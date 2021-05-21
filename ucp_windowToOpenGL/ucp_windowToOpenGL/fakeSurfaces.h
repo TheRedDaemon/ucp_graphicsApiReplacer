@@ -236,7 +236,7 @@ namespace UCPtoOpenGL
 	class FakeOffscreenMain : public FakeSurface
 	{
 	public:
-		FakeOffscreenMain() {};
+		FakeOffscreenMain(WindowCore* window) : win{ window } {};
 		~FakeOffscreenMain() {};
 
 		STDMETHOD(Lock)(THIS_ LPRECT, LPDDSURFACEDESC, DWORD, HANDLE) override;
@@ -249,14 +249,14 @@ namespace UCPtoOpenGL
 
 		virtual int getSurfaceWidth() override
 		{
-			return width;
+			return win->getTexStrongSizeW();
 		}
 
 	private:
 
 		// 16 bpp -> short; needs to change
 		std::unique_ptr<unsigned short[]> bitData{}; // = std::make_unique<unsigned short[]>(16000);
-		int width{ 0 };
+		WindowCore* const win;
 	};
 
 
@@ -291,7 +291,7 @@ namespace UCPtoOpenGL
 	class FakeBackbuffer : public FakeSurface
 	{
 	public:
-		FakeBackbuffer() {};
+		FakeBackbuffer(WindowCore* window) : win{ window } {};
 		~FakeBackbuffer() {};
 
 		STDMETHOD(Blt)(THIS_ LPRECT, LPDIRECTDRAWSURFACE, LPRECT, DWORD, LPDDBLTFX) override;
@@ -306,14 +306,14 @@ namespace UCPtoOpenGL
 
 		virtual int getSurfaceWidth() override
 		{
-			return width;
+			return win->getTexStrongSizeW();
 		}
 
 	private:
 
 		// 16 bpp -> short; needs to change
 		std::unique_ptr<unsigned short[]> bitData{}; // = std::make_unique<unsigned short[]>(16000);
-		int width{ 0 };
+		WindowCore* const win;
 
 	};
 

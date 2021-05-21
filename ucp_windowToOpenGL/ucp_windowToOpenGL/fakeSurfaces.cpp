@@ -62,7 +62,7 @@ namespace UCPtoOpenGL
   {
     // should not be reached by anything but fake
     FakeSurface* otherSurf{ (FakeSurface*)fromSurf };
-    FakeBlt(bitData.get(), toRect->left, toRect->top, width, otherSurf->getBitmapPtr(), fromRect->left,
+    FakeBlt(bitData.get(), toRect->left, toRect->top, win->getTexStrongSizeW(), otherSurf->getBitmapPtr(), fromRect->left,
       fromRect->top, toRect->right - toRect->left, toRect->bottom - toRect->top, otherSurf->getSurfaceWidth());
     return DD_OK;
   }
@@ -72,14 +72,80 @@ namespace UCPtoOpenGL
   {
     // should not be reached by anything but fake
     FakeSurface* otherSurf{ (FakeSurface*)fromSurf };
-    FakeBlt(bitData.get(), x, y, width, otherSurf->getBitmapPtr(), fromRect->left,
+    FakeBlt(bitData.get(), x, y, win->getTexStrongSizeW(), otherSurf->getBitmapPtr(), fromRect->left,
       fromRect->top, fromRect->right - fromRect->left, fromRect->bottom - fromRect->top, otherSurf->getSurfaceWidth());
     return DD_OK;
   }
 
-  STDMETHODIMP_(HRESULT __stdcall) FakeBackbuffer::GetSurfaceDesc(LPDDSURFACEDESC)
+  STDMETHODIMP_(HRESULT __stdcall) FakeBackbuffer::GetSurfaceDesc(LPDDSURFACEDESC descriptionPtr)
   {
-    return E_NOTIMPL;
+    // let hope that this is enough
+
+    DDSURFACEDESC& des{ *descriptionPtr };
+    des.dwFlags = DDSD_HEIGHT | DDSD_WIDTH | DDSD_PITCH | DDSD_PIXELFORMAT | DDSD_CAPS;
+
+    des.dwHeight = win->getTexStrongSizeH();
+    des.dwWidth = win->getTexStrongSizeW();
+
+    des.lPitch = 0;
+    des.lpSurface = getBitmapPtr();
+
+    des.ddpfPixelFormat.dwSize = sizeof(des.ddpfPixelFormat);
+    des.ddpfPixelFormat.dwFlags = DDPF_RGB;  // it is RGB
+    des.ddpfPixelFormat.dwRGBBitCount = 16; // Stronghold uses 16bit
+
+    des.ddsCaps.dwCaps = DDSCAPS_BACKBUFFER | DDSCAPS_COMPLEX | DDSCAPS_FLIP | DDSCAPS_SYSTEMMEMORY;
+
+    return DD_OK;
   }
 
+
+  /** fake offscreen main **/
+
+  STDMETHODIMP_(HRESULT __stdcall) FakeOffscreenMain::Lock(LPRECT, LPDDSURFACEDESC descriptionPtr, DWORD, HANDLE)
+  {
+    // let hope that this is enough
+
+    DDSURFACEDESC& des{ *descriptionPtr };
+    des.dwFlags = DDSD_HEIGHT | DDSD_WIDTH | DDSD_PITCH | DDSD_PIXELFORMAT | DDSD_CAPS;
+
+    des.dwHeight = win->getTexStrongSizeH();
+    des.dwWidth = win->getTexStrongSizeW();
+
+    des.lPitch = 0;
+    des.lpSurface = getBitmapPtr();
+
+    des.ddpfPixelFormat.dwSize = sizeof(des.ddpfPixelFormat);
+    des.ddpfPixelFormat.dwFlags = DDPF_RGB;  // it is RGB
+    des.ddpfPixelFormat.dwRGBBitCount = 16; // Stronghold uses 16bit
+
+    des.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN | DDSCAPS_SYSTEMMEMORY;
+
+    return DD_OK;
+  }
+
+
+  /** fake offscreen map **/
+
+  STDMETHODIMP_(HRESULT __stdcall) FakeOffscreenMap::Lock(LPRECT, LPDDSURFACEDESC descriptionPtr, DWORD, HANDLE)
+  {
+    // let hope that this is enough
+
+    DDSURFACEDESC& des{ *descriptionPtr };
+    des.dwFlags = DDSD_HEIGHT | DDSD_WIDTH | DDSD_PITCH | DDSD_PIXELFORMAT | DDSD_CAPS;
+
+    des.dwHeight = 2076;
+    des.dwWidth = 4056;
+
+    des.lPitch = 0;
+    des.lpSurface = getBitmapPtr();
+
+    des.ddpfPixelFormat.dwSize = sizeof(des.ddpfPixelFormat);
+    des.ddpfPixelFormat.dwFlags = DDPF_RGB;  // it is RGB
+    des.ddpfPixelFormat.dwRGBBitCount = 16; // Stronghold uses 16bit
+
+    des.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN | DDSCAPS_SYSTEMMEMORY;
+
+    return DD_OK;
+  }
 }

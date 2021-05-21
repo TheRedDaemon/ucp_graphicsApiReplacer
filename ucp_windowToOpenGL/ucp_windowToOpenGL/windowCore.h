@@ -12,6 +12,14 @@ namespace UCPtoOpenGL
 		HWND getWindowHandle();
 
 		void setTexStrongSize(int w, int h);
+		int getTexStrongSizeW()
+		{
+			return strongTexW;
+		}
+		int getTexStrongSizeH()
+		{
+			return strongTexH;
+		}
 
 		HRESULT renderNextScreen(unsigned short* backData);
 
