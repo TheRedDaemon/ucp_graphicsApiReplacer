@@ -1,23 +1,28 @@
 #pragma once
 
-class WindowCore
+namespace UCPtoOpenGL
 {
-public:
-	WindowCore() {};
-	~WindowCore() {};
+	class WindowCore
+	{
+	public:
+		WindowCore() {};
+		~WindowCore() {};
 
-	bool createWindow();
-	HWND getWindowHandle();
-	
-	void setTexStrongSize(int w, int h);
+		bool createWindow();
+		HWND getWindowHandle();
 
-private:
+		void setTexStrongSize(int w, int h);
 
-	// pointer to openGL Window
-	GLFWwindow* window = nullptr;
+		HRESULT renderNextScreen(unsigned short* backData);
 
-	// data infos:
-	int strongTexW{ 0 };
-	int strongTexH{ 0 };
+	private:
 
-};
+		// pointer to openGL Window
+		GLFWwindow* window = nullptr;
+
+		// data infos:
+		int strongTexW{ 0 };
+		int strongTexH{ 0 };
+
+	};
+}

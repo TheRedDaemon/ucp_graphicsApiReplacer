@@ -8,51 +8,57 @@
 #include "fakeSurfaces.h"
 #include "crusaderToOpenGL.h"
 
-// lua calls
 
-HWND CrusaderToOpenGL::createWindow(DWORD dwExStyle, LPCSTR lpClassName, LPCSTR lpWindowName, DWORD dwStyle,
-	int X, int Y, int nWidth, int nHeight, HWND hWndParent, HMENU hMenu, HINSTANCE hInstance, LPVOID lpParam)
+namespace UCPtoOpenGL
 {
-	// prevent second window -> TODO: Test ALT TAB
-	if (window.getWindowHandle() == NULL && window.createWindow())
+
+	// lua calls
+
+	HWND CrusaderToOpenGL::createWindow(DWORD dwExStyle, LPCSTR lpClassName, LPCSTR lpWindowName, DWORD dwStyle,
+		int X, int Y, int nWidth, int nHeight, HWND hWndParent, HMENU hMenu, HINSTANCE hInstance, LPVOID lpParam)
 	{
-		windowDone = true;
-		return window.getWindowHandle();
+		// prevent second window -> TODO: Test ALT TAB
+		if (window.getWindowHandle() == NULL && window.createWindow())
+		{
+			windowDone = true;
+			return window.getWindowHandle();
+		}
+		else
+		{
+			windowDone = false;
+		}
+
+		// if it fails:
+		return CreateWindowExA(dwExStyle, lpClassName, lpWindowName, dwStyle, X, Y, nWidth, nHeight, hWndParent, hMenu, hInstance, lpParam);
 	}
-	else
+
+	HRESULT CrusaderToOpenGL::createDirectDraw(GUID* lpGUID, LPDIRECTDRAW* lplpDD, IUnknown* pUnkOuter)
 	{
-		windowDone = false;
+		// get library and func
+		HMODULE ddraw{ GetModuleHandleA("ddraw.dll") };
+		if (ddraw == NULL) return DDERR_GENERIC;	// lets hope the game just crashes normally... need better handling... but what?
+		auto create{ (decltype(DirectDrawCreate)*)GetProcAddress(ddraw, "DirectDrawCreate") };
+
+		HRESULT res;
+		if (windowDone)
+		{
+			// use own if successful
+			res = create(lpGUID, &realInterface, pUnkOuter);
+			*lplpDD = this;
+		}
+		else
+		{
+			res = create(lpGUID, lplpDD, pUnkOuter);
+		}
+
+		return res;
 	}
 
-	// if it fails:
-	return CreateWindowExA(dwExStyle, lpClassName, lpWindowName, dwStyle, X, Y, nWidth, nHeight, hWndParent, hMenu, hInstance, lpParam);
-}
+	// DirectDraw
 
-HRESULT CrusaderToOpenGL::createDirectDraw(GUID* lpGUID, LPDIRECTDRAW* lplpDD, IUnknown* pUnkOuter)
-{
-	// get library and func
-	HMODULE ddraw{ GetModuleHandleA("ddraw.dll") };
-	if (ddraw == NULL) return DDERR_GENERIC;	// lets hope the game just crashes normally... need better handling... but what?
-	auto create{ (decltype(DirectDrawCreate)*)GetProcAddress(ddraw, "DirectDrawCreate") };
-	
-	HRESULT res;
-	if (windowDone)
+	STDMETHODIMP_(HRESULT __stdcall) CrusaderToOpenGL::SetDisplayMode(DWORD w, DWORD h, DWORD)
 	{
-		// use own if successful
-		res = create(lpGUID, &realInterface, pUnkOuter);
-		*lplpDD = this;
+		window.setTexStrongSize(w, h);
+		return DD_OK;
 	}
-	else{
-		res = create(lpGUID, lplpDD, pUnkOuter);
-	}
-
-	return res;
-}
-
-// DirectDraw
-
-STDMETHODIMP_(HRESULT __stdcall) CrusaderToOpenGL::SetDisplayMode(DWORD w, DWORD h, DWORD)
-{
-	window.setTexStrongSize(w, h);
-	return DD_OK;
 }

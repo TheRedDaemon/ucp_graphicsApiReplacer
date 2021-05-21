@@ -8,7 +8,7 @@
 #include "crusaderToOpenGL.h"
 
 // static object
-static CrusaderToOpenGL ToOpenGL;
+static UCPtoOpenGL::CrusaderToOpenGL ToOpenGL;
 
 // lua functions
 
@@ -19,7 +19,7 @@ HWND WINAPI CreateWindowCall(DWORD dwExStyle, LPCSTR lpClassName, LPCSTR lpWindo
     hWndParent, hMenu, hInstance, lpParam);
 }
 
-HRESULT WINAPI DirectDrawCreate(GUID* lpGUID, LPDIRECTDRAW* lplpDD, IUnknown* pUnkOuter)
+HRESULT WINAPI DirectDrawCreateCall(GUID* lpGUID, LPDIRECTDRAW* lplpDD, IUnknown* pUnkOuter)
 {
   return ToOpenGL.createDirectDraw(lpGUID, lplpDD, pUnkOuter);
 }
