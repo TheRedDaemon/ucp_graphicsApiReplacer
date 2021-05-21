@@ -59,6 +59,32 @@ namespace UCPtoOpenGL
 	STDMETHODIMP_(HRESULT __stdcall) CrusaderToOpenGL::SetDisplayMode(DWORD w, DWORD h, DWORD)
 	{
 		window.setTexStrongSize(w, h);
+
+		//create new bit maps
+		back.createBitData(w * h);
+		offMain.createBitData(w * h);
+
 		return DD_OK;
+	}
+
+	STDMETHODIMP_(HRESULT __stdcall) CrusaderToOpenGL::CreateSurface(LPDDSURFACEDESC des, LPDIRECTDRAWSURFACE* retSurfPtr, IUnknown*)
+	{
+		if (des->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
+		{
+			*retSurfPtr = &prim;
+			return DD_OK;
+		}
+
+		// offscreen surfaces (backbuffer is gathered different)
+		if (des->dwHeight == 2076 && des->dwWidth == 4056)	// lets hope this resolution will never be supported
+		{
+			*retSurfPtr = &offMap
+		}
+		else
+		{
+			*retSurfPtr = &offMain;
+		}
+		
+		return DD_OK
 	}
 }

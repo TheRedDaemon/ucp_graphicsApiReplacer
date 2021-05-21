@@ -247,9 +247,14 @@ namespace UCPtoOpenGL
 			return bitData.get();
 		}
 
-		virtual int getSurfaceWidth() override
+		int getSurfaceWidth() override
 		{
 			return win->getTexStrongSizeW();
+		}
+
+		void createBitData(int size)
+		{
+			bitData = std::make_unique<unsigned short[]>(size);
 		}
 
 	private:
@@ -275,7 +280,7 @@ namespace UCPtoOpenGL
 			return bitData;
 		}
 
-		virtual int getSurfaceWidth() override
+		int getSurfaceWidth() override
 		{
 			return 4056;
 		}
@@ -304,9 +309,14 @@ namespace UCPtoOpenGL
 			return bitData.get();
 		}
 
-		virtual int getSurfaceWidth() override
+		int getSurfaceWidth() override
 		{
 			return win->getTexStrongSizeW();
+		}
+
+		void createBitData(int size)
+		{
+			bitData = std::make_unique<unsigned short[]>(size);
 		}
 
 	private:
