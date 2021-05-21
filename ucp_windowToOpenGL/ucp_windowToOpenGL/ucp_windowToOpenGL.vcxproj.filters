@@ -27,6 +27,9 @@
     <ClInclude Include="windowCore.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="fakeSurfaces.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">

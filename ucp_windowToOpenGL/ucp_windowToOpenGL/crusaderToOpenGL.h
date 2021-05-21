@@ -4,9 +4,9 @@
 class CrusaderToOpenGL : public IDirectDraw
 {
 public:
-	CrusaderToOpenGL();
+	CrusaderToOpenGL() {};
 
-	virtual ~CrusaderToOpenGL();
+	virtual ~CrusaderToOpenGL() {};
 
 	// Inferface methods: Most are changed to do nothing but return DD_OK
 
@@ -16,7 +16,7 @@ public:
 		Licensed under the MIT license. See LICENSE.txt
 	*/
 
-	/*** IUnknown methods ***/
+	/*** not used ***/
 
 	STDMETHOD(QueryInterface) (THIS_ REFIID riid, LPVOID FAR* ppvObj)
 	{
@@ -27,13 +27,6 @@ public:
 	{
 		return DD_OK;	// not called by Crusader
 	}
-
-	STDMETHOD_(ULONG, Release) (THIS)
-	{
-		return DD_OK;	// called, but not important, realInterface is kept for re-init, until this is stopped
-	}
-
-	/*** IDirectDraw methods ***/
 
 	STDMETHOD(Compact)(THIS)
 	{
@@ -50,18 +43,9 @@ public:
 		return DD_OK;	// not called by Crusader
 	}
 
-	// needs handling
-	STDMETHOD(CreateSurface)(THIS_  LPDDSURFACEDESC, LPDIRECTDRAWSURFACE FAR*, IUnknown FAR*);
-
 	STDMETHOD(DuplicateSurface)(THIS_ LPDIRECTDRAWSURFACE, LPDIRECTDRAWSURFACE FAR*)
 	{
 		return DD_OK;	// not called by Crusader
-	}
-
-	STDMETHOD(EnumDisplayModes)(THIS_ DWORD dw, LPDDSURFACEDESC lpsurf, LPVOID lpvoid, LPDDENUMMODESCALLBACK callback)
-	{
-		// calls original, mode for values is set somewhere else
-		return realInterface->EnumDisplayModes(dw, lpsurf, lpvoid, callback);
 	}
 
 	STDMETHOD(EnumSurfaces)(THIS_ DWORD, LPDDSURFACEDESC, LPVOID, LPDDENUMSURFACESCALLBACK)
@@ -73,13 +57,7 @@ public:
 	{
 		return DD_OK;	// not called by Crusader
 	}
-
-	STDMETHOD(GetCaps)(THIS_ LPDDCAPS cap1, LPDDCAPS cap2)
-	{
-		// calls original, since there are currently many open questions regarding the needed return
-		return realInterface->GetCaps(cap1, cap2);
-	}
-
+	
 	STDMETHOD(GetDisplayMode)(THIS_ LPDDSURFACEDESC)
 	{
 		return DD_OK;	// not called by Crusader
@@ -125,15 +103,43 @@ public:
 		return DD_OK;	// called, but ignored
 	}
 
-	// needs handling -> place to get current resolution
-	STDMETHOD(SetDisplayMode)(THIS_ DWORD, DWORD, DWORD);
-
 	STDMETHOD(WaitForVerticalBlank)(THIS_ DWORD, HANDLE)
 	{
 		return DD_OK;	// not called by Crusader
 	}
 
+	/*** original ***/
+
+	STDMETHOD(EnumDisplayModes)(THIS_ DWORD dw, LPDDSURFACEDESC lpsurf, LPVOID lpvoid, LPDDENUMMODESCALLBACK callback)
+	{
+		// calls original, mode for values is set somewhere else
+		return realInterface->EnumDisplayModes(dw, lpsurf, lpvoid, callback);
+	}
+
+	STDMETHOD(GetCaps)(THIS_ LPDDCAPS cap1, LPDDCAPS cap2)
+	{
+		// calls original, since there are currently many open questions regarding the needed return
+		return realInterface->GetCaps(cap1, cap2);
+	}
+
+	STDMETHOD_(ULONG, Release) (THIS)
+	{
+		// calls normal release, since it should get created again afterwards
+		return realInterface->Release();
+	}
+
+
+	/*** modified ***/
+
+	// needs handling
+	STDMETHOD(CreateSurface)(THIS_  LPDDSURFACEDESC, LPDIRECTDRAWSURFACE FAR*, IUnknown FAR*);
+	
+	// needs handling -> place to get current resolution
+	STDMETHOD(SetDisplayMode)(THIS_ DWORD, DWORD, DWORD);
+
 	/* copied structure end */
+
+
 
 	HWND createWindow(DWORD dwExStyle, LPCSTR lpClassName, LPCSTR lpWindowName, DWORD dwStyle, int X, int Y,
 		int nWidth, int nHeight, HWND hWndParent, HMENU hMenu, HINSTANCE hInstance, LPVOID lpParam);

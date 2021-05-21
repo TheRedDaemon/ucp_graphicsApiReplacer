@@ -2,8 +2,10 @@
 #include "pch.h"
 
 #include <string>
+#include <memory>
 
 #include "windowCore.h"
+#include "fakeSurfaces.h"
 #include "crusaderToOpenGL.h"
 
 // lua calls
@@ -11,14 +13,18 @@
 HWND CrusaderToOpenGL::createWindow(DWORD dwExStyle, LPCSTR lpClassName, LPCSTR lpWindowName, DWORD dwStyle,
 	int X, int Y, int nWidth, int nHeight, HWND hWndParent, HMENU hMenu, HINSTANCE hInstance, LPVOID lpParam)
 {
-
-	if (window.createWindow())
+	// prevent second window -> TODO: Test ALT TAB
+	if (window.getWindowHandle() == NULL && window.createWindow())
 	{
 		windowDone = true;
 		return window.getWindowHandle();
 	}
+	else
+	{
+		windowDone = false;
+	}
 
-	// if it should fail:
+	// if it fails:
 	return CreateWindowExA(dwExStyle, lpClassName, lpWindowName, dwStyle, X, Y, nWidth, nHeight, hWndParent, hMenu, hInstance, lpParam);
 }
 
