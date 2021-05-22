@@ -12,7 +12,7 @@
 // static object
 static UCPtoOpenGL::CrusaderToOpenGL ToOpenGL;
 
-// lua functions
+// lua functions to bind
 
 HWND WINAPI CreateWindowCall(DWORD dwExStyle, LPCSTR lpClassName, LPCSTR lpWindowName, DWORD dwStyle, int X, int Y,
   int nWidth, int nHeight, HWND hWndParent, HMENU hMenu, HINSTANCE hInstance, LPVOID lpParam)
@@ -25,6 +25,19 @@ HRESULT WINAPI DirectDrawCreateCall(GUID* lpGUID, LPDIRECTDRAW* lplpDD, IUnknown
 {
   return ToOpenGL.createDirectDraw(lpGUID, lplpDD, pUnkOuter);
 }
+
+// stronghold gets the size of the screen sometimes times
+// only handles 0 and 1, the first SetDisplayMode needs to happen before
+int WINAPI GetSystemMetricsCall(int nIndex)
+{
+  return ToOpenGL.getFakeSystemMetrics(nIndex);
+}
+
+// the main drawing rect is set via a user call -> keep the pointer, change it on demand
+BOOL WINAPI SetRectCall(LPRECT lprc, int xLeft, int yTop, int xRight, int yBottom)
+{
+  return ToOpenGL.setFakeRect(lprc, xLeft, yTop, xRight, yBottom);
+};
 
 
 // lua module load
@@ -53,7 +66,7 @@ extern "C" __declspec(dllexport) int __cdecl luaopen_ucp_windowToOpenGL(lua_Stat
   VirtualProtect(reinterpret_cast<DWORD*>(0x00467B22), 6, oldAddressProtection, &oldAddressProtection);
 
 
-  // there is another pretty similar call, one condition further // extrme: 0x0046FCB8
+  // there is another pretty similar call, one condition further // extreme: 0x0046FCB8
   VirtualProtect(reinterpret_cast<DWORD*>(0x0046FCB8), 5, PAGE_EXECUTE_READWRITE, &oldAddressProtection);
 
   call = reinterpret_cast<unsigned char*>(0x0046FCB8);
@@ -63,6 +76,38 @@ extern "C" __declspec(dllexport) int __cdecl luaopen_ucp_windowToOpenGL(lua_Stat
   *func = reinterpret_cast<DWORD>(DirectDrawCreateCall) - 0x0046FCB8 - 5;
 
   VirtualProtect(reinterpret_cast<DWORD*>(0x0046FCB8), 5, oldAddressProtection, &oldAddressProtection);
+
+
+  // Crusader gets the size for some of its drawing RECTs via screen size, lets change that
+  // extreme address for ONE Rect: 00468089
+  // changing the jump address althougher for a test: 0059E1D0
+  //  -> does not really help? result is that the click positions move to the display edge
+  VirtualProtect(reinterpret_cast<DWORD*>(0x0059E1D0), 4, PAGE_EXECUTE_READWRITE, &oldAddressProtection);
+
+  func = reinterpret_cast<DWORD*>(0x0059E1D0);
+
+  // change the address that is moved in the register
+  *func = reinterpret_cast<DWORD>(GetSystemMetricsCall);
+
+  VirtualProtect(reinterpret_cast<DWORD*>(0x0059E1D0), 4, oldAddressProtection, &oldAddressProtection);
+
+
+  // the main drawing RECT is set using USER.SetRect, lets do it, but remember the pointer, extreme call: 004B2D06
+  // this is done before DirectDraw gets the set display mode order -> sets it to screen size?
+  // some weird stuff happens during the window creation... why is this a different number in other cases...
+  // maybe the combination of window and exlusiv mode already changes the resolution, the SetDisplayMode is just for DirectDraw?
+  // other address, for general jump: 0059E200
+  VirtualProtect(reinterpret_cast<DWORD*>(0x0059E200), 6, PAGE_EXECUTE_READWRITE, &oldAddressProtection);
+
+  //call = reinterpret_cast<unsigned char*>(0x004B2D06);
+  func = reinterpret_cast<DWORD*>(0x0059E200 /*+ 1*/);
+  //nop = reinterpret_cast<unsigned char*>(0x004B2D06 + 5);
+
+  //*call = 0xE8;
+  *func = reinterpret_cast<DWORD>(SetRectCall) /*- 0x004B2D06 - 5*/;
+  //*nop = 0x90;
+
+  VirtualProtect(reinterpret_cast<DWORD*>(0x004B2D06), 6, oldAddressProtection, &oldAddressProtection);
 
   return 1;
 }

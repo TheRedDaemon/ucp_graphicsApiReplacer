@@ -25,7 +25,7 @@ namespace UCPtoOpenGL
 
     // Open a window and create its OpenGL context
     // This will get other values later
-    window = glfwCreateWindow(1024, 768, "Tutorial 01", NULL, NULL);
+    window = glfwCreateWindow(1280, 720, "Tutorial 01", NULL, NULL);
     if (window == NULL)
     {
       return false;
@@ -54,8 +54,8 @@ namespace UCPtoOpenGL
     strongTexW = w;
     strongTexH = h;
     
-    // create initial texture
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_BGRA, GL_UNSIGNED_SHORT_1_5_5_5_REV, nullptr);
+    // create initial texture, internal format either full GL_RGB, or GL_RGB5_A1 (should choose a format closer to real)
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB5_A1, w, h, 0, GL_BGRA, GL_UNSIGNED_SHORT_1_5_5_5_REV, nullptr);
     int test = glGetError();
   }
 
@@ -74,13 +74,17 @@ namespace UCPtoOpenGL
     // Swap buffers
     glfwSwapBuffers(window);
     
-    // glfwPollEvents(); // The tutorial is also written for input. Lets just hope Stronghold takes care of this.
+    //glfwPollEvents(); // The tutorial is also written for input. Lets just hope Stronghold takes care of this.
     return DD_OK;
   }
 
 
   void WindowCore::initSystems()
   {
+
+    // the clear color
+    glClearColor(0.0, 1.0, 0.0, 1.0);
+
     /*======== geometry is simple quad ===========*/
     
     GLfloat vertexInfos[]{

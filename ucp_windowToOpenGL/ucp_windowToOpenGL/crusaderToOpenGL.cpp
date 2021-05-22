@@ -25,7 +25,7 @@ namespace UCPtoOpenGL
 		if (window.getWindowHandle() == NULL && window.createWindow())
 		{
 			windowDone = true;
-			// return window.getWindowHandle();
+			//return window.getWindowHandle();
 		}
 		else
 		{
@@ -58,6 +58,57 @@ namespace UCPtoOpenGL
 		return res;
 	}
 
+	int CrusaderToOpenGL::getFakeSystemMetrics(int nIndex)
+	{
+		// does not garantuee that the numbers are OK
+		// likely not fitting for many situation, not all stuff will need render size...
+		if (windowDone)
+		{
+			switch (nIndex)
+			{
+			case SM_CXSCREEN:
+			{
+				int texWidth{ window.getTexStrongSizeW() };
+				//texWidth = 1024; // test
+				if (texWidth > 0)
+				{
+					return texWidth;
+				}
+				break;
+			}
+			case SM_CYSCREEN:
+			{
+				int texHeight{ window.getTexStrongSizeH() };
+				//texHeight = 768; // test
+				if (texHeight > 0)
+				{
+					return texHeight;
+				}
+				break;
+			}
+			default:
+				break;
+			}
+		}
+		return GetSystemMetrics(nIndex);
+	}
+
+	BOOL CrusaderToOpenGL::setFakeRect(LPRECT lprc, int xLeft, int yTop, int xRight, int yBottom)
+	{
+		// test:
+		//xRight = 1024;
+		//yBottom = 768;
+
+		if (mainDrawingRect == lprc)
+		{
+			yBottom = window.getTexStrongSizeH();
+			xRight = window.getTexStrongSizeW();
+		}
+
+		return SetRect(lprc, xLeft, yTop, xRight, yBottom);
+	}
+
+
 	// DirectDraw
 
 	STDMETHODIMP_(HRESULT __stdcall) CrusaderToOpenGL::SetDisplayMode(DWORD w, DWORD h, DWORD)
@@ -67,6 +118,15 @@ namespace UCPtoOpenGL
 		offMain.createBitData(w * h);
 
 		window.setTexStrongSize(w, h);
+
+		if (mainDrawingRect)
+		{
+			RECT& rec{ *mainDrawingRect };
+			rec.left = 0;
+			rec.right = w;
+			rec.top = 0;
+			rec.bottom = h;
+		}
 
 		return DD_OK;
 	}

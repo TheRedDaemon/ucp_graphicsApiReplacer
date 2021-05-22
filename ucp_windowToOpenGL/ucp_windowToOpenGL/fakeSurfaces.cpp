@@ -4,6 +4,9 @@
 #include "windowCore.h"
 #include "fakeSurfaces.h"
 
+// for tests
+//#include <intrin.h>
+
 namespace UCPtoOpenGL
 {
 
@@ -24,12 +27,13 @@ namespace UCPtoOpenGL
       int maxX{ lenX + (int)bltTo };
       for (bltTo; (int)bltTo < maxX; bltTo++)
       {
-        unsigned short fromColor{ *bltFrom };
+        *bltTo = *bltFrom;  // all transparency seems to be handled by stronghold
 
-        if (fromColor != NULL) // black is not blt
-        {
-          *bltTo = fromColor;
-        }
+        // test
+        //if (*bltTo == NULL)
+        //{
+        //  *bltTo = 0x0000;
+        //}
 
         ++bltFrom;
       }
@@ -57,30 +61,74 @@ namespace UCPtoOpenGL
   /** fake backbuffer **/
 
   STDMETHODIMP_(HRESULT __stdcall) FakeBackbuffer::Blt(LPRECT toRect, LPDIRECTDRAWSURFACE fromSurf, LPRECT fromRect,
-    DWORD, LPDDBLTFX)
+    DWORD effectFlags, LPDDBLTFX)
   {
-    // should not be reached by anything but fake
-    FakeSurface* otherSurf{ (FakeSurface*)fromSurf };
-    FakeBlt(bitData.get(), toRect->left, toRect->top, win->getTexStrongSizeW(), otherSurf->getBitmapPtr(), fromRect->left,
-      fromRect->top, toRect->right - toRect->left, toRect->bottom - toRect->top, otherSurf->getSurfaceWidth());
-    return DD_OK;
-  }
+    if (effectFlags != DDBLT_WAIT)
+    {
+      int test = 1;
+    }
 
-  STDMETHODIMP_(HRESULT __stdcall) FakeBackbuffer::BltFast(DWORD x, DWORD y, LPDIRECTDRAWSURFACE fromSurf,
-    LPRECT fromRect, DWORD)
-  {
+    if (fromRect->right > win->getTexStrongSizeW())
+    {
+      int test = 1;
+    }
+
     // debug -> for some reason I receive my resolution -> maybe the window is not able to contain the size?
     // could also be that the screen resolution would change, but it can not...?
     // TODO: find out how it constructs the rects -> if it pulls for all blts, this could be a problem
+
+    // still issues -> the rect is still constantly set to screen size
     int lenX{ fromRect->right - fromRect->left };
     int lenY{ fromRect->bottom - fromRect->top };
     lenX = win->getTexStrongSizeW() < lenX ? win->getTexStrongSizeW() : lenX;
     lenY = win->getTexStrongSizeH() < lenY ? win->getTexStrongSizeH() : lenY;
 
+    // debug
+    //if (lenX != win->getTexStrongSizeW() || lenY != win->getTexStrongSizeH())
+    //{
+     // return DD_OK;
+    //}
+
+
+    // should not be reached by anything but fake
+    FakeSurface* otherSurf{ (FakeSurface*)fromSurf };
+    FakeBlt(bitData.get(), toRect->left, toRect->top, win->getTexStrongSizeW(), otherSurf->getBitmapPtr(), fromRect->left,
+      fromRect->top, lenX, lenY, otherSurf->getSurfaceWidth());
+
+    //int add = (int)_ReturnAddress();
+    return DD_OK;
+  }
+
+  STDMETHODIMP_(HRESULT __stdcall) FakeBackbuffer::BltFast(DWORD x, DWORD y, LPDIRECTDRAWSURFACE fromSurf,
+    LPRECT fromRect, DWORD bltAction)
+  {
+    if (bltAction != DDBLTFAST_WAIT)
+    {
+      int test = 1;
+    }
+
+    // debug -> for some reason I receive my resolution -> maybe the window is not able to contain the size?
+    // could also be that the screen resolution would change, but it can not...?
+    // TODO: find out how it constructs the rects -> if it pulls for all blts, this could be a problem
+
+    // still issues -> the rect is still constantly set to screen size
+    int lenX{ fromRect->right - fromRect->left };
+    int lenY{ fromRect->bottom - fromRect->top };
+    lenX = win->getTexStrongSizeW() < lenX ? win->getTexStrongSizeW() : lenX;
+    lenY = win->getTexStrongSizeH() < lenY ? win->getTexStrongSizeH() : lenY;
+
+    // debug
+    //if (lenX != win->getTexStrongSizeW() || lenY != win->getTexStrongSizeH())
+    //{
+    //  return DD_OK;
+    //}
+
     // should not be reached by anything but fake
     FakeSurface* otherSurf{ (FakeSurface*)fromSurf };
     FakeBlt(bitData.get(), x, y, win->getTexStrongSizeW(), otherSurf->getBitmapPtr(), fromRect->left,
       fromRect->top, lenX, lenY, otherSurf->getSurfaceWidth());
+
+    //int add = (int)_ReturnAddress();
     return DD_OK;
   }
 

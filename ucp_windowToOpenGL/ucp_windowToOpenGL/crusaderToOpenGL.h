@@ -148,10 +148,17 @@ namespace UCPtoOpenGL
 
 		HRESULT createDirectDraw(GUID* lpGUID, LPDIRECTDRAW* lplpDD, IUnknown* pUnkOuter);
 
+		int getFakeSystemMetrics(int nIndex);
+
+		BOOL setFakeRect(LPRECT lprc, int xLeft, int yTop, int xRight, int yBottom);
+
 	private:
 
 		WindowCore window;
 		bool windowDone{ false };
+
+		// window stuff
+		LPRECT mainDrawingRect{ nullptr };
 
 		// DirectDraw interface
 		IDirectDraw* realInterface = nullptr;
