@@ -157,9 +157,9 @@ namespace UCPtoOpenGL
 		IDirectDraw* realInterface = nullptr;
 
 		// fake interfaces
-		FakeOffscreenMain offNorm;
+		FakeOffscreenMain offMain{ &window };
 		FakeOffscreenMap offMap;
-		FakeBackbuffer back;
+		FakeBackbuffer back{ &window };
 		FakePrimary prim{ &window, &back };
 	};
 }

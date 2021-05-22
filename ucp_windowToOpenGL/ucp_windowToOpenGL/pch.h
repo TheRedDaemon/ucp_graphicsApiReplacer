@@ -18,6 +18,9 @@
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
 
+// for ptr
+#include <memory>
+
 #include "ddraw.h"
 
 #endif //PCH_H

@@ -1,8 +1,6 @@
 
 #include "pch.h"
 
-#include <memory>
-
 #include "windowCore.h"
 #include "fakeSurfaces.h"
 
@@ -21,11 +19,13 @@ namespace UCPtoOpenGL
     // init
     bltFrom += fromY * fromWidth + fromX;
     bltTo += toY * toWidth + toX;
-    for (size_t yRun{ 0 }; yRun < lenY; yRun++)
+    for (int yRun{ 0 }; yRun < lenY; yRun++)
     {
-      for (bltTo; bltTo < lenX + bltTo; bltTo++)
+      int maxX{ lenX + (int)bltTo };
+      for (bltTo; (int)bltTo < maxX; bltTo++)
       {
-        short fromColor{ *bltFrom };
+        unsigned short fromColor{ *bltFrom };
+        fromColor = 0xFFFF;
 
         if (fromColor != NULL) // black is not blt
         {
@@ -70,10 +70,18 @@ namespace UCPtoOpenGL
   STDMETHODIMP_(HRESULT __stdcall) FakeBackbuffer::BltFast(DWORD x, DWORD y, LPDIRECTDRAWSURFACE fromSurf,
     LPRECT fromRect, DWORD)
   {
+    // debug -> for some reason I receive my resolution -> maybe the window is not able to contain the size?
+    // could also be that the screen resolution would change, but it can not...?
+    // TODO: find out how it constructs the rects -> if it pulls for all blts, this could be a problem
+    int lenX{ fromRect->right - fromRect->left };
+    int lenY{ fromRect->bottom - fromRect->top };
+    lenX = win->getTexStrongSizeW() < lenX ? win->getTexStrongSizeW() : lenX;
+    lenY = win->getTexStrongSizeH() < lenY ? win->getTexStrongSizeH() : lenY;
+
     // should not be reached by anything but fake
     FakeSurface* otherSurf{ (FakeSurface*)fromSurf };
     FakeBlt(bitData.get(), x, y, win->getTexStrongSizeW(), otherSurf->getBitmapPtr(), fromRect->left,
-      fromRect->top, fromRect->right - fromRect->left, fromRect->bottom - fromRect->top, otherSurf->getSurfaceWidth());
+      fromRect->top, lenX, lenY, otherSurf->getSurfaceWidth());
     return DD_OK;
   }
 
@@ -149,3 +157,8 @@ namespace UCPtoOpenGL
     return DD_OK;
   }
 }
+
+
+// NOTES:
+//  - switch to game after loading causes issues: -> of they create another window there, it might be better to use this instead
+//  - if they close the window there -> would be ok to use other window

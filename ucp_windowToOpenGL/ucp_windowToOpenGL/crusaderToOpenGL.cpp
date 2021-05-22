@@ -2,11 +2,13 @@
 #include "pch.h"
 
 #include <string>
-#include <memory>
 
 #include "windowCore.h"
 #include "fakeSurfaces.h"
 #include "crusaderToOpenGL.h"
+
+#include <chrono>
+#include <thread>
 
 
 namespace UCPtoOpenGL
@@ -17,11 +19,13 @@ namespace UCPtoOpenGL
 	HWND CrusaderToOpenGL::createWindow(DWORD dwExStyle, LPCSTR lpClassName, LPCSTR lpWindowName, DWORD dwStyle,
 		int X, int Y, int nWidth, int nHeight, HWND hWndParent, HMENU hMenu, HINSTANCE hInstance, LPVOID lpParam)
 	{
+		std::this_thread::sleep_for(std::chrono::seconds(10)); // 20 seconds to attach
+
 		// prevent second window -> TODO: Test ALT TAB
 		if (window.getWindowHandle() == NULL && window.createWindow())
 		{
 			windowDone = true;
-			return window.getWindowHandle();
+			// return window.getWindowHandle();
 		}
 		else
 		{
@@ -58,11 +62,11 @@ namespace UCPtoOpenGL
 
 	STDMETHODIMP_(HRESULT __stdcall) CrusaderToOpenGL::SetDisplayMode(DWORD w, DWORD h, DWORD)
 	{
-		window.setTexStrongSize(w, h);
-
 		//create new bit maps
 		back.createBitData(w * h);
 		offMain.createBitData(w * h);
+
+		window.setTexStrongSize(w, h);
 
 		return DD_OK;
 	}
@@ -78,13 +82,13 @@ namespace UCPtoOpenGL
 		// offscreen surfaces (backbuffer is gathered different)
 		if (des->dwHeight == 2076 && des->dwWidth == 4056)	// lets hope this resolution will never be supported
 		{
-			*retSurfPtr = &offMap
+			*retSurfPtr = &offMap;
 		}
 		else
 		{
 			*retSurfPtr = &offMain;
 		}
 		
-		return DD_OK
+		return DD_OK;
 	}
 }

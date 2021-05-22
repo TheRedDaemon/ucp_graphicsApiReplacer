@@ -32,5 +32,13 @@ namespace UCPtoOpenGL
 		int strongTexW{ 0 };
 		int strongTexH{ 0 };
 
+		// openGL pointer
+		GLuint vertexArrayID{ NULL };
+		GLuint quadBufferID{ NULL };
+		GLuint quadIndexBuffer{ NULL };
+		GLuint strongholdScreenTex{ NULL };
+
+		// dummy currently 
+		void initSystems();
 	};
 }
