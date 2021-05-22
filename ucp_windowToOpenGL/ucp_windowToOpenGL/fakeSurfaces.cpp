@@ -25,7 +25,6 @@ namespace UCPtoOpenGL
       for (bltTo; (int)bltTo < maxX; bltTo++)
       {
         unsigned short fromColor{ *bltFrom };
-        fromColor = 0xFFFF;
 
         if (fromColor != NULL) // black is not blt
         {

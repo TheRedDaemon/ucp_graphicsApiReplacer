@@ -20,6 +20,7 @@ namespace UCPtoOpenGL
     // OPenGl 3.3
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_FOCUSED, GLFW_FALSE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // Open a window and create its OpenGL context
@@ -53,21 +54,17 @@ namespace UCPtoOpenGL
     strongTexW = w;
     strongTexH = h;
     
-    // dummy
-
-    // create tex
-    unsigned short testData[]{ 0xFFFF, 0x5555, 0xFFFF, 0x5555, 0xFFFF, 0x5555, 0xFFFF, 0x5555, 0xFFFF };
-    unsigned short* t = testData;
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 3, 3, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, (void*)t);
-    GLenum test = glGetError();
+    // create initial texture
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_BGRA, GL_UNSIGNED_SHORT_1_5_5_5_REV, nullptr);
+    int test = glGetError();
   }
 
 
   HRESULT WindowCore::renderNextScreen(unsigned short* backData)
   {
-    // update texture
-    //glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, strongTexW, strongTexH, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, backData);
-    glActiveTexture(0);
+    // update texture (issue here?)
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, strongTexW, strongTexH, GL_BGRA, GL_UNSIGNED_SHORT_1_5_5_5_REV, backData);
+
     // Clear the screen.
     glClear(GL_COLOR_BUFFER_BIT);
 
@@ -122,13 +119,15 @@ namespace UCPtoOpenGL
 
 
     // create texture, currently static
-    //glActiveTexture(0);
     glGenTextures(1, &strongholdScreenTex);
     glBindTexture(GL_TEXTURE_2D, strongholdScreenTex);
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    //glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    //glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    // set so that OPenGL does not expect midmaps
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
 
     /*================ Shaders ====================*/
 
@@ -170,10 +169,7 @@ namespace UCPtoOpenGL
 
       void main()
       {
-        vec4 col = texture(strongTexture, TexCoord);
-        if (col.x == 0.0 && col.z == 0.0){
-          finalColor = vec4(TexCoord.x, TexCoord.y, TexCoord.x, TexCoord.y);
-        }
+        finalColor = texture(strongTexture, TexCoord);
       }
     )";
     
