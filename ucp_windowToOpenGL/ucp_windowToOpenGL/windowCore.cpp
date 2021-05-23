@@ -6,10 +6,15 @@
 
 #include "windowCore.h"
 
+// test
+#include <string>
+
 namespace UCPtoOpenGL
 {
-  bool WindowCore::createWindow()
+  bool WindowCore::createWindow(HWND win)
   {
+    /*
+    // -> with glew and glfw
     // Initialise GLFW
     glewExperimental = true; // Needed for core profile
     if (!glfwInit())
@@ -31,7 +36,70 @@ namespace UCPtoOpenGL
       return false;
     }
 
+    // test: set function pointer
+
     glfwMakeContextCurrent(window); // Initialize GLEW
+    glewExperimental = true; // Needed in core profile // @TheRedDaemon: Tutorial sets it twice? I keep it this way.
+    if (glewInit() != GLEW_OK)
+    {
+      return false;
+    }
+    */
+    
+    // wgl Context creation after this source: https://stackoverflow.com/a/6316595
+
+    deviceContext = GetDC(win); // this one will not get closed for a while
+    
+    PIXELFORMATDESCRIPTOR pfd{ sizeof(pfd), 1 };
+    pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_SUPPORT_COMPOSITION | PFD_DOUBLEBUFFER;
+    pfd.iPixelType = PFD_TYPE_RGBA;
+    pfd.cColorBits = 24;
+    pfd.cAlphaBits = 8;
+    //pfd.iLayerType = PFD_MAIN_PLANE;  // apperantly ignored anyway
+    int format_index{ ChoosePixelFormat(deviceContext, &pfd) };
+    if (!format_index)
+    {
+      return false;
+    }
+
+    if (!SetPixelFormat(deviceContext, format_index, &pfd))
+    {
+      return false;
+    }
+
+
+    // double check, because originally set structure optional? -> maybe remove later:
+    // -> this
+    auto active_format_index{ GetPixelFormat(deviceContext) };
+    if (!active_format_index)
+    {
+      return false;
+    }
+
+    if (!DescribePixelFormat(deviceContext, active_format_index, sizeof(pfd), &pfd))
+    {
+      return false;
+    }
+
+    if ((pfd.dwFlags & PFD_SUPPORT_OPENGL) != PFD_SUPPORT_OPENGL)
+    {
+      return false;
+    }
+    // until here -> but maybe needd to validate that windows choose a fitting thing?
+
+
+    renderingContext = wglCreateContext(deviceContext);
+
+    if (!renderingContext || !wglMakeCurrent(deviceContext, renderingContext))
+    {
+      return false;
+    }
+
+    std::string test{ reinterpret_cast<const char*>(glGetString(GL_VERSION)) };
+    
+    // wglSwapIntervalEXT(1); // <- activiert VSYNC, might not be needed in our case, but if it is needed, it is extension
+
+    // if glfw is not needed anymore, lets just test it with glew to get at least the functions
     glewExperimental = true; // Needed in core profile // @TheRedDaemon: Tutorial sets it twice? I keep it this way.
     if (glewInit() != GLEW_OK)
     {
@@ -43,16 +111,11 @@ namespace UCPtoOpenGL
   }
 
 
-  HWND WindowCore::getWindowHandle()
-  {
-    return glfwGetWin32Window(window);
-  }
-
-
   void WindowCore::setTexStrongSize(int w, int h)
   {
     strongTexW = w;
     strongTexH = h;
+    glViewport(0, 0, w, h);
     
     // create initial texture, internal format either full GL_RGB, or GL_RGB5_A1 (should choose a format closer to real)
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB5_A1, w, h, 0, GL_BGRA, GL_UNSIGNED_SHORT_1_5_5_5_REV, nullptr);
@@ -71,7 +134,8 @@ namespace UCPtoOpenGL
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
     // Swap buffers
-    glfwSwapBuffers(window);
+    //glfwSwapBuffers(window);
+    SwapBuffers(deviceContext);
     
     //glfwPollEvents(); // The tutorial is also written for input. Lets just hope Stronghold takes care of this.
     return DD_OK;

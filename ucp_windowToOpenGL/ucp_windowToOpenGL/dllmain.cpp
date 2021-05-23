@@ -9,16 +9,22 @@
 #include "crusaderToOpenGL.h"
 
 
-// static object
+#include <chrono>
+#include <thread>
+
+
+// static objects
 static UCPtoOpenGL::CrusaderToOpenGL ToOpenGL;
+static WNDPROC KeyboardCallbackFunc{ (WNDPROC)0x004B2C50 };  // currently hardcoded, later received from lua, gynt gave me this address: 0x004B2AE0 (Crusader maybe?)
 
 // lua functions to bind
 
-HWND WINAPI CreateWindowCall(DWORD dwExStyle, LPCSTR lpClassName, LPCSTR lpWindowName, DWORD dwStyle, int X, int Y,
-  int nWidth, int nHeight, HWND hWndParent, HMENU hMenu, HINSTANCE hInstance, LPVOID lpParam)
+// using fastCall hack to get this in global function
+// source: https://www.unknowncheats.me/forum/c-and-c-/154364-detourfunction-__thiscall.html
+// note: the second parameter is EDX and a dummy that should be ignored!
+bool __fastcall CreateWindowComplete(void* that, DWORD, LPSTR windowName, unsigned int unknown)
 {
-  return ToOpenGL.createWindow(dwExStyle, lpClassName, lpWindowName, dwStyle, X, Y, nWidth, nHeight,
-    hWndParent, hMenu, hInstance, lpParam);
+  return ToOpenGL.createWindow((DWORD)that, windowName, unknown, KeyboardCallbackFunc);
 }
 
 HRESULT WINAPI DirectDrawCreateCall(GUID* lpGUID, LPDIRECTDRAW* lplpDD, IUnknown* pUnkOuter)
@@ -54,32 +60,34 @@ extern "C" __declspec(dllexport) int __cdecl luaopen_ucp_windowToOpenGL(lua_Stat
   // The table is left on top of the stack, so it is now easy to tell lua we will return one value (the table).
 
   // for test, I will hardcode the detours
-
-  // address for create window: 00467B22 -> can be replaced with call and a nop // extreme: 0x00467D52
   DWORD oldAddressProtection{ 0 };
-  VirtualProtect(reinterpret_cast<DWORD*>(0x00467D52), 6, PAGE_EXECUTE_READWRITE, &oldAddressProtection);
 
-  unsigned char* call = reinterpret_cast<unsigned char*>(0x00467D52);
-  DWORD* func = reinterpret_cast<DWORD*>(0x00467D52 + 1);
-  unsigned char* nop = reinterpret_cast<unsigned char*>(0x00467D52 + 5);
+
+  // extreme window creation function: 0x00470189
+  // -> it is a thisCall
+  // needed callback: 004b2ae0 
+  VirtualProtect(reinterpret_cast<DWORD*>(0x00470189), 5, PAGE_EXECUTE_READWRITE, &oldAddressProtection);
+
+  unsigned char* call = reinterpret_cast<unsigned char*>(0x00470189);
+  DWORD* func = reinterpret_cast<DWORD*>(0x00470189 + 1);
 
   *call = 0xE8;
-  *func = reinterpret_cast<DWORD>(CreateWindowCall) - 0x00467D52 - 5;
-  *nop = 0x90;
-  
-  VirtualProtect(reinterpret_cast<DWORD*>(0x00467B22), 6, oldAddressProtection, &oldAddressProtection);
+  *func = reinterpret_cast<DWORD>(CreateWindowComplete) - 0x00470189 - 5;
+
+  VirtualProtect(reinterpret_cast<DWORD*>(0x00470189), 5, oldAddressProtection, &oldAddressProtection);
 
 
   // there is another pretty similar call, one condition further // extreme: 0x0046FCB8
-  VirtualProtect(reinterpret_cast<DWORD*>(0x0046FCB8), 5, PAGE_EXECUTE_READWRITE, &oldAddressProtection);
+  // extreme jump address: 0x0059E010
+  VirtualProtect(reinterpret_cast<DWORD*>(0x0059E010), 4, PAGE_EXECUTE_READWRITE, &oldAddressProtection);
 
-  call = reinterpret_cast<unsigned char*>(0x0046FCB8);
-  func = reinterpret_cast<DWORD*>(0x0046FCB8 + 1);
+  //call = reinterpret_cast<unsigned char*>(0x0046FCB8);
+  func = reinterpret_cast<DWORD*>(0x0059E010);
 
-  *call = 0xE8;
-  *func = reinterpret_cast<DWORD>(DirectDrawCreateCall) - 0x0046FCB8 - 5;
+  //*call = 0xE8;
+  *func = reinterpret_cast<DWORD>(DirectDrawCreateCall);
 
-  VirtualProtect(reinterpret_cast<DWORD*>(0x0046FCB8), 5, oldAddressProtection, &oldAddressProtection);
+  VirtualProtect(reinterpret_cast<DWORD*>(0x0059E010), 4, oldAddressProtection, &oldAddressProtection);
 
 
   // Crusader gets the size for some of its drawing RECTs via screen size, lets change that
@@ -112,6 +120,9 @@ extern "C" __declspec(dllexport) int __cdecl luaopen_ucp_windowToOpenGL(lua_Stat
   //*nop = 0x90;
 
   VirtualProtect(reinterpret_cast<DWORD*>(0x004B2D06), 6, oldAddressProtection, &oldAddressProtection);
+
+
+  std::this_thread::sleep_for(std::chrono::seconds(10)); // 20 seconds to attach
 
   return 1;
 }

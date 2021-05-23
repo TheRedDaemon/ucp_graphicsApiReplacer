@@ -8,8 +8,7 @@ namespace UCPtoOpenGL
 		WindowCore() {};
 		~WindowCore() {};
 
-		bool createWindow();
-		HWND getWindowHandle();
+		bool createWindow(HWND win);
 
 		void setTexStrongSize(int w, int h);
 		int getTexStrongSizeW()
@@ -28,6 +27,11 @@ namespace UCPtoOpenGL
 		// pointer to openGL Window
 		GLFWwindow* window = nullptr;
 
+		// wgl stuff -> both of these should actually get released and deleted at the end
+		// TODO: should it work, create another hook to release them... or let lua do it
+		HDC deviceContext{ 0 };
+		HGLRC renderingContext{ 0 };
+
 		// data infos:
 		int strongTexW{ 0 };
 		int strongTexH{ 0 };
@@ -40,5 +44,7 @@ namespace UCPtoOpenGL
 
 		// dummy currently 
 		void initSystems();
+
+		// also -> if possible (should one day the stuff work), try to get clean up point
 	};
 }
