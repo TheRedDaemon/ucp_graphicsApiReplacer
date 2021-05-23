@@ -56,7 +56,6 @@ namespace UCPtoOpenGL
     
     // create initial texture, internal format either full GL_RGB, or GL_RGB5_A1 (should choose a format closer to real)
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB5_A1, w, h, 0, GL_BGRA, GL_UNSIGNED_SHORT_1_5_5_5_REV, nullptr);
-    int test = glGetError();
   }
 
 
@@ -174,6 +173,12 @@ namespace UCPtoOpenGL
       void main()
       {
         finalColor = texture(strongTexture, TexCoord);
+        
+        //// test stuff:
+        //if (finalColor.x < 0.1 && finalColor.y < 0.1 && finalColor.z < 0.1)
+        //{
+        //  finalColor = vec4(1.0, 1.0, 1.0, 1.0);
+        //}
       }
     )";
     

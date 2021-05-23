@@ -28,12 +28,16 @@ HRESULT WINAPI DirectDrawCreateCall(GUID* lpGUID, LPDIRECTDRAW* lplpDD, IUnknown
 
 // stronghold gets the size of the screen sometimes times
 // only handles 0 and 1, the first SetDisplayMode needs to happen before
+// TODO: Replacing the jump routes all code through here, maybe there are less hard methods?
+//  - depends on how other stuff gets handeld
 int WINAPI GetSystemMetricsCall(int nIndex)
 {
   return ToOpenGL.getFakeSystemMetrics(nIndex);
 }
 
 // the main drawing rect is set via a user call -> keep the pointer, change it on demand
+// TODO: Replacing the jump routes all code through here, maybe there are less hard methods?
+//  - depends on how other stuff gets handeld
 BOOL WINAPI SetRectCall(LPRECT lprc, int xLeft, int yTop, int xRight, int yBottom)
 {
   return ToOpenGL.setFakeRect(lprc, xLeft, yTop, xRight, yBottom);

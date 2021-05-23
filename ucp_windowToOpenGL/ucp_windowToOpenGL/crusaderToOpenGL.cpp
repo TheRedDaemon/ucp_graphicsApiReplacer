@@ -69,7 +69,6 @@ namespace UCPtoOpenGL
 			case SM_CXSCREEN:
 			{
 				int texWidth{ window.getTexStrongSizeW() };
-				//texWidth = 1024; // test
 				if (texWidth > 0)
 				{
 					return texWidth;
@@ -79,7 +78,6 @@ namespace UCPtoOpenGL
 			case SM_CYSCREEN:
 			{
 				int texHeight{ window.getTexStrongSizeH() };
-				//texHeight = 768; // test
 				if (texHeight > 0)
 				{
 					return texHeight;
