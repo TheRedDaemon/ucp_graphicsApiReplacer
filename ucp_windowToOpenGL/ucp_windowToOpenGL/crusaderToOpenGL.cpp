@@ -62,7 +62,7 @@ namespace UCPtoOpenGL
 		WNDCLASSA wndClass;
 		wndClass.hInstance = hInstance;
 		wndClass.lpfnWndProc = keyboardCallbackFunc;
-		wndClass.style = CS_OWNDC;	// CS_OWNDC apperantly needed to allow a constant device context
+		wndClass.style = CS_OWNDC | CS_HREDRAW | CS_VREDRAW;	// CS_OWNDC apperantly needed to allow a constant device context CS_HREDRAW | CS_VREDRAW
 		wndClass.cbClsExtra = NULL;
 		wndClass.cbWndExtra = NULL;
 		wndClass.hIcon = LoadIconA(hInstance, (LPCSTR)(unknown & 0xFFFF));	// weird... is this a downcast, so unknown would be a address?

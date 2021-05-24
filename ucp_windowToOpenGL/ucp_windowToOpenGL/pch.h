@@ -11,12 +11,7 @@
 #include "framework.h"
 
 // openGL
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
-
-// for windows functions
-#define GLFW_EXPOSE_NATIVE_WIN32
-#include <GLFW/glfw3native.h>
+#include <GL/glew.h>  // also loads OpenGL
 
 // for ptr
 #include <memory>

@@ -13,39 +13,10 @@ namespace UCPtoOpenGL
 {
   bool WindowCore::createWindow(HWND win)
   {
-    /*
-    // -> with glew and glfw
-    // Initialise GLFW
-    glewExperimental = true; // Needed for core profile
-    if (!glfwInit())
-    {
-      return false;
-    }
+    // INFO: I guess there is a lot of trust going on here, no safety, no additional driver checks, etc. etc...
 
-    // OPenGl 3.3
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_FOCUSED, GLFW_FALSE);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    winHandle = win;
 
-    // Open a window and create its OpenGL context
-    // This will get other values later
-    window = glfwCreateWindow(1280, 720, "Tutorial 01", NULL, NULL);
-    if (window == NULL)
-    {
-      return false;
-    }
-
-    // test: set function pointer
-
-    glfwMakeContextCurrent(window); // Initialize GLEW
-    glewExperimental = true; // Needed in core profile // @TheRedDaemon: Tutorial sets it twice? I keep it this way.
-    if (glewInit() != GLEW_OK)
-    {
-      return false;
-    }
-    */
-    
     // wgl Context creation after this source: https://stackoverflow.com/a/6316595
 
     deviceContext = GetDC(win); // this one will not get closed for a while
@@ -55,7 +26,6 @@ namespace UCPtoOpenGL
     pfd.iPixelType = PFD_TYPE_RGBA;
     pfd.cColorBits = 24;
     pfd.cAlphaBits = 8;
-    //pfd.iLayerType = PFD_MAIN_PLANE;  // apperantly ignored anyway
     int format_index{ ChoosePixelFormat(deviceContext, &pfd) };
     if (!format_index)
     {
@@ -66,7 +36,6 @@ namespace UCPtoOpenGL
     {
       return false;
     }
-
 
     // double check, because originally set structure optional? -> maybe remove later:
     // -> this
@@ -96,11 +65,10 @@ namespace UCPtoOpenGL
     }
 
     std::string test{ reinterpret_cast<const char*>(glGetString(GL_VERSION)) };
-    
-    // wglSwapIntervalEXT(1); // <- activiert VSYNC, might not be needed in our case, but if it is needed, it is extension
 
+    // TODO: if possible, replace with fixed calls: https://www.khronos.org/opengl/wiki/Load_OpenGL_Functions#Windows_2
     // if glfw is not needed anymore, lets just test it with glew to get at least the functions
-    glewExperimental = true; // Needed in core profile // @TheRedDaemon: Tutorial sets it twice? I keep it this way.
+    glewExperimental = true; // Needed in core profile
     if (glewInit() != GLEW_OK)
     {
       return false;
@@ -115,12 +83,31 @@ namespace UCPtoOpenGL
   {
     strongTexW = w;
     strongTexH = h;
-    glViewport(0, 0, w, h);
+
+    // dummy call
+    setNewWindowStyle();
     
     // create initial texture, internal format either full GL_RGB, or GL_RGB5_A1 (should choose a format closer to real)
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB5_A1, w, h, 0, GL_BGRA, GL_UNSIGNED_SHORT_1_5_5_5_REV, nullptr);
   }
 
+
+  void WindowCore::setNewWindowStyle()
+  {
+    // currently dummy stuff
+    glViewport(0, 0, strongTexW, strongTexH);
+
+
+    // this would set a new style and adjust the window
+    // however, screenshots still do not work
+    DWORD newStyle{ WS_OVERLAPPEDWINDOW | WS_VISIBLE };
+    RECT newWinRect;
+    GetWindowRect(winHandle, &newWinRect);
+    AdjustWindowRectEx(&newWinRect, newStyle, false, NULL);
+
+    SetWindowLongPtr(winHandle, GWL_STYLE, newStyle);
+    MoveWindow(winHandle, newWinRect.left, newWinRect.top, newWinRect.right - newWinRect.left, newWinRect.bottom - newWinRect.top, true);
+  }
 
   HRESULT WindowCore::renderNextScreen(unsigned short* backData)
   {
@@ -133,11 +120,8 @@ namespace UCPtoOpenGL
     // Draw the triangle (size should be number of indicies)
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
-    // Swap buffers
-    //glfwSwapBuffers(window);
     SwapBuffers(deviceContext);
-    
-    //glfwPollEvents(); // The tutorial is also written for input. Lets just hope Stronghold takes care of this.
+
     return DD_OK;
   }
 
