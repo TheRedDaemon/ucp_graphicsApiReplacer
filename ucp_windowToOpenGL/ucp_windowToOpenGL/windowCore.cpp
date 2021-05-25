@@ -11,6 +11,55 @@
 
 namespace UCPtoOpenGL
 {
+  // used to get function pointers, mostly based on:
+  // source: https://www.khronos.org/opengl/wiki/Load_OpenGL_Functions
+  bool WindowCore::getAnyGLFuncAddress(const char* name, void** ptrToFuncPtr)
+  {
+    void*& p{ *ptrToFuncPtr };
+    p = (void*)wglGetProcAddress(name);
+    if (p == 0 || (p == (void*)0x1) || (p == (void*)0x2) || (p == (void*)0x3) || (p == (void*)-1))
+    {
+      static HMODULE module = LoadLibraryA("opengl32.dll");
+      if (module != NULL)
+      {
+        p = (void*)GetProcAddress(module, name);
+      }
+    }
+
+    return p != nullptr;
+  }
+
+
+  bool WindowCore::loadGLFunctions()
+  {
+    return
+      getAnyGLFuncAddress("glGenVertexArrays", (void**)&ownPtr_glGenVertexArrays) &&
+      getAnyGLFuncAddress("glBindVertexArray", (void**)&ownPtr_glBindVertexArray) &&
+
+      getAnyGLFuncAddress("glGenBuffers", (void**)&ownPtr_glGenBuffers) &&
+      getAnyGLFuncAddress("glBindBuffer", (void**)&ownPtr_glBindBuffer) &&
+      getAnyGLFuncAddress("glBufferData", (void**)&ownPtr_glBufferData) &&
+
+      getAnyGLFuncAddress("glVertexAttribPointer", (void**)&ownPtr_glVertexAttribPointer) &&
+      getAnyGLFuncAddress("glEnableVertexAttribArray", (void**)&ownPtr_glEnableVertexAttribArray) &&
+
+      getAnyGLFuncAddress("glCreateShader", (void**)&ownPtr_glCreateShader) &&
+      getAnyGLFuncAddress("glShaderSource", (void**)&ownPtr_glShaderSource) &&
+      getAnyGLFuncAddress("glCompileShader", (void**)&ownPtr_glCompileShader) &&
+      getAnyGLFuncAddress("glAttachShader", (void**)&ownPtr_glAttachShader) &&
+      getAnyGLFuncAddress("glDetachShader", (void**)&ownPtr_glDetachShader) &&
+      getAnyGLFuncAddress("glDeleteShader", (void**)&ownPtr_glDeleteShader) &&
+
+      getAnyGLFuncAddress("glBindAttribLocation", (void**)&ownPtr_glBindAttribLocation) &&
+      getAnyGLFuncAddress("glBindFragDataLocation", (void**)&ownPtr_glBindFragDataLocation) &&
+
+      getAnyGLFuncAddress("glCreateProgram", (void**)&ownPtr_glCreateProgram) &&
+      getAnyGLFuncAddress("glLinkProgram", (void**)&ownPtr_glLinkProgram) &&
+      getAnyGLFuncAddress("glUseProgram", (void**)&ownPtr_glUseProgram);
+  }
+
+
+
   bool WindowCore::createWindow(HWND win)
   {
     // INFO: I guess there is a lot of trust going on here, no safety, no additional driver checks, etc. etc...
@@ -66,13 +115,20 @@ namespace UCPtoOpenGL
 
     std::string test{ reinterpret_cast<const char*>(glGetString(GL_VERSION)) };
 
-    // TODO: if possible, replace with fixed calls: https://www.khronos.org/opengl/wiki/Load_OpenGL_Functions#Windows_2
-    // if glfw is not needed anymore, lets just test it with glew to get at least the functions
-    glewExperimental = true; // Needed in core profile
-    if (glewInit() != GLEW_OK)
+    // load functions -> currently no checks are made before
+    // if the functions are not found in the context, the game window will simply close
+    if (!loadGLFunctions())
     {
       return false;
     }
+
+    // TODO: if possible, replace with fixed calls: https://www.khronos.org/opengl/wiki/Load_OpenGL_Functions#Windows_2
+    // if glfw is not needed anymore, lets just test it with glew to get at least the functions
+    //glewExperimental = true; // Needed in core profile
+    //if (glewInit() != GLEW_OK)
+    //{
+    //  return false;
+    //}
 
     initSystems();
     return true;
@@ -148,26 +204,26 @@ namespace UCPtoOpenGL
       0, 1, 2, 1, 3, 2
     };
 
-    glGenVertexArrays(1, &vertexArrayID);
-    glBindVertexArray(vertexArrayID);
+    ownPtr_glGenVertexArrays(1, &vertexArrayID);
+    ownPtr_glBindVertexArray(vertexArrayID);
 
 
-    glGenBuffers(1, &quadBufferID); // create empty buffer
-    glBindBuffer(GL_ARRAY_BUFFER, quadBufferID);  // bind buffer
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertexInfos), vertexInfos, GL_STATIC_DRAW); // vertex data to buffer
+    ownPtr_glGenBuffers(1, &quadBufferID); // create empty buffer
+    ownPtr_glBindBuffer(GL_ARRAY_BUFFER, quadBufferID);  // bind buffer
+    ownPtr_glBufferData(GL_ARRAY_BUFFER, sizeof(vertexInfos), vertexInfos, GL_STATIC_DRAW); // vertex data to buffer
     
     // vertex position (might be very often modified in the future)
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0); // point to vertex buffer
-    glEnableVertexAttribArray(0); // enable
+    ownPtr_glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0); // point to vertex buffer
+    ownPtr_glEnableVertexAttribArray(0); // enable
 
     // texture coords
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float))); // point to vertex buffer
-    glEnableVertexAttribArray(1); // enable
+    ownPtr_glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float))); // point to vertex buffer
+    ownPtr_glEnableVertexAttribArray(1); // enable
 
     // indicies
-    glGenBuffers(1, &quadIndexBuffer); // create empty buffer
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quadIndexBuffer); // bind buffer
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW); // vertex data to the buffer
+    ownPtr_glGenBuffers(1, &quadIndexBuffer); // create empty buffer
+    ownPtr_glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quadIndexBuffer); // bind buffer
+    ownPtr_glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW); // vertex data to the buffer
 
 
     // create texture, currently static
@@ -197,15 +253,15 @@ namespace UCPtoOpenGL
 
       void main()
       {
-	      gl_Position = vec4(vertex_position, 1);
+        gl_Position = vec4(vertex_position, 1);
         TexCoord = inTexCoord;
       }
     )";
 
     // create
-    GLuint vertShader{ glCreateShader(GL_VERTEX_SHADER) };
-    glShaderSource(vertShader, 1, &vertShaderString, nullptr);
-    glCompileShader(vertShader);
+    GLuint vertShader{ ownPtr_glCreateShader(GL_VERTEX_SHADER) };
+    ownPtr_glShaderSource(vertShader, 1, &vertShaderString, nullptr);
+    ownPtr_glCompileShader(vertShader);
 
 
     // fragment-shader
@@ -232,32 +288,32 @@ namespace UCPtoOpenGL
     )";
     
     // create
-    GLuint fragShader{ glCreateShader(GL_FRAGMENT_SHADER) };
-    glShaderSource(fragShader, 1, &fragShadeString, nullptr);
-    glCompileShader(fragShader);
+    GLuint fragShader{ ownPtr_glCreateShader(GL_FRAGMENT_SHADER) };
+    ownPtr_glShaderSource(fragShader, 1, &fragShadeString, nullptr);
+    ownPtr_glCompileShader(fragShader);
 
     
     // Create a shader program object to store
     
-    GLuint program = glCreateProgram(); // Create a shader program
-    glAttachShader(program, vertShader); // Attach a vertex shader
-    glAttachShader(program, fragShader); // Attach a fragment shader
-    glLinkProgram(program);  // Link both the programs
+    GLuint program = ownPtr_glCreateProgram(); // Create a shader program
+    ownPtr_glAttachShader(program, vertShader); // Attach a vertex shader
+    ownPtr_glAttachShader(program, fragShader); // Attach a fragment shader
+    ownPtr_glLinkProgram(program);  // Link both the programs
 
 
     // remove not needed programs
-    glDetachShader(program, vertShader);
-    glDetachShader(program, fragShader);
-    glDeleteShader(vertShader);
-    glDeleteShader(fragShader);
+    ownPtr_glDetachShader(program, vertShader);
+    ownPtr_glDetachShader(program, fragShader);
+    ownPtr_glDeleteShader(vertShader);
+    ownPtr_glDeleteShader(fragShader);
     
     // bind shader values
-    glBindAttribLocation(program, 0, "vertex_position");
-    glBindAttribLocation(program, 1, "inTexCoord");
-    glBindFragDataLocation(program, 0, "finalColor");
+    ownPtr_glBindAttribLocation(program, 0, "vertex_position");
+    ownPtr_glBindAttribLocation(program, 1, "inTexCoord");
+    ownPtr_glBindFragDataLocation(program, 0, "finalColor");
     //glUniform1i(glGetUniformLocation(program, "strongTexture"), 0); // bind to sampler
 
     // use only program
-    glUseProgram(program);
+    ownPtr_glUseProgram(program);
   }
 }

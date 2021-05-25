@@ -11,7 +11,8 @@
 #include "framework.h"
 
 // openGL
-#include <GL/glew.h>  // also loads OpenGL
+#include "gl/gl.h"
+#include "gl/glext.h"
 
 // for ptr
 #include <memory>
