@@ -156,11 +156,6 @@ namespace UCPtoOpenGL
 			return DD_OK;  // not called
 		}
 
-		STDMETHOD(GetPixelFormat)(THIS_ LPDDPIXELFORMAT)
-		{
-			return DD_OK;  // called, BUT I think from ddraw itself, to this should not happen here
-		}
-
 		STDMETHOD(Restore)(THIS)
 		{
 			return DD_OK;  // called on Focus switch, but we do not care
@@ -211,6 +206,14 @@ namespace UCPtoOpenGL
 			return DD_OK;
 		}
 
+		// called, BUT actually from bink video -> should have taken this serious
+		// offscreen main need handling
+		STDMETHOD(GetPixelFormat)(THIS_ LPDDPIXELFORMAT)
+		{
+			return DD_OK;
+		}
+
+
 		// helper
 		virtual unsigned short* getBitmapPtr()
 		{
@@ -240,6 +243,7 @@ namespace UCPtoOpenGL
 		~FakeOffscreenMain() {};
 
 		STDMETHOD(Lock)(THIS_ LPRECT, LPDDSURFACEDESC, DWORD, HANDLE) override;
+		STDMETHOD(GetPixelFormat)(THIS_ LPDDPIXELFORMAT) override;
 
 		// helper
 		unsigned short* getBitmapPtr() override

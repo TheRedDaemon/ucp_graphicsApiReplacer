@@ -81,12 +81,18 @@ namespace UCPtoOpenGL
     des.dwHeight = win->getTexStrongSizeH();
     des.dwWidth = win->getTexStrongSizeW();
 
-    des.lPitch = 0;
+    des.lPitch = 2 * des.dwWidth;  // lPitch is the number of bytes from the start of one line to the next
     des.lpSurface = getBitmapPtr();
 
+    // NOTE: format is (at least during test) RGB565 -> and set here
+    // Stronghold supports multiple pixel formats, going for now with the 565 one
     des.ddpfPixelFormat.dwSize = sizeof(des.ddpfPixelFormat);
-    des.ddpfPixelFormat.dwFlags = DDPF_RGB;  // it is RGB
-    des.ddpfPixelFormat.dwRGBBitCount = 16; // Stronghold uses 16bit
+    des.ddpfPixelFormat.dwFlags = DDPF_RGB;       // it is RGB
+    des.ddpfPixelFormat.dwRGBBitCount = 16;       // Stronghold uses 16bit
+    des.ddpfPixelFormat.dwRBitMask = 0xf800;      // 1111 1000 0000 0000
+    des.ddpfPixelFormat.dwGBitMask = 0x7e0;       // 0000 0111 1110 0000
+    des.ddpfPixelFormat.dwBBitMask = 0x1F;        // 0000 0000 0001 1111
+    des.ddpfPixelFormat.dwRGBAlphaBitMask = 0x0;
 
     des.ddsCaps.dwCaps = DDSCAPS_BACKBUFFER | DDSCAPS_COMPLEX | DDSCAPS_FLIP | DDSCAPS_SYSTEMMEMORY;
 
@@ -101,19 +107,30 @@ namespace UCPtoOpenGL
     // let hope that this is enough
 
     DDSURFACEDESC& des{ *descriptionPtr };
-    des.dwFlags = DDSD_HEIGHT | DDSD_WIDTH | DDSD_PITCH | DDSD_PIXELFORMAT | DDSD_CAPS;
+    des.dwFlags = DDSD_HEIGHT | DDSD_WIDTH | DDSD_PITCH | DDSD_CAPS;
 
     des.dwHeight = win->getTexStrongSizeH();
     des.dwWidth = win->getTexStrongSizeW();
 
-    des.lPitch = 0;
+    des.lPitch = 2 * des.dwWidth; // lPitch is the number of bytes from the start of one line to the next
     des.lpSurface = getBitmapPtr();
 
-    des.ddpfPixelFormat.dwSize = sizeof(des.ddpfPixelFormat);
-    des.ddpfPixelFormat.dwFlags = DDPF_RGB;  // it is RGB
-    des.ddpfPixelFormat.dwRGBBitCount = 16; // Stronghold uses 16bit
-
     des.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN | DDSCAPS_SYSTEMMEMORY;
+
+    return DD_OK;
+  }
+
+  STDMETHODIMP_(HRESULT __stdcall) FakeOffscreenMain::GetPixelFormat(LPDDPIXELFORMAT format)
+  {
+    DDPIXELFORMAT& pix{ *format };
+
+    // format is RGB565 -> and set here
+    pix.dwFlags = DDPF_RGB;       // it is RGB
+    pix.dwRGBBitCount = 16;       // Stronghold uses 16bit
+    pix.dwRBitMask = 0xf800;      // 1111 1000 0000 0000
+    pix.dwGBitMask = 0x7e0;       // 0000 0111 1110 0000
+    pix.dwBBitMask = 0x1F;        // 0000 0000 0001 1111
+    pix.dwRGBAlphaBitMask = 0x0;
 
     return DD_OK;
   }
@@ -126,25 +143,16 @@ namespace UCPtoOpenGL
     // let hope that this is enough
 
     DDSURFACEDESC& des{ *descriptionPtr };
-    des.dwFlags = DDSD_HEIGHT | DDSD_WIDTH | DDSD_PITCH | DDSD_PIXELFORMAT | DDSD_CAPS;
+    des.dwFlags = DDSD_HEIGHT | DDSD_WIDTH | DDSD_PITCH | DDSD_CAPS;
 
     des.dwHeight = 2076;
     des.dwWidth = 4056;
 
-    des.lPitch = 0;
+    des.lPitch = 8112; // 4056 * 2; lPitch is the number of BYTES from the start of one line to the next
     des.lpSurface = getBitmapPtr();
-
-    des.ddpfPixelFormat.dwSize = sizeof(des.ddpfPixelFormat);
-    des.ddpfPixelFormat.dwFlags = DDPF_RGB;  // it is RGB
-    des.ddpfPixelFormat.dwRGBBitCount = 16; // Stronghold uses 16bit
 
     des.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN | DDSCAPS_SYSTEMMEMORY;
 
     return DD_OK;
   }
 }
-
-
-// NOTES:
-//  - switch to game after loading causes issues: -> of they create another window there, it might be better to use this instead
-//  - if they close the window there -> would be ok to use other window

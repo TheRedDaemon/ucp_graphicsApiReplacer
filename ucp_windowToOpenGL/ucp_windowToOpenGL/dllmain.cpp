@@ -144,3 +144,10 @@ BOOL APIENTRY DllMain( HMODULE hModule,
     return TRUE;
 }
 
+/* NOTE:
+    - There might be a chance that bink video will be of interest in the future.
+    - for example:
+        - RADEXPFUNC s32 RADEXPLINK BinkDDSurfaceType(void PTR4* lpDDS) (0x0046FF61) -> gets flag(part)
+        - RADEXPFUNC s32 RADEXPLINK BinkCopyToBuffer(HBINK bnk,void* dest,s32 destpitch,u32 destheight,u32 destx,u32 desty,u32 flags); (0x004091D6) -> blt to surface
+    - structure ref (maybe): https://github.com/ioquake/jedi-outcast/blob/master/code/win32/bink.h
+*/

@@ -87,8 +87,9 @@ namespace UCPtoOpenGL
     // dummy call
     setNewWindowStyle();
     
-    // create initial texture, internal format either full GL_RGB, or GL_RGB5_A1 (should choose a format closer to real)
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB5_A1, w, h, 0, GL_BGRA, GL_UNSIGNED_SHORT_1_5_5_5_REV, nullptr);
+    // create initial texture
+    // Stronghold supports multiple pixel formats, currently using often returned 565 -> but it seems more are possible
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, nullptr);
   }
 
 
@@ -112,7 +113,7 @@ namespace UCPtoOpenGL
   HRESULT WindowCore::renderNextScreen(unsigned short* backData)
   {
     // update texture (issue here?)
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, strongTexW, strongTexH, GL_BGRA, GL_UNSIGNED_SHORT_1_5_5_5_REV, backData);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, strongTexW, strongTexH, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, backData);
 
     // Clear the screen.
     glClear(GL_COLOR_BUFFER_BIT);
