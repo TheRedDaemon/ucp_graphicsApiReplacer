@@ -152,6 +152,13 @@ namespace UCPtoOpenGL
 
     BOOL getWindowCursorPos(LPPOINT lpPoint);
 
+    LPARAM transformMouseMovePos(LPARAM lParam);
+
+    HWND getWindowHandle()
+    {
+      return winHandle;
+    }
+
   private:
 
     WindowCore window;
@@ -159,6 +166,9 @@ namespace UCPtoOpenGL
     bool windowDone{ false };
     int winSizeW{ 1000 }; // dummy
     int winSizeH{ 500 }; // dummy
+    int winOffsetW{ 0 };
+    int winOffsetH{ 0 };
+    double winToTexMult{ 1.0 };
 
     // window stuff
     LPRECT mainDrawingRect{ nullptr };

@@ -15,18 +15,46 @@
 
 // static objects
 static UCPtoOpenGL::CrusaderToOpenGL ToOpenGL;
-static WNDPROC KeyboardCallbackFunc{ (WNDPROC)0x004B2C50 };  // currently hardcoded, later received from lua, gynt gave me this address: 0x004B2AE0 (Crusader maybe?)
+static WNDPROC WindowProcCallbackFunc{ (WNDPROC)0x004B2C50 };  // currently hardcoded, later received from lua, gynt gave me this address: 0x004B2AE0 (Crusader maybe?)
 
 // static deug helper
 
 static void ReplaceDWORD(DWORD destination, DWORD newDWORD)
 {
   DWORD* des{ reinterpret_cast<DWORD*>(destination) };
-  
+
   DWORD oldAddressProtection;
   VirtualProtect(des, 4, PAGE_EXECUTE_READWRITE, &oldAddressProtection);
   *des = newDWORD;
   VirtualProtect(des, 4, oldAddressProtection, &oldAddressProtection);
+}
+
+
+// create own callbackProc -> everything has to pass through here for now -> I care only about the mouse
+LRESULT CALLBACK WindowProcCallbackFake(_In_ HWND hwnd, _In_ UINT uMsg, _In_ WPARAM wParam, _In_ LPARAM lParam)
+{
+  // transform all mouse coords
+  switch (uMsg)
+  {
+  case WM_MOUSEMOVE:
+  case WM_LBUTTONDBLCLK:
+  case WM_LBUTTONDOWN:
+  case WM_LBUTTONUP:
+  case WM_MBUTTONDBLCLK:
+  case WM_MBUTTONDOWN:
+  case WM_MBUTTONUP:
+  case WM_MOUSEHWHEEL:
+  case WM_MOUSEHOVER:
+  case WM_RBUTTONDBLCLK:
+  case WM_RBUTTONDOWN:
+  case WM_RBUTTONUP:
+    lParam = ToOpenGL.transformMouseMovePos(lParam);
+    break;
+  default:
+    break;
+  }
+
+  return WindowProcCallbackFunc(hwnd, uMsg, wParam, lParam);
 }
 
 
@@ -37,8 +65,10 @@ static void ReplaceDWORD(DWORD destination, DWORD newDWORD)
 // note: the second parameter is EDX and a dummy that should be ignored!
 bool __fastcall CreateWindowComplete(void* that, DWORD, LPSTR windowName, unsigned int unknown)
 {
-  return ToOpenGL.createWindow((DWORD)that, windowName, unknown, KeyboardCallbackFunc);
+  return ToOpenGL.createWindow((DWORD)that, windowName, unknown, WindowProcCallbackFake);
 }
+
+
 
 HRESULT WINAPI DirectDrawCreateCall(GUID* lpGUID, LPDIRECTDRAW* lplpDD, IUnknown* pUnkOuter)
 {
@@ -132,20 +162,20 @@ extern "C" __declspec(dllexport) int __cdecl luaopen_ucp_windowToOpenGL(lua_Stat
 }
 
 // entry point
-BOOL APIENTRY DllMain( HMODULE hModule,
-                       DWORD  ul_reason_for_call,
-                       LPVOID lpReserved
-                     )
+BOOL APIENTRY DllMain(HMODULE hModule,
+  DWORD  ul_reason_for_call,
+  LPVOID lpReserved
+)
 {
-    switch (ul_reason_for_call)
-    {
-    case DLL_PROCESS_ATTACH:
-    case DLL_THREAD_ATTACH:
-    case DLL_THREAD_DETACH:
-    case DLL_PROCESS_DETACH:
-        break;
-    }
-    return TRUE;
+  switch (ul_reason_for_call)
+  {
+  case DLL_PROCESS_ATTACH:
+  case DLL_THREAD_ATTACH:
+  case DLL_THREAD_DETACH:
+  case DLL_PROCESS_DETACH:
+    break;
+  }
+  return TRUE;
 }
 
 /* NOTE:
@@ -181,5 +211,14 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 
     - Others likely effect the mouse control:
       -  267  GetCursorPos        -> 0x0059E1E8
-      -> they get their mouse cursor differently...
+      -> they get their mouse cursor differently... -> maybe messages -> message hook?
+      - general mouse input function seems to be here: 0x00468320
+      - but here the whole thing reacts to clicks: 0x00468250
+      - ok, it is the general message proc:
+        -> I will detour the window proc message for now:
+          -> this might get handy for later, but I assume a more general interface for this would be needed
+          -> other might want to do stuff with it
+
+    - it might also be possible to remove the create window hook and use the received window
+      - changing class values is possible after all: SetClassLongPtrA
 */

@@ -10,7 +10,7 @@ namespace UCPtoOpenGL
 
     bool createWindow(HWND win);
 
-    void adjustTexSizeAndViewport(int wTex, int hTex, int wView, int hView);
+    void adjustTexSizeAndViewport(int wTex, int hTex, int wView, int hView, double scaleW, double scaleH);
     
     int getTexStrongSizeW()
     {

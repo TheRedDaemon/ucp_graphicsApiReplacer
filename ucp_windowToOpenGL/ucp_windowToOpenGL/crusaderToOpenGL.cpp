@@ -13,7 +13,7 @@ namespace UCPtoOpenGL
 
   // lua calls
 
-  bool CrusaderToOpenGL::createWindow(DWORD that, LPSTR windowName, unsigned int unknown, WNDPROC keyboardCallbackFunc)
+  bool CrusaderToOpenGL::createWindow(DWORD that, LPSTR windowName, unsigned int unknown, WNDPROC windowCallbackFunc)
   {
     /* recreated original window func
     HINSTANCE hInstance{ *(HINSTANCE*)(that + 0xA8) };
@@ -61,7 +61,7 @@ namespace UCPtoOpenGL
 
     WNDCLASSA wndClass;
     wndClass.hInstance = hInstance;
-    wndClass.lpfnWndProc = keyboardCallbackFunc;
+    wndClass.lpfnWndProc = windowCallbackFunc;
     wndClass.style = CS_OWNDC | CS_HREDRAW | CS_VREDRAW;	// CS_OWNDC apperantly needed to allow a constant device context CS_HREDRAW | CS_VREDRAW
     wndClass.cbClsExtra = NULL;
     wndClass.cbWndExtra = NULL;
@@ -84,8 +84,8 @@ namespace UCPtoOpenGL
       WS_OVERLAPPED | WS_VISIBLE, // WS_POPUP is apperantly an indicator that the window is only short lift... changed it to overlap
       CW_USEDEFAULT,
       CW_USEDEFAULT,
-      GetSystemMetrics(0),	// at this point, no hint exist as to how big it should be
-      GetSystemMetrics(1),
+      winSizeW,	// at this point, no hint exist as to how big it should be
+      winSizeH,
       NULL,
       NULL,
       hInstance,
@@ -131,35 +131,21 @@ namespace UCPtoOpenGL
 
   int CrusaderToOpenGL::getFakeSystemMetrics(int nIndex)
   {
-    // does not garantuee that the numbers are OK
-    // likely not fitting for many situation, not all stuff will need render size...
-    if (windowDone)
+    switch (nIndex)
     {
-      switch (nIndex)
-      {
-      case SM_CXSCREEN:
-      {
-        int texWidth{ window.getTexStrongSizeW() };
-        if (texWidth > 0)
-        {
-          return texWidth;
-        }
-        break;
-      }
-      case SM_CYSCREEN:
-      {
-        int texHeight{ window.getTexStrongSizeH() };
-        if (texHeight > 0)
-        {
-          return texHeight;
-        }
-        break;
-      }
-      default:
-        break;
-      }
+    case SM_CXSCREEN:
+    {
+      int texWidth{ window.getTexStrongSizeW() };
+      return texWidth > 0 ? texWidth : winSizeW;   // still issues
     }
-    return GetSystemMetrics(nIndex);
+    case SM_CYSCREEN:
+    {
+      int texHeight{ window.getTexStrongSizeH() };
+      return texHeight > 0 ? texHeight : winSizeH;  // still issues
+    }
+    default:
+      return GetSystemMetrics(nIndex);
+    }
   }
 
   BOOL CrusaderToOpenGL::setFakeRect(LPRECT lprc, int xLeft, int yTop, int xRight, int yBottom)
@@ -173,19 +159,34 @@ namespace UCPtoOpenGL
     return SetRect(lprc, xLeft, yTop, xRight, yBottom);
   }
 
-  // this adjusts scrolling only... -> shoudl be replaced with own code anyway -> 100% wrong
-  // TODO: replace once the mosue works
+  // this adjusts scrolling only... -> currently onyl working after tab -> issue
   BOOL CrusaderToOpenGL::getWindowCursorPos(LPPOINT lpPoint)
   {
     bool success{ GetCursorPos(lpPoint) && ScreenToClient(winHandle, lpPoint) };
     if (success)
     {
       // accept deviations? (int / int)
-      lpPoint->x = lround(static_cast<float>(lpPoint->x) * window.getTexStrongSizeW() / winSizeW);
-      lpPoint->y = lround(static_cast<float>(lpPoint->y) * window.getTexStrongSizeH() / winSizeH);
+      lpPoint->x = lround((static_cast<double>(lpPoint->x) - winOffsetW) * winToTexMult);
+      lpPoint->y = lround((static_cast<double>(lpPoint->y) - winOffsetH) * winToTexMult);
     }
 
     return success;
+  }
+
+
+  LPARAM CrusaderToOpenGL::transformMouseMovePos(LPARAM lParam)
+  {
+    int texW{ window.getTexStrongSizeW() };
+    int texH{ window.getTexStrongSizeH() };
+    if (texW == winSizeW && texH == winSizeH)
+    {
+      return lParam;
+    }
+
+    POINTS mousePos{ MAKEPOINTS(lParam) };  // still broken
+    mousePos.x = static_cast<short>(lround((static_cast<double>(mousePos.x) - winOffsetW) * winToTexMult));
+    mousePos.y = static_cast<short>(lround((static_cast<double>(mousePos.y) - winOffsetH) * winToTexMult));
+    return MAKELPARAM(mousePos.x, mousePos.y);
   }
 
 
@@ -212,7 +213,18 @@ namespace UCPtoOpenGL
       rec.bottom = hTex;
     }
 
-    window.adjustTexSizeAndViewport(wTex, hTex, winSizeW, winSizeH);
+    // change scale
+    // I choose the easy route, algorithm: https://math.stackexchange.com/a/1620375
+    double winToTexW = static_cast<double>(wTex) / winSizeW;
+    double winToTexH = static_cast<double>(hTex) / winSizeH;
+    winToTexMult = winToTexH > winToTexW ? winToTexH : winToTexW;
+    double winScaleW = winToTexW / winToTexMult;
+    double winScaleH = winToTexH / winToTexMult;
+    winOffsetW = lround((1.0 - winScaleW) * winSizeW / 2.0);
+    winOffsetH = lround((1.0 - winScaleH) * winSizeH / 2.0);
+
+    window.adjustTexSizeAndViewport(wTex, hTex, winSizeW, winSizeH, winScaleW, winScaleH);
+
 
     // window adjustments should go here, right?
     // -> only until external control possible

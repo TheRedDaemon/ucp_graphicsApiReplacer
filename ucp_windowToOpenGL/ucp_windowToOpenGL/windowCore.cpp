@@ -125,30 +125,19 @@ namespace UCPtoOpenGL
     return true;
   }
 
-  void WindowCore::adjustTexSizeAndViewport(int wTex, int hTex, int wView, int hView)
+  void WindowCore::adjustTexSizeAndViewport(int wTex, int hTex, int wView, int hView, double scaleW, double scaleH)
   {
     glViewport(0, 0, wView, hView);
     strongTexW = wTex;
     strongTexH = hTex;
 
-    // change guad
-    // I choose the easy route, algorithm: https://math.stackexchange.com/a/1620375
-    float scaleX{ 1.0f };
-    float scaleY{ 1.0f };
-    float horizScale{ static_cast<float>(wView) / wTex };
-    float vertScale{ static_cast<float>(hView) / hTex };
-    if (horizScale != vertScale)
-    {
-      bool isVertScale{ vertScale < horizScale };
-      scaleX = isVertScale ? vertScale * wTex / wView : 1.0f;
-      scaleY =  isVertScale ? 1.0f : horizScale * hTex / hView;
-    }
-
+    float sW{ static_cast<float>(scaleW) };
+    float sH{ static_cast<float>(scaleH) };
     GLfloat newPos[]{
-      -1.0f * scaleX, -1.0f * scaleY,
-      1.0f * scaleX, -1.0f * scaleY,
-      -1.0f * scaleX, 1.0f * scaleY,
-      1.0f * scaleX, 1.0f * scaleY
+      -1.0f * sW, -1.0f * sH,
+      1.0f * sW, -1.0f * sH,
+      -1.0f * sW, 1.0f * sH,
+      1.0f * sW, 1.0f * sH
     };
 
     ownPtr_glBufferSubData(GL_ARRAY_BUFFER, 0, 8 * sizeof(float), newPos);
