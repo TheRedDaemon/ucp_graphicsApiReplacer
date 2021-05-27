@@ -50,6 +50,12 @@ LRESULT CALLBACK WindowProcCallbackFake(_In_ HWND hwnd, _In_ UINT uMsg, _In_ WPA
   case WM_RBUTTONUP:
     lParam = ToOpenGL.transformMouseMovePos(lParam);
     break;
+  case WM_KILLFOCUS:
+    ToOpenGL.windowLostFocus();  // allows to receive the new scroll border resolution -> I do not like this
+    break;
+  case WM_SETFOCUS:
+    ToOpenGL.windowSetFocus();  // allows to receive the new scroll border resolution -> I do not like this
+    break;
   default:
     break;
   }
@@ -87,10 +93,12 @@ int WINAPI GetSystemMetricsCall(int nIndex)
 // the main drawing rect is set via a user call -> keep the pointer, change it on demand
 // TODO: Replacing the jump routes all code through here, maybe there are less hard methods?
 //  - depends on how other stuff gets handeld
+
 BOOL WINAPI SetRectCall(LPRECT lprc, int xLeft, int yTop, int xRight, int yBottom)
 {
   return ToOpenGL.setFakeRect(lprc, xLeft, yTop, xRight, yBottom);
 };
+
 
 // set window call -> simply deactivate
 BOOL WINAPI SetWindowPosCall(HWND, HWND, int, int, int, int, UINT)
@@ -146,7 +154,7 @@ extern "C" __declspec(dllexport) int __cdecl luaopen_ucp_windowToOpenGL(lua_Stat
   // some weird stuff happens during the window creation... why is this a different number in other cases...
   // maybe the combination of window and exlusiv mode already changes the resolution, the SetDisplayMode is just for DirectDraw?
   // other address, for general jump: 0059E200
-  ReplaceDWORD(0x0059E200, (DWORD)SetRectCall);
+  ReplaceDWORD(0x0059E200, (DWORD)SetRectCall); // not used at the moment -> likely set thorugh other means
 
 
   // try to get more control over window:

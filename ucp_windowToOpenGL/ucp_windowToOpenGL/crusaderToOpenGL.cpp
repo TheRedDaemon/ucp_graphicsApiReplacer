@@ -105,6 +105,9 @@ namespace UCPtoOpenGL
 
   HRESULT CrusaderToOpenGL::createDirectDraw(GUID* lpGUID, LPDIRECTDRAW* lplpDD, IUnknown* pUnkOuter)
   {
+    resChanged = restWasInit; // used for scroll handling
+    restWasInit = true;  // will notice if only resolution changed
+
     // get library and func (just once)
     static decltype(DirectDrawCreate)* create{ nullptr };
     if (create == nullptr)
@@ -131,43 +134,98 @@ namespace UCPtoOpenGL
 
   int CrusaderToOpenGL::getFakeSystemMetrics(int nIndex)
   {
-    switch (nIndex)
+    // The fake window size can only be set after a refocus. Before that, it likely sets the choosen render size
+    // before or around the "SetDisplayMode" method.
+    // TODO: Find out how to change this. It also effects other parts. -> Using real screen size as return for now.
+    if (windowDone)
     {
-    case SM_CXSCREEN:
-    {
-      int texWidth{ window.getTexStrongSizeW() };
-      return texWidth > 0 ? texWidth : winSizeW;   // still issues
+      switch (nIndex)
+      {
+      case SM_CXSCREEN:
+      {
+        int texWidth{ window.getTexStrongSizeW() };
+        if (texWidth > 0)
+        {
+          return texWidth;
+        }
+        break;
+      }
+      case SM_CYSCREEN:
+      {
+        int texHeight{ window.getTexStrongSizeH() };
+        if (texHeight > 0)
+        {
+          return texHeight;
+        }
+        break;
+      }
+      default:
+        break;
+      }
     }
-    case SM_CYSCREEN:
-    {
-      int texHeight{ window.getTexStrongSizeH() };
-      return texHeight > 0 ? texHeight : winSizeH;  // still issues
-    }
-    default:
-      return GetSystemMetrics(nIndex);
-    }
+    return GetSystemMetrics(nIndex);
   }
+
 
   BOOL CrusaderToOpenGL::setFakeRect(LPRECT lprc, int xLeft, int yTop, int xRight, int yBottom)
   {
-    if (mainDrawingRect == lprc)
+    // There seem to be three Rects (at lea<st arounf the screen init):
+    // -> The main Rect
+    // -> a second rect for the initialisation (only during init, resolution)
+    // -> a third used during refocus
+    // this structure adapts to the first
+
+    // set during drawing rect inits, only after new DirctDrawCreate -> also sets ref for scroll width
+    if (!rectInit)
     {
-      yBottom = window.getTexStrongSizeH();
-      xRight = window.getTexStrongSizeW();
+      static LPRECT mainDrawRect{ nullptr };
+      if (!mainDrawRect)
+      {
+        mainDrawRect = lprc;
+      }
+      else if (mainDrawRect != lprc)
+      {
+        scrollSizeW = xRight;
+        scrollSizeH = yBottom;
+        mainDrawRect->right = xRight;
+        mainDrawRect->bottom = yBottom;
+        window.setOnlyTexSize(xRight, yBottom);
+        rectInit = true;
+      }
     }
 
     return SetRect(lprc, xLeft, yTop, xRight, yBottom);
   }
 
-  // this adjusts scrolling only... -> currently onyl working after tab -> issue
+
+  // this adjusts scrolling only -> maybe use custom code later, this stuff here is kinda horrible
   BOOL CrusaderToOpenGL::getWindowCursorPos(LPPOINT lpPoint)
   {
     bool success{ GetCursorPos(lpPoint) && ScreenToClient(winHandle, lpPoint) };
     if (success)
     {
-      // accept deviations? (int / int)
-      lpPoint->x = lround((static_cast<double>(lpPoint->x) - winOffsetW) * winToTexMult);
-      lpPoint->y = lround((static_cast<double>(lpPoint->y) - winOffsetH) * winToTexMult);
+      int texW{ window.getTexStrongSizeW() };
+      int texH{ window.getTexStrongSizeH() };
+
+      double cursorX{ (static_cast<double>(lpPoint->x) - winOffsetW) * winToTexMult };
+      double cursorY{ (static_cast<double>(lpPoint->y) - winOffsetH) * winToTexMult };
+
+      if (resChanged)
+      {
+        // need to adapt to tex/scroll differences after resolution change
+        cursorX *= static_cast<double>(scrollSizeW) / texW;
+        cursorY *= static_cast<double>(scrollSizeH) / texH;
+      }
+
+      // range limit test
+      if (cursorX < -5.0 || cursorX > scrollSizeW + 5.0 || cursorY < -5.0 || cursorY > scrollSizeH + 5.0)
+      {
+        cursorX = static_cast<double>(scrollSizeW) / 2.0;
+        cursorY = static_cast<double>(scrollSizeH) / 2.0;
+      }
+
+      lpPoint->x = lround(cursorX);
+      lpPoint->y = lround(cursorY);
     }
 
     return success;
@@ -194,6 +252,9 @@ namespace UCPtoOpenGL
 
   STDMETHODIMP_(HRESULT __stdcall) CrusaderToOpenGL::SetDisplayMode(DWORD width, DWORD height, DWORD)
   {
+    // in-theory, the earliest to adapt to screen changes where the tex heights are known is now the
+    // setRectFake function on the second call per request
+
     int wTex{ (int)width };
     int hTex{ (int)height };
 
@@ -203,15 +264,6 @@ namespace UCPtoOpenGL
     int pixNum{ wTex * hTex };
     back.createBitData(pixNum);
     offMain.createBitData(pixNum);
-
-    if (mainDrawingRect)
-    {
-      RECT& rec{ *mainDrawingRect };
-      rec.left = 0;
-      rec.right = wTex;
-      rec.top = 0;
-      rec.bottom = hTex;
-    }
 
     // change scale
     // I choose the easy route, algorithm: https://math.stackexchange.com/a/1620375
@@ -246,6 +298,18 @@ namespace UCPtoOpenGL
     // other stuff:
     //GetWindowRect(winHandle, &newWinRect);
     //MoveWindow(winHandle, newWinRect.left, newWinRect.top, newWinRect.right - newWinRect.left, newWinRect.bottom - newWinRect.top, true);
+
+
+    /* -> it is possible to set a rect through this structure
+    if (mainDrawingRect)
+    {
+      RECT& rec{ *mainDrawingRect };
+      rec.left = 0;
+      rec.right = wTex;
+      rec.top = 0;
+      rec.bottom = hTex;
+    }
+    */
 
     return DD_OK;
   }

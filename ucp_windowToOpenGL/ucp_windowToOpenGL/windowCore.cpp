@@ -125,6 +125,12 @@ namespace UCPtoOpenGL
     return true;
   }
 
+  void WindowCore::setOnlyTexSize(int wTex, int hTex)
+  {
+    strongTexW = wTex;
+    strongTexH = hTex;
+  }
+
   void WindowCore::adjustTexSizeAndViewport(int wTex, int hTex, int wView, int hView, double scaleW, double scaleH)
   {
     glViewport(0, 0, wView, hView);

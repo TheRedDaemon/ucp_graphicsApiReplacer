@@ -154,6 +154,17 @@ namespace UCPtoOpenGL
 
     LPARAM transformMouseMovePos(LPARAM lParam);
 
+    void windowLostFocus()
+    {
+      rectInit = false;
+      restWasInit = false;
+    }
+
+    void windowSetFocus()
+    {
+      resChanged = false;
+    }
+
     HWND getWindowHandle()
     {
       return winHandle;
@@ -162,6 +173,8 @@ namespace UCPtoOpenGL
   private:
 
     WindowCore window;
+
+    // window stuff
     HWND winHandle{ 0 };	// the actual window -> stronghold should clean this up
     bool windowDone{ false };
     int winSizeW{ 1000 }; // dummy
@@ -170,8 +183,13 @@ namespace UCPtoOpenGL
     int winOffsetH{ 0 };
     double winToTexMult{ 1.0 };
 
-    // window stuff
-    LPRECT mainDrawingRect{ nullptr };
+    // set during drawing rect inits, removed during DirectDrawCreate
+    // sets scroll borders, since they do not react to resolutions changes
+    bool rectInit{ false };
+    bool restWasInit{ false };
+    bool resChanged{ false };
+    int scrollSizeW{ 0 };
+    int scrollSizeH{ 0 };
 
     // DirectDraw interface
     IDirectDraw* realInterface = nullptr;
