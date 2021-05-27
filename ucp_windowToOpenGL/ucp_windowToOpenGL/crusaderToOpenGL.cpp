@@ -77,32 +77,30 @@ namespace UCPtoOpenGL
       return false;
     }
 
-    HWND win{
-      CreateWindowExA(
-        NULL,
-        className,
-        windowName,
-        WS_OVERLAPPED | WS_VISIBLE, // WS_POPUP is apperantly an indicator that the window is only short lift... changed it to overlap
-        CW_USEDEFAULT,
-        CW_USEDEFAULT,
-        GetSystemMetrics(0),	// at this point, no hint exist as to how big it should be
-        GetSystemMetrics(1),
-        NULL,
-        NULL,
-        hInstance,
-        NULL
-      )
-    };
+    winHandle = CreateWindowExA(
+      NULL,
+      className,
+      windowName,
+      WS_OVERLAPPED | WS_VISIBLE, // WS_POPUP is apperantly an indicator that the window is only short lift... changed it to overlap
+      CW_USEDEFAULT,
+      CW_USEDEFAULT,
+      GetSystemMetrics(0),	// at this point, no hint exist as to how big it should be
+      GetSystemMetrics(1),
+      NULL,
+      NULL,
+      hInstance,
+      NULL
+    );
 
     // this is an isseu -> if something here fails, then the whole thing might be busted...
     // TODO: is there a possible way around? -> close everything until then, then recreate with original Stronghold?
     // until then, this will return false, and I assume stronghold will close
-    windowDone = win && window.createWindow(win);
+    windowDone = winHandle && window.createWindow(winHandle);
 
 
     // end -> do not touch
-    *(DWORD*)(that + 0xAC) = (DWORD)win;
-    return win != NULL;
+    *(DWORD*)(that + 0xAC) = (DWORD)winHandle;
+    return winHandle != NULL;
   }
 
   HRESULT CrusaderToOpenGL::createDirectDraw(GUID* lpGUID, LPDIRECTDRAW* lplpDD, IUnknown* pUnkOuter)
@@ -166,10 +164,6 @@ namespace UCPtoOpenGL
 
   BOOL CrusaderToOpenGL::setFakeRect(LPRECT lprc, int xLeft, int yTop, int xRight, int yBottom)
   {
-    // test:
-    //xRight = 1024;
-    //yBottom = 768;
-
     if (mainDrawingRect == lprc)
     {
       yBottom = window.getTexStrongSizeH();
@@ -179,25 +173,67 @@ namespace UCPtoOpenGL
     return SetRect(lprc, xLeft, yTop, xRight, yBottom);
   }
 
+  // this adjusts scrolling only... -> shoudl be replaced with own code anyway -> 100% wrong
+  // TODO: replace once the mosue works
+  BOOL CrusaderToOpenGL::getWindowCursorPos(LPPOINT lpPoint)
+  {
+    bool success{ GetCursorPos(lpPoint) && ScreenToClient(winHandle, lpPoint) };
+    if (success)
+    {
+      // accept deviations? (int / int)
+      lpPoint->x = lround(static_cast<float>(lpPoint->x) * window.getTexStrongSizeW() / winSizeW);
+      lpPoint->y = lround(static_cast<float>(lpPoint->y) * window.getTexStrongSizeH() / winSizeH);
+    }
+
+    return success;
+  }
+
 
   // DirectDraw
 
-  STDMETHODIMP_(HRESULT __stdcall) CrusaderToOpenGL::SetDisplayMode(DWORD w, DWORD h, DWORD)
+  STDMETHODIMP_(HRESULT __stdcall) CrusaderToOpenGL::SetDisplayMode(DWORD width, DWORD height, DWORD)
   {
-    //create new bit maps
-    back.createBitData(w * h);
-    offMain.createBitData(w * h);
+    int wTex{ (int)width };
+    int hTex{ (int)height };
 
-    window.setTexStrongSize(w, h);
+    // TODO?: seperate tex and window settings
+
+    //create new bit maps
+    int pixNum{ wTex * hTex };
+    back.createBitData(pixNum);
+    offMain.createBitData(pixNum);
 
     if (mainDrawingRect)
     {
       RECT& rec{ *mainDrawingRect };
       rec.left = 0;
-      rec.right = w;
+      rec.right = wTex;
       rec.top = 0;
-      rec.bottom = h;
+      rec.bottom = hTex;
     }
+
+    window.adjustTexSizeAndViewport(wTex, hTex, winSizeW, winSizeH);
+
+    // window adjustments should go here, right?
+    // -> only until external control possible
+
+    // dummy -> adjust for middle(?)
+    int winXpos{ (GetSystemMetrics(0) - winSizeW) / 2 };
+    int winYPos{ (GetSystemMetrics(1) - winSizeH) / 2 };
+    RECT newWinRect{ winXpos, winYPos, winXpos + winSizeW, winYPos + winSizeH };
+
+    // this would set a new style and adjust the window
+    // however, screenshots stil do not work
+    DWORD newStyle{ WS_OVERLAPPEDWINDOW | WS_VISIBLE };
+    AdjustWindowRectEx(&newWinRect, newStyle, false, NULL);
+
+    SetWindowLongPtr(winHandle, GWL_STYLE, newStyle);
+    SetWindowPos(winHandle, HWND_TOP, newWinRect.left, newWinRect.top, newWinRect.right - newWinRect.left,
+      newWinRect.bottom - newWinRect.top, SWP_SHOWWINDOW);
+
+    // other stuff:
+    //GetWindowRect(winHandle, &newWinRect);
+    //MoveWindow(winHandle, newWinRect.left, newWinRect.top, newWinRect.right - newWinRect.left, newWinRect.bottom - newWinRect.top, true);
 
     return DD_OK;
   }

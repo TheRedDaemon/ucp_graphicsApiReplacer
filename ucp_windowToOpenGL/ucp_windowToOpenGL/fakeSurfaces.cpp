@@ -84,15 +84,26 @@ namespace UCPtoOpenGL
     des.lPitch = 2 * des.dwWidth;  // lPitch is the number of bytes from the start of one line to the next
     des.lpSurface = getBitmapPtr();
 
-    // NOTE: format is (at least during test) RGB565 -> and set here
-    // Stronghold supports multiple pixel formats, going for now with the 565 one
+
+    // Stronghold supports multiple pixel formats -> what the game would "prefer" still needs more research
     des.ddpfPixelFormat.dwSize = sizeof(des.ddpfPixelFormat);
     des.ddpfPixelFormat.dwFlags = DDPF_RGB;       // it is RGB
     des.ddpfPixelFormat.dwRGBBitCount = 16;       // Stronghold uses 16bit
-    des.ddpfPixelFormat.dwRBitMask = 0xf800;      // 1111 1000 0000 0000
-    des.ddpfPixelFormat.dwGBitMask = 0x7e0;       // 0000 0111 1110 0000
-    des.ddpfPixelFormat.dwBBitMask = 0x1F;        // 0000 0000 0001 1111
-    des.ddpfPixelFormat.dwRGBAlphaBitMask = 0x0;
+
+    /*
+    // this is the 565 one
+    des.ddpfPixelFormat.dwRBitMask = 0xf800;          // 1111 1000 0000 0000
+    des.ddpfPixelFormat.dwGBitMask = 0x7e0;           // 0000 0111 1110 0000
+    des.ddpfPixelFormat.dwBBitMask = 0x1F;            // 0000 0000 0001 1111
+    des.ddpfPixelFormat.dwRGBAlphaBitMask = 0x0;      // 0000 0000 0000 0000
+    */
+    
+    // this is ARGB 1555, I assume
+    des.ddpfPixelFormat.dwRBitMask = 0x7c00;          // 0111 1100 0000 0000
+    des.ddpfPixelFormat.dwGBitMask = 0x3e0;           // 0000 0011 1110 0000
+    des.ddpfPixelFormat.dwBBitMask = 0x1F;            // 0000 0000 0001 1111
+    des.ddpfPixelFormat.dwRGBAlphaBitMask = 0x8000;   // 1000 0000 0000 0000
+    
 
     des.ddsCaps.dwCaps = DDSCAPS_BACKBUFFER | DDSCAPS_COMPLEX | DDSCAPS_FLIP | DDSCAPS_SYSTEMMEMORY;
 
@@ -124,13 +135,24 @@ namespace UCPtoOpenGL
   {
     DDPIXELFORMAT& pix{ *format };
 
-    // format is RGB565 -> and set here
+    // Stronghold supports multiple pixel formats -> what the game would "prefer" still needs more research
     pix.dwFlags = DDPF_RGB;       // it is RGB
     pix.dwRGBBitCount = 16;       // Stronghold uses 16bit
-    pix.dwRBitMask = 0xf800;      // 1111 1000 0000 0000
-    pix.dwGBitMask = 0x7e0;       // 0000 0111 1110 0000
-    pix.dwBBitMask = 0x1F;        // 0000 0000 0001 1111
-    pix.dwRGBAlphaBitMask = 0x0;
+
+    /*
+    // this is the 565 one
+    pix.dwRBitMask = 0xf800;          // 1111 1000 0000 0000
+    pix.dwGBitMask = 0x7e0;           // 0000 0111 1110 0000
+    pix.dwBBitMask = 0x1F;            // 0000 0000 0001 1111
+    pix.dwRGBAlphaBitMask = 0x0;      // 0000 0000 0000 0000
+    */
+    
+    // this is ARGB 1555, I assume
+    pix.dwRBitMask = 0x7c00;          // 0111 1100 0000 0000
+    pix.dwGBitMask = 0x3e0;           // 0000 0011 1110 0000
+    pix.dwBBitMask = 0x1F;            // 0000 0000 0001 1111
+    pix.dwRGBAlphaBitMask = 0x8000;   // 1000 0000 0000 0000
+    
 
     return DD_OK;
   }

@@ -39,6 +39,7 @@ namespace UCPtoOpenGL
       getAnyGLFuncAddress("glGenBuffers", (void**)&ownPtr_glGenBuffers) &&
       getAnyGLFuncAddress("glBindBuffer", (void**)&ownPtr_glBindBuffer) &&
       getAnyGLFuncAddress("glBufferData", (void**)&ownPtr_glBufferData) &&
+      getAnyGLFuncAddress("glBufferSubData", (void**)&ownPtr_glBufferSubData) &&
 
       getAnyGLFuncAddress("glVertexAttribPointer", (void**)&ownPtr_glVertexAttribPointer) &&
       getAnyGLFuncAddress("glEnableVertexAttribArray", (void**)&ownPtr_glEnableVertexAttribArray) &&
@@ -63,8 +64,6 @@ namespace UCPtoOpenGL
   bool WindowCore::createWindow(HWND win)
   {
     // INFO: I guess there is a lot of trust going on here, no safety, no additional driver checks, etc. etc...
-
-    winHandle = win;
 
     // wgl Context creation after this source: https://stackoverflow.com/a/6316595
 
@@ -122,54 +121,50 @@ namespace UCPtoOpenGL
       return false;
     }
 
-    // TODO: if possible, replace with fixed calls: https://www.khronos.org/opengl/wiki/Load_OpenGL_Functions#Windows_2
-    // if glfw is not needed anymore, lets just test it with glew to get at least the functions
-    //glewExperimental = true; // Needed in core profile
-    //if (glewInit() != GLEW_OK)
-    //{
-    //  return false;
-    //}
-
     initSystems();
     return true;
   }
 
-
-  void WindowCore::setTexStrongSize(int w, int h)
+  void WindowCore::adjustTexSizeAndViewport(int wTex, int hTex, int wView, int hView)
   {
-    strongTexW = w;
-    strongTexH = h;
+    glViewport(0, 0, wView, hView);
+    strongTexW = wTex;
+    strongTexH = hTex;
 
-    // dummy call
-    setNewWindowStyle();
-    
+    // change guad
+    // I choose the easy route, algorithm: https://math.stackexchange.com/a/1620375
+    float scaleX{ 1.0f };
+    float scaleY{ 1.0f };
+    float horizScale{ static_cast<float>(wView) / wTex };
+    float vertScale{ static_cast<float>(hView) / hTex };
+    if (horizScale != vertScale)
+    {
+      bool isVertScale{ vertScale < horizScale };
+      scaleX = isVertScale ? vertScale * wTex / wView : 1.0f;
+      scaleY =  isVertScale ? 1.0f : horizScale * hTex / hView;
+    }
+
+    GLfloat newPos[]{
+      -1.0f * scaleX, -1.0f * scaleY,
+      1.0f * scaleX, -1.0f * scaleY,
+      -1.0f * scaleX, 1.0f * scaleY,
+      1.0f * scaleX, 1.0f * scaleY
+    };
+
+    ownPtr_glBufferSubData(GL_ARRAY_BUFFER, 0, 8 * sizeof(float), newPos);
+
     // create initial texture
-    // Stronghold supports multiple pixel formats, currently using often returned 565 -> but it seems more are possible
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, nullptr);
+    // Stronghold supports multiple pixel formats -> what the game would "prefer" still needs more research
+    //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, nullptr); // RGB565
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB5_A1, wTex, hTex, 0, GL_BGRA, GL_UNSIGNED_SHORT_1_5_5_5_REV, nullptr); // ARGB1555 (?)
   }
 
-
-  void WindowCore::setNewWindowStyle()
-  {
-    // currently dummy stuff
-    glViewport(0, 0, strongTexW, strongTexH);
-
-
-    // this would set a new style and adjust the window
-    // however, screenshots still do not work
-    DWORD newStyle{ WS_OVERLAPPEDWINDOW | WS_VISIBLE };
-    RECT newWinRect;
-    GetWindowRect(winHandle, &newWinRect);
-    AdjustWindowRectEx(&newWinRect, newStyle, false, NULL);
-
-    SetWindowLongPtr(winHandle, GWL_STYLE, newStyle);
-    MoveWindow(winHandle, newWinRect.left, newWinRect.top, newWinRect.right - newWinRect.left, newWinRect.bottom - newWinRect.top, true);
-  }
 
   HRESULT WindowCore::renderNextScreen(unsigned short* backData)
   {
-    // update texture (issue here?)
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, strongTexW, strongTexH, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, backData);
+    // update texture
+    //glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, strongTexW, strongTexH, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, backData); // RGB565
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, strongTexW, strongTexH, GL_BGRA, GL_UNSIGNED_SHORT_1_5_5_5_REV, backData); // ARGB1555 (?)
 
     // Clear the screen.
     glClear(GL_COLOR_BUFFER_BIT);
@@ -187,17 +182,23 @@ namespace UCPtoOpenGL
   {
 
     // the clear color
-    glClearColor(0.0, 1.0, 0.0, 1.0);
+    glClearColor(0.0, 0.0, 0.0, 0.0);
 
     /*======== geometry is simple quad ===========*/
     
     GLfloat vertexInfos[]{
       
-      // pos        // texcoord
-      -1.0, -1.0,   0.0, 1.0,
-      1.0, -1.0,    1.0, 1.0,
-      -1.0, 1.0,    0.0, 0.0,
-      1.0, 1.0,     1.0, 0.0
+      // pos
+      -1.0f, -1.0f,
+      1.0f, -1.0f,
+      -1.0f, 1.0f,
+      1.0f, 1.0f,
+
+      // texcoord
+      0.0f, 1.0f,
+      1.0f, 1.0f,
+      0.0f, 0.0f,
+      1.0f, 0.0f
     };
 
     GLuint indices[]{
@@ -211,13 +212,13 @@ namespace UCPtoOpenGL
     ownPtr_glGenBuffers(1, &quadBufferID); // create empty buffer
     ownPtr_glBindBuffer(GL_ARRAY_BUFFER, quadBufferID);  // bind buffer
     ownPtr_glBufferData(GL_ARRAY_BUFFER, sizeof(vertexInfos), vertexInfos, GL_STATIC_DRAW); // vertex data to buffer
-    
-    // vertex position (might be very often modified in the future)
-    ownPtr_glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0); // point to vertex buffer
+
+    // vertex position (is modified)
+    ownPtr_glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0); // point to vertex buffer
     ownPtr_glEnableVertexAttribArray(0); // enable
 
     // texture coords
-    ownPtr_glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float))); // point to vertex buffer
+    ownPtr_glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)(8 * sizeof(float))); // point to vertex buffer
     ownPtr_glEnableVertexAttribArray(1); // enable
 
     // indicies
@@ -230,11 +231,16 @@ namespace UCPtoOpenGL
     glGenTextures(1, &strongholdScreenTex);
     glBindTexture(GL_TEXTURE_2D, strongholdScreenTex);
 
-    // set so that OPenGL does not expect midmaps
+    // set so that OpenGL does not expect midmaps
+    // TODO: check more options
+    // -> mipmaps could be possible, but the would need to be created on every frame...
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    // currently only GL_LINEAR for a little bit filtering, only other without mipmaps would be raw GL_NEAREST
+    // TODO?: make filtermode changeable
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 
     /*================ Shaders ====================*/

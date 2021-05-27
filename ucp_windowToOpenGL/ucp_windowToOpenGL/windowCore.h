@@ -10,7 +10,8 @@ namespace UCPtoOpenGL
 
     bool createWindow(HWND win);
 
-    void setTexStrongSize(int w, int h);
+    void adjustTexSizeAndViewport(int wTex, int hTex, int wView, int hView);
+    
     int getTexStrongSizeW()
     {
       return strongTexW;
@@ -19,9 +20,6 @@ namespace UCPtoOpenGL
     {
       return strongTexH;
     }
-
-    // will likely later receive
-    void setNewWindowStyle();
     
     HRESULT renderNextScreen(unsigned short* backData);
 
@@ -29,7 +27,6 @@ namespace UCPtoOpenGL
 
     // wgl stuff -> both of these should actually get released and deleted at the end
     // TODO: should it work, create another hook to release them... or let lua do it
-    HWND winHandle{ 0 };	// the actual window -> stronghold should clean this up
     HDC deviceContext{ 0 };
     HGLRC renderingContext{ 0 };
 
@@ -61,6 +58,7 @@ namespace UCPtoOpenGL
     PFNGLGENBUFFERSPROC ownPtr_glGenBuffers{ nullptr };
     PFNGLBINDBUFFERPROC ownPtr_glBindBuffer{ nullptr };
     PFNGLBUFFERDATAPROC ownPtr_glBufferData{ nullptr };
+    PFNGLBUFFERSUBDATAPROC ownPtr_glBufferSubData{ nullptr };
 
     PFNGLVERTEXATTRIBPOINTERPROC ownPtr_glVertexAttribPointer{ nullptr };
     PFNGLENABLEVERTEXATTRIBARRAYPROC ownPtr_glEnableVertexAttribArray{ nullptr };

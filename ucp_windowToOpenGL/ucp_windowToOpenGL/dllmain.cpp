@@ -17,6 +17,19 @@
 static UCPtoOpenGL::CrusaderToOpenGL ToOpenGL;
 static WNDPROC KeyboardCallbackFunc{ (WNDPROC)0x004B2C50 };  // currently hardcoded, later received from lua, gynt gave me this address: 0x004B2AE0 (Crusader maybe?)
 
+// static deug helper
+
+static void ReplaceDWORD(DWORD destination, DWORD newDWORD)
+{
+  DWORD* des{ reinterpret_cast<DWORD*>(destination) };
+  
+  DWORD oldAddressProtection;
+  VirtualProtect(des, 4, PAGE_EXECUTE_READWRITE, &oldAddressProtection);
+  *des = newDWORD;
+  VirtualProtect(des, 4, oldAddressProtection, &oldAddressProtection);
+}
+
+
 // lua functions to bind
 
 // using fastCall hack to get this in global function
@@ -49,6 +62,18 @@ BOOL WINAPI SetRectCall(LPRECT lprc, int xLeft, int yTop, int xRight, int yBotto
   return ToOpenGL.setFakeRect(lprc, xLeft, yTop, xRight, yBottom);
 };
 
+// set window call -> simply deactivate
+BOOL WINAPI SetWindowPosCall(HWND, HWND, int, int, int, int, UINT)
+{
+  return true;
+}
+
+// cursor -> to window (not to screen)
+BOOL WINAPI GetCursorPosCall(LPPOINT lpPoint)
+{
+  return ToOpenGL.getWindowCursorPos(lpPoint);
+}
+
 
 // lua module load
 extern "C" __declspec(dllexport) int __cdecl luaopen_ucp_windowToOpenGL(lua_State * L)
@@ -61,7 +86,6 @@ extern "C" __declspec(dllexport) int __cdecl luaopen_ucp_windowToOpenGL(lua_Stat
 
   // for test, I will hardcode the detours
   DWORD oldAddressProtection{ 0 };
-
 
   // extreme window creation function: 0x00470189
   // -> it is a thisCall
@@ -79,50 +103,30 @@ extern "C" __declspec(dllexport) int __cdecl luaopen_ucp_windowToOpenGL(lua_Stat
 
   // there is another pretty similar call, one condition further // extreme: 0x0046FCB8
   // extreme jump address: 0x0059E010
-  VirtualProtect(reinterpret_cast<DWORD*>(0x0059E010), 4, PAGE_EXECUTE_READWRITE, &oldAddressProtection);
-
-  //call = reinterpret_cast<unsigned char*>(0x0046FCB8);
-  func = reinterpret_cast<DWORD*>(0x0059E010);
-
-  //*call = 0xE8;
-  *func = reinterpret_cast<DWORD>(DirectDrawCreateCall);
-
-  VirtualProtect(reinterpret_cast<DWORD*>(0x0059E010), 4, oldAddressProtection, &oldAddressProtection);
-
+  ReplaceDWORD(0x0059E010, (DWORD)DirectDrawCreateCall);
 
   // Crusader gets the size for some of its drawing RECTs via screen size, lets change that
   // extreme address for ONE Rect: 00468089
   // changing the jump address althougher for a test: 0059E1D0
   //  -> does not really help? result is that the click positions move to the display edge
-  VirtualProtect(reinterpret_cast<DWORD*>(0x0059E1D0), 4, PAGE_EXECUTE_READWRITE, &oldAddressProtection);
-
-  func = reinterpret_cast<DWORD*>(0x0059E1D0);
-
-  // change the address that is moved in the register
-  *func = reinterpret_cast<DWORD>(GetSystemMetricsCall);
-
-  VirtualProtect(reinterpret_cast<DWORD*>(0x0059E1D0), 4, oldAddressProtection, &oldAddressProtection);
-
+  ReplaceDWORD(0x0059E1D0, (DWORD)GetSystemMetricsCall);
 
   // the main drawing RECT is set using USER.SetRect, lets do it, but remember the pointer, extreme call: 004B2D06
   // this is done before DirectDraw gets the set display mode order -> sets it to screen size?
   // some weird stuff happens during the window creation... why is this a different number in other cases...
   // maybe the combination of window and exlusiv mode already changes the resolution, the SetDisplayMode is just for DirectDraw?
   // other address, for general jump: 0059E200
-  VirtualProtect(reinterpret_cast<DWORD*>(0x0059E200), 6, PAGE_EXECUTE_READWRITE, &oldAddressProtection);
-
-  //call = reinterpret_cast<unsigned char*>(0x004B2D06);
-  func = reinterpret_cast<DWORD*>(0x0059E200 /*+ 1*/);
-  //nop = reinterpret_cast<unsigned char*>(0x004B2D06 + 5);
-
-  //*call = 0xE8;
-  *func = reinterpret_cast<DWORD>(SetRectCall) /*- 0x004B2D06 - 5*/;
-  //*nop = 0x90;
-
-  VirtualProtect(reinterpret_cast<DWORD*>(0x004B2D06), 6, oldAddressProtection, &oldAddressProtection);
+  ReplaceDWORD(0x0059E200, (DWORD)SetRectCall);
 
 
-  std::this_thread::sleep_for(std::chrono::seconds(10)); // 20 seconds to attach
+  // try to get more control over window:
+  ReplaceDWORD(0x0059E1F8, (DWORD)SetWindowPosCall);
+
+
+  // map cursor
+  ReplaceDWORD(0x0059E1E8, (DWORD)GetCursorPosCall);
+
+  //std::this_thread::sleep_for(std::chrono::seconds(10)); // 20 seconds to attach
 
   return 1;
 }
@@ -150,4 +154,32 @@ BOOL APIENTRY DllMain( HMODULE hModule,
         - RADEXPFUNC s32 RADEXPLINK BinkDDSurfaceType(void PTR4* lpDDS) (0x0046FF61) -> gets flag(part)
         - RADEXPFUNC s32 RADEXPLINK BinkCopyToBuffer(HBINK bnk,void* dest,s32 destpitch,u32 destheight,u32 destx,u32 desty,u32 flags); (0x004091D6) -> blt to surface
     - structure ref (maybe): https://github.com/ioquake/jedi-outcast/blob/master/code/win32/bink.h
+
+    - Crusader (likely as part of development?) seems to have (leftovers?) of console output.
+      - The biggest hint should be the printf(?) structures gynt found.
+      - But they also import functions like: (could however just be lowlevel functions of the engine)
+        - 309  GetConsoleOutputCP
+        - 921  WriteConsoleA
+        - 307  GetConsoleMode
+        - 290  GetConsoleCP
+      - Could also be that they were included for tests with code parts, and no real "debug" system in-game ever existed.
+        - 272  GetCommandLineA -> maybe they have start parameter?
+        - 569  IsDebuggerPresent -> they might have a debuging system?
+
+    - There are multiple functions that likely effect the window (excluding already detoured) (jump addresses):
+      -   13  BeginPaint          -> 0x0059E1A8
+      -  200  EndPaint            -> 0x0059E1AC
+      -  554  ReleaseDC           -> 0x0059E1E0
+      -  268  GetDC               -> 0x0059E1E4
+      -  598  SetFocus            -> 0x0059E1F0
+      -  700  UpdateWindow        -> 0x0059E1F4
+      -  643  SetWindowPos        -> 0x0059E1F8
+      -    1  AdjustWindowRect    -> 0x0059E1FC
+      -   64  ClientToScreen      -> 0x         -> registered no call in normal game
+      -  255  GetClientRect       -> 0x         -> registered no call in normal game
+      -  279  GetForegroundWindow -> 0x0059E20C
+
+    - Others likely effect the mouse control:
+      -  267  GetCursorPos        -> 0x0059E1E8
+      -> they get their mouse cursor differently...
 */

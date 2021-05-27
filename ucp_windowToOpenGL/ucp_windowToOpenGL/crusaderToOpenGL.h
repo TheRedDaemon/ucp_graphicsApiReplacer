@@ -150,10 +150,15 @@ namespace UCPtoOpenGL
 
     BOOL setFakeRect(LPRECT lprc, int xLeft, int yTop, int xRight, int yBottom);
 
+    BOOL getWindowCursorPos(LPPOINT lpPoint);
+
   private:
 
     WindowCore window;
+    HWND winHandle{ 0 };	// the actual window -> stronghold should clean this up
     bool windowDone{ false };
+    int winSizeW{ 1000 }; // dummy
+    int winSizeH{ 500 }; // dummy
 
     // window stuff
     LPRECT mainDrawingRect{ nullptr };
