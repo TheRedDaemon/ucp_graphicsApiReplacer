@@ -159,6 +159,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="configUtil.h" />
+    <ClInclude Include="toOpenGLconfig.h" />
     <ClInclude Include="crusaderToOpenGL.h" />
     <ClInclude Include="fakeSurfaces.h" />
     <ClInclude Include="framework.h" />
@@ -166,6 +168,7 @@
     <ClInclude Include="windowCore.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="configUtil.cpp" />
     <ClCompile Include="crusaderToOpenGL.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="fakeSurfaces.cpp" />

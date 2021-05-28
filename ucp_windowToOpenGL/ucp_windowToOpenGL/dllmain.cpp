@@ -101,9 +101,9 @@ BOOL WINAPI SetRectCall(LPRECT lprc, int xLeft, int yTop, int xRight, int yBotto
 
 
 // set window call -> simply deactivate
-BOOL WINAPI SetWindowPosCall(HWND, HWND, int, int, int, int, UINT)
+BOOL WINAPI SetWindowPosCall(HWND hWnd, HWND hWndInsertAfter, int X, int Y, int cx, int cy, UINT uFlag)
 {
-  return true;
+  return ToOpenGL.setWindowPosFake(hWnd, hWndInsertAfter, X, Y, cx, cy, uFlag);
 }
 
 // cursor -> to window (not to screen)
@@ -113,9 +113,41 @@ BOOL WINAPI GetCursorPosCall(LPPOINT lpPoint)
 }
 
 
+// further tests
+
+// what does it update?
+BOOL WINAPI UpdateWindowCall(HWND hWnd)
+{
+  return ToOpenGL.updateWindowFake(hWnd);
+}
+
+BOOL WINAPI AdjustWindowRectCall(LPRECT lpRect, DWORD dwStyle, BOOL bMenu)
+{
+  return ToOpenGL.adjustWindowRectFake(lpRect, dwStyle, bMenu);
+};
+
+
+LONG WINAPI SetWindowLongACall(HWND hWnd, int nIndex, LONG dwNewLong)
+{
+  return ToOpenGL.setWindowLongAFake(hWnd, nIndex, dwNewLong);
+}
+
+// first chars -> dll name, function name
+void WINAPI DetouredWindowLongPtrReceive(char*, char*, DWORD* ptrToWindowLongPtr, DWORD, DWORD)
+{
+  // e8 call
+  *ptrToWindowLongPtr = reinterpret_cast<DWORD>(SetWindowLongACall);
+}
+
+
 // lua module load
 extern "C" __declspec(dllexport) int __cdecl luaopen_ucp_windowToOpenGL(lua_State * L)
 {
+  static UCPtoOpenGL::ToOpenGLConfig conf; // for tests
+
+  // test
+  //conf.window.type = UCPtoOpenGL::TYPE_BORDERLESS_WINDOW;
+
   //lua_newtable(L); // push a new table on the stack
   //lua_pushinteger(L, &dummyFunction); // The value we want to set
   //lua_setfield(L, -2, "dummyFunction"); // Sets the value on the top of the stack to this key in the table at index -2 (the table is not on the top, but right under it). The value is popped off the stack.
@@ -164,7 +196,18 @@ extern "C" __declspec(dllexport) int __cdecl luaopen_ucp_windowToOpenGL(lua_Stat
   // map cursor
   ReplaceDWORD(0x0059E1E8, (DWORD)GetCursorPosCall);
 
-  //std::this_thread::sleep_for(std::chrono::seconds(10)); // 20 seconds to attach
+  // window update call
+  ReplaceDWORD(0x0059E1F4, (DWORD)UpdateWindowCall);
+
+  // set windowLong load func
+  ReplaceDWORD(0x0057CCCA + 1, reinterpret_cast<DWORD>(DetouredWindowLongPtrReceive) - 0x0057CCCA - 5);
+
+  // adjust client rect
+  ReplaceDWORD(0x0059E1FC, (DWORD)AdjustWindowRectCall);
+
+  ToOpenGL.setConf(&conf);
+
+  std::this_thread::sleep_for(std::chrono::seconds(10)); // 20 seconds to attach
 
   return 1;
 }
@@ -212,10 +255,17 @@ BOOL APIENTRY DllMain(HMODULE hModule,
       -  598  SetFocus            -> 0x0059E1F0
       -  700  UpdateWindow        -> 0x0059E1F4
       -  643  SetWindowPos        -> 0x0059E1F8
-      -    1  AdjustWindowRect    -> 0x0059E1FC
+      -    1  AdjustWindowRect    -> 0x0059E1FC -> This might very well also be a possible point to change stuff, instead of other positions
       -   64  ClientToScreen      -> 0x         -> registered no call in normal game
       -  255  GetClientRect       -> 0x         -> registered no call in normal game
       -  279  GetForegroundWindow -> 0x0059E20C
+
+      - (Crusader) 0x00b95778 -> ptr to SetWindowLongA -> is memory position
+        - dynamic resolved with with a function here: (Crusader) 0x0057c89e (is a E8 call):
+          - func: undefined _ResolveThunk@20("user32.dll","SetWindowLongA", &PTR_SetWindowLongAThunk_00b95778, DAT_024280b4, FID_conflict:_GodotFailFindResourceW@12)
+            - third is important ptr to SetWindowLongA ptr
+            - ghira assumes void return
+          - extreme address: 0x0057CCCA
 
     - Others likely effect the mouse control:
       -  267  GetCursorPos        -> 0x0059E1E8

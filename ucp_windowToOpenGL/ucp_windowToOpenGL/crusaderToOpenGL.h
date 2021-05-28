@@ -141,6 +141,11 @@ namespace UCPtoOpenGL
 
     /* copied structure end */
 
+    void setConf(ToOpenGLConfig* conf)
+    {
+      confPtr = conf;
+    };
+
     // that -> the stronghold object(whatever it is)
     bool createWindow(DWORD that, LPSTR windowName, unsigned int unknown, WNDPROC keyboardCallbackFunc);
 
@@ -152,18 +157,19 @@ namespace UCPtoOpenGL
 
     BOOL getWindowCursorPos(LPPOINT lpPoint);
 
+    BOOL setWindowPosFake(HWND, HWND, int, int, int, int, UINT);
+
+    BOOL WINAPI updateWindowFake(HWND hWnd);
+
+    BOOL WINAPI adjustWindowRectFake(LPRECT lpRect, DWORD dwStyle, BOOL bMenu);
+
+    LONG WINAPI setWindowLongAFake(HWND hWnd, int nIndex, LONG dwNewLong);
+
     LPARAM transformMouseMovePos(LPARAM lParam);
 
-    void windowLostFocus()
-    {
-      rectInit = false;
-      restWasInit = false;
-    }
+    void windowLostFocus();
 
-    void windowSetFocus()
-    {
-      resChanged = false;
-    }
+    void windowSetFocus();
 
     HWND getWindowHandle()
     {
@@ -172,24 +178,31 @@ namespace UCPtoOpenGL
 
   private:
 
+    // config:
+    ToOpenGLConfig* confPtr{ nullptr };
+
+    // intern:
+
     WindowCore window;
 
     // window stuff
     HWND winHandle{ 0 };	// the actual window -> stronghold should clean this up
     bool windowDone{ false };
-    int winSizeW{ 1000 }; // dummy
-    int winSizeH{ 500 }; // dummy
+    //int winSizeW{ 1280 }; // dummy
+    //int winSizeH{ 720 }; // dummy
     int winOffsetW{ 0 };
     int winOffsetH{ 0 };
     double winToTexMult{ 1.0 };
 
     // set during drawing rect inits, removed during DirectDrawCreate
-    // sets scroll borders, since they do not react to resolutions changes
+    // sets scroll borders, since they do not react to resolution changes
     bool rectInit{ false };
     bool restWasInit{ false };
     bool resChanged{ false };
     int scrollSizeW{ 0 };
     int scrollSizeH{ 0 };
+    int scrollDeadZone{ 0 }; // zone in render pixels outside of window where it still scrolls
+    int scrollZoneWidth{ 0 };  // zone in render pixels inside the window where it already scrolls
 
     // DirectDraw interface
     IDirectDraw* realInterface = nullptr;
@@ -199,5 +212,11 @@ namespace UCPtoOpenGL
     FakeOffscreenMap offMap;
     FakeBackbuffer back{ &window };
     FakePrimary prim{ &window, &back };
+
+
+    // functions:
+
+    // config
+    void setWindowStyleAndSize();
   };
 }

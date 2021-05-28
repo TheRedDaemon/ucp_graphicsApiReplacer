@@ -8,6 +8,11 @@ namespace UCPtoOpenGL
     WindowCore() {};
     ~WindowCore() {};
 
+    void setConf(ToOpenGLConfig* conf)
+    {
+      confPtr = conf;
+    };
+
     bool createWindow(HWND win);
 
     // does nothing, only sets tex size
@@ -27,6 +32,9 @@ namespace UCPtoOpenGL
     HRESULT renderNextScreen(unsigned short* backData);
 
   private:
+
+    // config:
+    ToOpenGLConfig* confPtr{ nullptr };
 
     // wgl stuff -> both of these should actually get released and deleted at the end
     // TODO: should it work, create another hook to release them... or let lua do it

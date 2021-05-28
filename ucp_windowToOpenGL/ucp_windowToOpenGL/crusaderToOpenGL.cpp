@@ -7,6 +7,8 @@
 #include "fakeSurfaces.h"
 #include "crusaderToOpenGL.h"
 
+#include "configUtil.h"
+
 
 namespace UCPtoOpenGL
 {
@@ -15,30 +17,31 @@ namespace UCPtoOpenGL
 
   bool CrusaderToOpenGL::createWindow(DWORD that, LPSTR windowName, unsigned int unknown, WNDPROC windowCallbackFunc)
   {
-    /* recreated original window func
-    HINSTANCE hInstance{ *(HINSTANCE*)(that + 0xA8) };
-    LPCSTR className{ "FFwinClass" };
-
-    WNDCLASSA wndClass;
-    wndClass.hInstance = hInstance;
-    wndClass.lpfnWndProc = keyboardCallbackFunc;
-    wndClass.style = NULL;	// this needs changes later
-    wndClass.cbClsExtra = NULL;
-    wndClass.cbWndExtra = NULL;
-    wndClass.hIcon = LoadIconA(hInstance, (LPCSTR)(unknown & 0xFFFF));	// weird... is this a downcast, so unknown would be a address?
-    wndClass.hCursor = NULL;
-    wndClass.hbrBackground = NULL;
-    wndClass.lpszMenuName = NULL;
-    wndClass.lpszClassName = className;
-
-    ATOM classAtom{ RegisterClassA(&wndClass) };
-    if (classAtom == NULL)
+    if (!confPtr) // no config, so everything normal
     {
-      return false;
-    }
+      // recreated original window func
+      HINSTANCE hInstance{ *(HINSTANCE*)(that + 0xA8) };
+      LPCSTR className{ "FFwinClass" };
 
-    HWND win{
-      CreateWindowExA(
+      WNDCLASSA wndClass;
+      wndClass.hInstance = hInstance;
+      wndClass.lpfnWndProc = windowCallbackFunc;
+      wndClass.style = NULL;	// this needs changes later
+      wndClass.cbClsExtra = NULL;
+      wndClass.cbWndExtra = NULL;
+      wndClass.hIcon = LoadIconA(hInstance, (LPCSTR)(unknown & 0xFFFF));	// weird... is this a downcast, so unknown would be an address?
+      wndClass.hCursor = NULL;
+      wndClass.hbrBackground = NULL;
+      wndClass.lpszMenuName = NULL;
+      wndClass.lpszClassName = className;
+
+      ATOM classAtom{ RegisterClassA(&wndClass) };
+      if (classAtom == NULL)
+      {
+        return false;
+      }
+
+      winHandle = CreateWindowExA(
         NULL,
         className,
         windowName,
@@ -51,56 +54,62 @@ namespace UCPtoOpenGL
         NULL,
         hInstance,
         NULL
-      )
-    };
-    */
+      );
 
-    // try to change stuff
-    HINSTANCE hInstance{ *(HINSTANCE*)(that + 0xA8) };
-    LPCSTR className{ "FFwinClass" };
-
-    WNDCLASSA wndClass;
-    wndClass.hInstance = hInstance;
-    wndClass.lpfnWndProc = windowCallbackFunc;
-    wndClass.style = CS_OWNDC | CS_HREDRAW | CS_VREDRAW;	// CS_OWNDC apperantly needed to allow a constant device context CS_HREDRAW | CS_VREDRAW
-    wndClass.cbClsExtra = NULL;
-    wndClass.cbWndExtra = NULL;
-    wndClass.hIcon = LoadIconA(hInstance, (LPCSTR)(unknown & 0xFFFF));	// weird... is this a downcast, so unknown would be a address?
-    wndClass.hCursor = NULL;
-    wndClass.hbrBackground = NULL;
-    wndClass.lpszMenuName = NULL;
-    wndClass.lpszClassName = className;
-
-    ATOM classAtom{ RegisterClassA(&wndClass) };
-    if (classAtom == NULL)
-    {
-      return false;
+      *(DWORD*)(that + 0xAC) = (DWORD)winHandle;
+      return winHandle != NULL;
     }
+    else
+    {
+      // try to change stuff
+      HINSTANCE hInstance{ *(HINSTANCE*)(that + 0xA8) };
+      LPCSTR className{ "FFwinClass" };
 
-    winHandle = CreateWindowExA(
-      NULL,
-      className,
-      windowName,
-      WS_OVERLAPPED | WS_VISIBLE, // WS_POPUP is apperantly an indicator that the window is only short lift... changed it to overlap
-      CW_USEDEFAULT,
-      CW_USEDEFAULT,
-      winSizeW,	// at this point, no hint exist as to how big it should be
-      winSizeH,
-      NULL,
-      NULL,
-      hInstance,
-      NULL
-    );
+      WNDCLASSA wndClass;
+      wndClass.hInstance = hInstance;
+      wndClass.lpfnWndProc = windowCallbackFunc;
+      wndClass.style = CS_OWNDC | CS_HREDRAW | CS_VREDRAW;	// CS_OWNDC apperantly needed to allow a constant device context CS_HREDRAW | CS_VREDRAW
+      wndClass.cbClsExtra = NULL;
+      wndClass.cbWndExtra = NULL;
+      wndClass.hIcon = LoadIconA(hInstance, (LPCSTR)(unknown & 0xFFFF));	// weird... is this a downcast, so unknown would be a address?
+      wndClass.hCursor = NULL;
+      wndClass.hbrBackground = NULL;
+      wndClass.lpszMenuName = NULL;
+      wndClass.lpszClassName = className;
 
-    // this is an isseu -> if something here fails, then the whole thing might be busted...
-    // TODO: is there a possible way around? -> close everything until then, then recreate with original Stronghold?
-    // until then, this will return false, and I assume stronghold will close
-    windowDone = winHandle && window.createWindow(winHandle);
+      ATOM classAtom{ RegisterClassA(&wndClass) };
+      if (classAtom == NULL)
+      {
+        return false;
+      }
+
+      RECT winRect{ GetWindowRect(confPtr->window.type, confPtr->window.pos, confPtr->window.width, confPtr->window.height) };
+
+      winHandle = CreateWindowExA(
+        GetExtendedWindowStyle(confPtr->window.type),
+        className,
+        windowName,
+        GetWindowStyle(confPtr->window.type),
+        winRect.left,
+        winRect.top,
+        winRect.right - winRect.left,
+        winRect.bottom - winRect.top,
+        NULL,
+        NULL,
+        hInstance,
+        NULL
+      );
+
+      // this is an issue -> if something here fails, then the whole thing might be busted...
+      // TODO: is there a possible way around? -> close everything until then, then recreate with original Stronghold?
+      // until then, this will return false, and I assume stronghold will close
+      windowDone = winHandle && window.createWindow(winHandle);
 
 
-    // end -> do not touch
-    *(DWORD*)(that + 0xAC) = (DWORD)winHandle;
-    return winHandle != NULL;
+      // end -> do not touch
+      *(DWORD*)(that + 0xAC) = (DWORD)winHandle;
+      return winHandle != NULL;
+    }
   }
 
   HRESULT CrusaderToOpenGL::createDirectDraw(GUID* lpGUID, LPDIRECTDRAW* lplpDD, IUnknown* pUnkOuter)
@@ -176,7 +185,7 @@ namespace UCPtoOpenGL
     // this structure adapts to the first
 
     // set during drawing rect inits, only after new DirctDrawCreate -> also sets ref for scroll width
-    if (!rectInit)
+    if (confPtr && !rectInit)
     {
       static LPRECT mainDrawRect{ nullptr };
       if (!mainDrawRect)
@@ -201,6 +210,11 @@ namespace UCPtoOpenGL
   // this adjusts scrolling only -> maybe use custom code later, this stuff here is kinda horrible
   BOOL CrusaderToOpenGL::getWindowCursorPos(LPPOINT lpPoint)
   {
+    if (!windowDone)
+    {
+      return GetCursorPos(lpPoint);
+    }
+
     bool success{ GetCursorPos(lpPoint) && ScreenToClient(winHandle, lpPoint) };
     if (success)
     {
@@ -223,6 +237,27 @@ namespace UCPtoOpenGL
         cursorX = static_cast<double>(scrollSizeW) / 2.0;
         cursorY = static_cast<double>(scrollSizeH) / 2.0;
       }
+      else
+      {
+        // increased border test
+        if (cursorX < 10.0)
+        {
+          cursorX = 0;
+        }
+        else if (cursorX > scrollSizeW - 10.0)
+        {
+          cursorX = scrollSizeW;
+        }
+
+        if (cursorY < 10.0)
+        {
+          cursorY = 0;
+        }
+        else if (cursorY > scrollSizeH - 10.0)
+        {
+          cursorY = scrollSizeH;
+        }
+      }
 
       lpPoint->x = lround(cursorX);
       lpPoint->y = lround(cursorY);
@@ -231,12 +266,50 @@ namespace UCPtoOpenGL
     return success;
   }
 
+  BOOL CrusaderToOpenGL::setWindowPosFake(HWND hWnd, HWND hWndInsertAfter, int X, int Y, int cx, int cy, UINT uFlag)
+  {
+    return windowDone ? true : SetWindowPos(hWnd, hWndInsertAfter, X, Y, cx, cy, uFlag);
+  }
+
+  BOOL WINAPI CrusaderToOpenGL::updateWindowFake(HWND hWnd)
+  {
+    return windowDone ? true : UpdateWindow(hWnd);
+  }
+
+  BOOL WINAPI CrusaderToOpenGL::adjustWindowRectFake(LPRECT lpRect, DWORD dwStyle, BOOL bMenu)
+  {
+    /*
+    bool res{ false };
+    if (windowDone)
+    {
+      WindowConfig& wConf{ confPtr->window };
+      *lpRect = GetWindowRect(wConf.type == TYPE_WINDOW ? TYPE_BORDERLESS_WINDOW : wConf.type, wConf.pos, wConf.width, wConf.height);
+      res = true;
+    }
+    else
+    {
+      res = AdjustWindowRect(lpRect, dwStyle, bMenu);
+    }
+    return res;
+    */
+    return windowDone ? true : AdjustWindowRect(lpRect, dwStyle, bMenu);
+  };
+
+  LONG WINAPI CrusaderToOpenGL::setWindowLongAFake(HWND hWnd, int nIndex, LONG dwNewLong)
+  {
+    return windowDone ? true : SetWindowLongA(hWnd, nIndex, dwNewLong); // 0 could mean error
+  }
 
   LPARAM CrusaderToOpenGL::transformMouseMovePos(LPARAM lParam)
   {
+    if (!windowDone)
+    {
+      return lParam;
+    }
+
     int texW{ window.getTexStrongSizeW() };
     int texH{ window.getTexStrongSizeH() };
-    if (texW == winSizeW && texH == winSizeH)
+    if (texW == confPtr->window.width && texH == confPtr->window.height)
     {
       return lParam;
     }
@@ -247,6 +320,26 @@ namespace UCPtoOpenGL
     return MAKELPARAM(mousePos.x, mousePos.y);
   }
 
+  void CrusaderToOpenGL::windowLostFocus()
+  {
+    if (!windowDone)
+    {
+      return;
+    }
+
+    rectInit = false;
+    restWasInit = false;
+  }
+
+  void CrusaderToOpenGL::windowSetFocus()
+  {
+    if (!windowDone)
+    {
+      return;
+    }
+
+    resChanged = false;
+  }
 
   // DirectDraw
 
@@ -255,6 +348,8 @@ namespace UCPtoOpenGL
     // in-theory, the earliest to adapt to screen changes where the tex heights are known is now the
     // setRectFake function on the second call per request
 
+    int wWin{ confPtr->window.width };
+    int hWin{ confPtr->window.height };
     int wTex{ (int)width };
     int hTex{ (int)height };
 
@@ -267,49 +362,15 @@ namespace UCPtoOpenGL
 
     // change scale
     // I choose the easy route, algorithm: https://math.stackexchange.com/a/1620375
-    double winToTexW = static_cast<double>(wTex) / winSizeW;
-    double winToTexH = static_cast<double>(hTex) / winSizeH;
+    double winToTexW = static_cast<double>(wTex) / wWin;
+    double winToTexH = static_cast<double>(hTex) / hWin;
     winToTexMult = winToTexH > winToTexW ? winToTexH : winToTexW;
     double winScaleW = winToTexW / winToTexMult;
     double winScaleH = winToTexH / winToTexMult;
-    winOffsetW = lround((1.0 - winScaleW) * winSizeW / 2.0);
-    winOffsetH = lround((1.0 - winScaleH) * winSizeH / 2.0);
+    winOffsetW = lround((1.0 - winScaleW) * wWin / 2.0);
+    winOffsetH = lround((1.0 - winScaleH) * hWin / 2.0);
 
-    window.adjustTexSizeAndViewport(wTex, hTex, winSizeW, winSizeH, winScaleW, winScaleH);
-
-
-    // window adjustments should go here, right?
-    // -> only until external control possible
-
-    // dummy -> adjust for middle(?)
-    int winXpos{ (GetSystemMetrics(0) - winSizeW) / 2 };
-    int winYPos{ (GetSystemMetrics(1) - winSizeH) / 2 };
-    RECT newWinRect{ winXpos, winYPos, winXpos + winSizeW, winYPos + winSizeH };
-
-    // this would set a new style and adjust the window
-    // however, screenshots stil do not work
-    DWORD newStyle{ WS_OVERLAPPEDWINDOW | WS_VISIBLE };
-    AdjustWindowRectEx(&newWinRect, newStyle, false, NULL);
-
-    SetWindowLongPtr(winHandle, GWL_STYLE, newStyle);
-    SetWindowPos(winHandle, HWND_TOP, newWinRect.left, newWinRect.top, newWinRect.right - newWinRect.left,
-      newWinRect.bottom - newWinRect.top, SWP_SHOWWINDOW);
-
-    // other stuff:
-    //GetWindowRect(winHandle, &newWinRect);
-    //MoveWindow(winHandle, newWinRect.left, newWinRect.top, newWinRect.right - newWinRect.left, newWinRect.bottom - newWinRect.top, true);
-
-
-    /* -> it is possible to set a rect through this structure
-    if (mainDrawingRect)
-    {
-      RECT& rec{ *mainDrawingRect };
-      rec.left = 0;
-      rec.right = wTex;
-      rec.top = 0;
-      rec.bottom = hTex;
-    }
-    */
+    window.adjustTexSizeAndViewport(wTex, hTex, wWin, hWin, winScaleW, winScaleH);
 
     return DD_OK;
   }
@@ -333,5 +394,29 @@ namespace UCPtoOpenGL
     }
     
     return DD_OK;
+  }
+
+
+
+  /** internal helper functions **/
+  
+  // NOTE: currently unused
+  void CrusaderToOpenGL::setWindowStyleAndSize()
+  {
+    RECT newWinRect{ GetWindowRect(confPtr->window.type, confPtr->window.pos, confPtr->window.width, confPtr->window.height) };
+
+    // this would set a new style and adjust the window
+    // however, screenshots stil do not work
+    DWORD newStyle{ GetWindowStyle(confPtr->window.type) };
+    DWORD newExStyle{ GetExtendedWindowStyle(confPtr->window.type) };
+    SetWindowLongPtr(winHandle, GWL_STYLE, newStyle);
+    SetWindowLongPtr(winHandle, GWL_EXSTYLE, newExStyle);
+
+    SetWindowPos(winHandle, HWND_TOP, newWinRect.left, newWinRect.top, newWinRect.right - newWinRect.left,
+      newWinRect.bottom - newWinRect.top, SWP_SHOWWINDOW | SWP_FRAMECHANGED);
+
+    // other possible stuff:
+    //GetWindowRect(winHandle, &newWinRect);
+    //MoveWindow(winHandle, newWinRect.left, newWinRect.top, newWinRect.right - newWinRect.left, newWinRect.bottom - newWinRect.top, true);
   }
 }

@@ -30,6 +30,12 @@
     <ClInclude Include="fakeSurfaces.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="toOpenGLconfig.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="configUtil.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -45,6 +51,9 @@
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="fakeSurfaces.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="configUtil.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
   </ItemGroup>

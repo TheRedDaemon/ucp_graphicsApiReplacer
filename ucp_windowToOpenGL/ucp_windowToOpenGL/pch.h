@@ -19,4 +19,7 @@
 
 #include "ddraw.h"
 
+// config is needed everywhere
+#include "toOpenGLconfig.h"
+
 #endif //PCH_H
