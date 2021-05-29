@@ -88,6 +88,8 @@ namespace UCPtoOpenGL
     PFNGLLINKPROGRAMPROC ownPtr_glLinkProgram{ nullptr };
     PFNGLUSEPROGRAMPROC ownPtr_glUseProgram{ nullptr };
 
+    PFNWGLSWAPINTERVALEXTPROC ownPtr_wglSwapIntervalEXT{ nullptr };
+
     bool loadGLFunctions();
   };
 }

@@ -13,6 +13,7 @@
 // openGL
 #include "gl/gl.h"
 #include "gl/glext.h"
+#include "gl/wglext.h" // needed for windows OpenGL
 
 // for ptr
 #include <memory>

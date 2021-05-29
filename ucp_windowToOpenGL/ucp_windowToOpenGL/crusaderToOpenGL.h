@@ -188,8 +188,8 @@ namespace UCPtoOpenGL
     // window stuff
     HWND winHandle{ 0 };	// the actual window -> stronghold should clean this up
     bool windowDone{ false };
-    //int winSizeW{ 1280 }; // dummy
-    //int winSizeH{ 720 }; // dummy
+    int gameSizeW{ 1280 };
+    int gameSizeH{ 720 };
     int winOffsetW{ 0 };
     int winOffsetH{ 0 };
     double winToTexMult{ 1.0 };
@@ -197,7 +197,6 @@ namespace UCPtoOpenGL
     // set during drawing rect inits, removed during DirectDrawCreate
     // sets scroll borders, since they do not react to resolution changes
     bool rectInit{ false };
-    bool restWasInit{ false };
     bool resChanged{ false };
     int scrollSizeW{ 0 };
     int scrollSizeH{ 0 };

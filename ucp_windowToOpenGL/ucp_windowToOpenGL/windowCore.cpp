@@ -56,13 +56,20 @@ namespace UCPtoOpenGL
 
       getAnyGLFuncAddress("glCreateProgram", (void**)&ownPtr_glCreateProgram) &&
       getAnyGLFuncAddress("glLinkProgram", (void**)&ownPtr_glLinkProgram) &&
-      getAnyGLFuncAddress("glUseProgram", (void**)&ownPtr_glUseProgram);
+      getAnyGLFuncAddress("glUseProgram", (void**)&ownPtr_glUseProgram) &&
+
+      getAnyGLFuncAddress("wglSwapIntervalEXT", (void**)&ownPtr_wglSwapIntervalEXT);
   }
 
 
 
   bool WindowCore::createWindow(HWND win)
   {
+    if (!confPtr)
+    {
+      return false;
+    }
+
     // INFO: I guess there is a lot of trust going on here, no safety, no additional driver checks, etc. etc...
 
     // wgl Context creation after this source: https://stackoverflow.com/a/6316595
@@ -121,7 +128,14 @@ namespace UCPtoOpenGL
       return false;
     }
 
+    // set vsync
+    if (confPtr->graphic.vsync)
+    {
+      ownPtr_wglSwapIntervalEXT(1);
+    }
+
     initSystems();
+
     return true;
   }
 
@@ -168,6 +182,10 @@ namespace UCPtoOpenGL
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
     SwapBuffers(deviceContext);
+    if (confPtr->graphic.waitWithGLFinish)
+    {
+      glFinish();
+    }
 
     return DD_OK;
   }

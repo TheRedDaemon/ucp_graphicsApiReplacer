@@ -147,6 +147,9 @@ extern "C" __declspec(dllexport) int __cdecl luaopen_ucp_windowToOpenGL(lua_Stat
 
   // test
   //conf.window.type = UCPtoOpenGL::TYPE_BORDERLESS_WINDOW;
+  //conf.window.type = UCPtoOpenGL::TYPE_BORDERLESS_FULLSCREEN;
+  //conf.window.type = UCPtoOpenGL::TYPE_FULLSCREEN;
+  conf.window.pos = UCPtoOpenGL::POS_TOP_LEFT;
 
   //lua_newtable(L); // push a new table on the stack
   //lua_pushinteger(L, &dummyFunction); // The value we want to set
@@ -207,7 +210,7 @@ extern "C" __declspec(dllexport) int __cdecl luaopen_ucp_windowToOpenGL(lua_Stat
 
   ToOpenGL.setConf(&conf);
 
-  std::this_thread::sleep_for(std::chrono::seconds(10)); // 20 seconds to attach
+  //std::this_thread::sleep_for(std::chrono::seconds(10)); // 20 seconds to attach
 
   return 1;
 }

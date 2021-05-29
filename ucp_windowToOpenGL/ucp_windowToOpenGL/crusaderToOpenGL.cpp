@@ -83,7 +83,9 @@ namespace UCPtoOpenGL
         return false;
       }
 
-      RECT winRect{ GetWindowRect(confPtr->window.type, confPtr->window.pos, confPtr->window.width, confPtr->window.height) };
+      RECT winRect{ GetWindowRect(confPtr->window) };
+      gameSizeW = GetGameWidth(confPtr->window);
+      gameSizeH = GetGameHeight(confPtr->window);
 
       winHandle = CreateWindowExA(
         GetExtendedWindowStyle(confPtr->window.type),
@@ -103,6 +105,7 @@ namespace UCPtoOpenGL
       // this is an issue -> if something here fails, then the whole thing might be busted...
       // TODO: is there a possible way around? -> close everything until then, then recreate with original Stronghold?
       // until then, this will return false, and I assume stronghold will close
+      window.setConf(confPtr);
       windowDone = winHandle && window.createWindow(winHandle);
 
 
@@ -114,9 +117,6 @@ namespace UCPtoOpenGL
 
   HRESULT CrusaderToOpenGL::createDirectDraw(GUID* lpGUID, LPDIRECTDRAW* lplpDD, IUnknown* pUnkOuter)
   {
-    resChanged = restWasInit; // used for scroll handling
-    restWasInit = true;  // will notice if only resolution changed
-
     // get library and func (just once)
     static decltype(DirectDrawCreate)* create{ nullptr };
     if (create == nullptr)
@@ -184,21 +184,41 @@ namespace UCPtoOpenGL
     // -> a third used during refocus
     // this structure adapts to the first
 
-    // set during drawing rect inits, only after new DirctDrawCreate -> also sets ref for scroll width
-    if (confPtr && !rectInit)
+    // trying to get as early as possible, issue -> scroll, does not seem to get set
+    // by resolution change through this structure
+    // -> change scroll method altogether
+    if (confPtr)
     {
       static LPRECT mainDrawRect{ nullptr };
       if (!mainDrawRect)
       {
         mainDrawRect = lprc;
       }
-      else if (mainDrawRect != lprc)
+      else if (mainDrawRect->right != xRight || mainDrawRect->bottom != yBottom)
       {
-        scrollSizeW = xRight;
-        scrollSizeH = yBottom;
+        static bool startUpDone{ false };
+        if (startUpDone)
+        {
+          scrollSizeW = mainDrawRect->right;
+          scrollSizeH = mainDrawRect->bottom;
+          resChanged = true;
+        }
+        else
+        {
+          scrollSizeW = xRight;
+          scrollSizeH = yBottom;
+          startUpDone = true;
+        }
+
         mainDrawRect->right = xRight;
         mainDrawRect->bottom = yBottom;
         window.setOnlyTexSize(xRight, yBottom);
+        rectInit = true;
+      }
+      else if (!rectInit)
+      {
+        scrollSizeW = xRight;
+        scrollSizeH = yBottom;
         rectInit = true;
       }
     }
@@ -278,20 +298,6 @@ namespace UCPtoOpenGL
 
   BOOL WINAPI CrusaderToOpenGL::adjustWindowRectFake(LPRECT lpRect, DWORD dwStyle, BOOL bMenu)
   {
-    /*
-    bool res{ false };
-    if (windowDone)
-    {
-      WindowConfig& wConf{ confPtr->window };
-      *lpRect = GetWindowRect(wConf.type == TYPE_WINDOW ? TYPE_BORDERLESS_WINDOW : wConf.type, wConf.pos, wConf.width, wConf.height);
-      res = true;
-    }
-    else
-    {
-      res = AdjustWindowRect(lpRect, dwStyle, bMenu);
-    }
-    return res;
-    */
     return windowDone ? true : AdjustWindowRect(lpRect, dwStyle, bMenu);
   };
 
@@ -309,7 +315,7 @@ namespace UCPtoOpenGL
 
     int texW{ window.getTexStrongSizeW() };
     int texH{ window.getTexStrongSizeH() };
-    if (texW == confPtr->window.width && texH == confPtr->window.height)
+    if (texW == gameSizeW && texH == gameSizeH)
     {
       return lParam;
     }
@@ -328,7 +334,6 @@ namespace UCPtoOpenGL
     }
 
     rectInit = false;
-    restWasInit = false;
   }
 
   void CrusaderToOpenGL::windowSetFocus()
@@ -348,8 +353,8 @@ namespace UCPtoOpenGL
     // in-theory, the earliest to adapt to screen changes where the tex heights are known is now the
     // setRectFake function on the second call per request
 
-    int wWin{ confPtr->window.width };
-    int hWin{ confPtr->window.height };
+    int wWin{ gameSizeW };
+    int hWin{ gameSizeH };
     int wTex{ (int)width };
     int hTex{ (int)height };
 
@@ -403,7 +408,9 @@ namespace UCPtoOpenGL
   // NOTE: currently unused
   void CrusaderToOpenGL::setWindowStyleAndSize()
   {
-    RECT newWinRect{ GetWindowRect(confPtr->window.type, confPtr->window.pos, confPtr->window.width, confPtr->window.height) };
+    RECT newWinRect{ GetWindowRect(confPtr->window) };
+    gameSizeW = GetGameWidth(confPtr->window);
+    gameSizeH = GetGameHeight(confPtr->window);
 
     // this would set a new style and adjust the window
     // however, screenshots stil do not work
