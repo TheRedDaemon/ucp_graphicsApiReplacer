@@ -22,14 +22,14 @@ namespace UCPtoOpenGL
   {
     TYPE_WINDOW,
     TYPE_BORDERLESS_WINDOW,
-    TYPE_FULLSCREEN,
+    TYPE_FULLSCREEN,              // NOT_IMPL, currently like borderless fullscreen -> what should it do? -> maybe like normal crusader, adapt screen size to set resolution
     TYPE_BORDERLESS_FULLSCREEN
   };
 
   struct WindowConfig
   {
     WindowType type{ TYPE_WINDOW };
-    int width{ 1280 };
+    int width{ 1280 };            // only relevant for window modes
     int height{ 720 };
     WindowPos pos{ POS_MIDDLE };  // only used for non fullscreen
   };
@@ -46,7 +46,7 @@ namespace UCPtoOpenGL
   struct GraphicConfig
   {
     bool filterLinear{ true };  // if the texture filter should be linear, otherwise nearest
-    bool vsync{ true };  // win10 and vsync are no friends -> instead of screen tearing, it becomes relativly slow and forces fullscreen
+    bool vsync{ true }; // there might be issue with the win10 screen composition...
     bool waitWithGLFinish{ false }; // calls glFinish after swap -> also seems to prevent tearing, do not know what is better...
     PixelFormat pixFormat{ ARGB_1555 };
   };
@@ -56,7 +56,7 @@ namespace UCPtoOpenGL
 
   struct ControlConfig
   {
-    bool clipCursor{ false }; // cursor is bound to the game window (problems with title bar?)
+    bool clipCursor{ true }; // cursor is bound to the game screen (problems with title bar?)
     
     bool scrollActive{ true };
     int padding{ 0 }; // window pixels to extend the scroll zone inward

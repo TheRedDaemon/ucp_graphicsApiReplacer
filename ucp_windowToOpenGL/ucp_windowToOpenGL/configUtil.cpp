@@ -9,13 +9,15 @@ namespace UCPtoOpenGL
 
   DWORD GetWindowStyle(WindowType type)
   {
-    DWORD style{ WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN };  // returned window needs to be visible, other stuff because of tutorial
+    // returned window needs to be visible and minimizeable, other stuff because of tutorial
+    DWORD style{ WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN };
     switch(type)
     {
       case TYPE_FULLSCREEN:
       case TYPE_BORDERLESS_FULLSCREEN:
-      case TYPE_BORDERLESS_WINDOW:
         return style | WS_POPUP;
+      case TYPE_BORDERLESS_WINDOW:
+        return style | WS_POPUP | WS_MINIMIZEBOX;
       case TYPE_WINDOW: // is default
       default:
         return style | WS_OVERLAPPEDWINDOW & ~(WS_THICKFRAME | WS_MAXIMIZEBOX);

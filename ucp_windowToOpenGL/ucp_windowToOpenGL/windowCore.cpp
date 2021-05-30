@@ -134,6 +134,9 @@ namespace UCPtoOpenGL
       ownPtr_wglSwapIntervalEXT(1);
     }
 
+    // set pix format
+    pixFormat = confPtr->graphic.pixFormat;
+
     initSystems();
 
     return true;
@@ -164,16 +167,32 @@ namespace UCPtoOpenGL
 
     // create initial texture
     // Stronghold supports multiple pixel formats -> what the game would "prefer" still needs more research
-    //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, nullptr); // RGB565
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB5_A1, wTex, hTex, 0, GL_BGRA, GL_UNSIGNED_SHORT_1_5_5_5_REV, nullptr); // ARGB1555 (?)
+    switch (pixFormat)
+    {
+      case RGB_565:
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, wTex, hTex, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, nullptr); // RGB565
+        break;
+      case ARGB_1555:
+      default:
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB5_A1, wTex, hTex, 0, GL_BGRA, GL_UNSIGNED_SHORT_1_5_5_5_REV, nullptr); // ARGB1555
+        break;
+    }
   }
 
 
   HRESULT WindowCore::renderNextScreen(unsigned short* backData)
   {
     // update texture
-    //glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, strongTexW, strongTexH, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, backData); // RGB565
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, strongTexW, strongTexH, GL_BGRA, GL_UNSIGNED_SHORT_1_5_5_5_REV, backData); // ARGB1555 (?)
+    switch (pixFormat)
+    {
+      case RGB_565:
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, strongTexW, strongTexH, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, backData); // RGB565
+        break;
+      case ARGB_1555:
+      default:
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, strongTexW, strongTexH, GL_BGRA, GL_UNSIGNED_SHORT_1_5_5_5_REV, backData); // ARGB1555
+        break;
+    }
 
     // Clear the screen.
     glClear(GL_COLOR_BUFFER_BIT);
@@ -188,6 +207,14 @@ namespace UCPtoOpenGL
     }
 
     return DD_OK;
+  }
+
+  void WindowCore::releaseContext(HWND hwnd)
+  {
+    wglMakeCurrent(NULL, NULL); // no context
+    ReleaseDC(hwnd, deviceContext);
+    wglDeleteContext(renderingContext);
+    // window should get destroyed by Crusader
   }
 
 
@@ -252,8 +279,9 @@ namespace UCPtoOpenGL
 
     // currently only GL_LINEAR for a little bit filtering, only other without mipmaps would be raw GL_NEAREST
     // TODO?: make filtermode changeable
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    GLint filterMode{confPtr->graphic.filterLinear ? GL_LINEAR : GL_NEAREST};
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filterMode);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filterMode);
 
 
     /*================ Shaders ====================*/

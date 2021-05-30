@@ -108,6 +108,11 @@ namespace UCPtoOpenGL
       window.setConf(confPtr);
       windowDone = winHandle && window.createWindow(winHandle);
 
+      // give pixel format to
+      offMain.setPixelFormat(confPtr->graphic.pixFormat);
+      back.setPixelFormat(confPtr->graphic.pixFormat);
+
+      // failing at this part can will cause issues
 
       // end -> do not touch
       *(DWORD*)(that + 0xAC) = (DWORD)winHandle;
@@ -178,7 +183,7 @@ namespace UCPtoOpenGL
 
   BOOL CrusaderToOpenGL::setFakeRect(LPRECT lprc, int xLeft, int yTop, int xRight, int yBottom)
   {
-    // There seem to be three Rects (at lea<st arounf the screen init):
+    // There seem to be three Rects (at least around the screen init):
     // -> The main Rect
     // -> a second rect for the initialisation (only during init, resolution)
     // -> a third used during refocus
@@ -187,16 +192,16 @@ namespace UCPtoOpenGL
     // trying to get as early as possible, issue -> scroll, does not seem to get set
     // by resolution change through this structure
     // -> change scroll method altogether
-    if (confPtr)
+    if (confPtr)  // this part will likely create issues should the window creation fail
     {
       static LPRECT mainDrawRect{ nullptr };
+      static bool startUpDone{ false };
       if (!mainDrawRect)
       {
         mainDrawRect = lprc;
       }
       else if (mainDrawRect->right != xRight || mainDrawRect->bottom != yBottom)
       {
-        static bool startUpDone{ false };
         if (startUpDone)
         {
           scrollSizeW = mainDrawRect->right;
@@ -213,6 +218,7 @@ namespace UCPtoOpenGL
         mainDrawRect->right = xRight;
         mainDrawRect->bottom = yBottom;
         window.setOnlyTexSize(xRight, yBottom);
+        possibleTexChange = true;
         rectInit = true;
       }
       else if (!rectInit)
@@ -220,6 +226,7 @@ namespace UCPtoOpenGL
         scrollSizeW = xRight;
         scrollSizeH = yBottom;
         rectInit = true;
+        startUpDone = true; // for the case that same size -> if this is reached, not additional handling of start needed
       }
     }
 
@@ -320,7 +327,7 @@ namespace UCPtoOpenGL
       return lParam;
     }
 
-    POINTS mousePos{ MAKEPOINTS(lParam) };  // still broken
+    POINTS mousePos{ MAKEPOINTS(lParam) };
     mousePos.x = static_cast<short>(lround((static_cast<double>(mousePos.x) - winOffsetW) * winToTexMult));
     mousePos.y = static_cast<short>(lround((static_cast<double>(mousePos.y) - winOffsetH) * winToTexMult));
     return MAKELPARAM(mousePos.x, mousePos.y);
@@ -333,7 +340,20 @@ namespace UCPtoOpenGL
       return;
     }
 
+    // found no other way to proper minimize
+    if (confPtr->window.type == TYPE_BORDERLESS_FULLSCREEN || confPtr->window.type == TYPE_FULLSCREEN)
+    {
+      ShowWindow(winHandle, SW_MINIMIZE);
+    }
+
+    hasFocus = false;
     rectInit = false;
+
+    if (confPtr->control.clipCursor)
+    {
+      ClipCursor(NULL); // free cursor
+      cursorClipped = false;
+    }
   }
 
   void CrusaderToOpenGL::windowSetFocus()
@@ -343,8 +363,57 @@ namespace UCPtoOpenGL
       return;
     }
 
+    hasFocus = true;
     resChanged = false;
+
+    // because of interaction with window border needs other handling
+    if (confPtr->window.type != TYPE_WINDOW && confPtr->control.clipCursor)
+    {
+      clipCursor();
+    }
   }
+
+  void CrusaderToOpenGL::windowActivated(bool active) // nothing currently
+  {
+    if (active)
+    {
+    }
+    else
+    {
+    }
+  }
+
+  void CrusaderToOpenGL::windowDestroyed()
+  {
+    // a final free action
+    if (confPtr->control.clipCursor)
+    {
+      ClipCursor(NULL);
+      cursorClipped = false;
+    }
+
+    // windows spoke: https://docs.microsoft.com/en-us/windows/win32/opengl/deleting-a-rendering-context
+    window.releaseContext(winHandle);
+  }
+
+  void CrusaderToOpenGL::windowEditEnded()  // currently unused
+  {
+  }
+
+
+  void CrusaderToOpenGL::mouseDown()
+  {
+    if (confPtr->window.type != TYPE_WINDOW || !confPtr->control.clipCursor)
+    {
+      return;
+    }
+
+    if (!cursorClipped && hasFocus)
+    {
+      clipCursor();
+    }
+  }
+
 
   // DirectDraw
 
@@ -353,29 +422,39 @@ namespace UCPtoOpenGL
     // in-theory, the earliest to adapt to screen changes where the tex heights are known is now the
     // setRectFake function on the second call per request
 
-    int wWin{ gameSizeW };
-    int hWin{ gameSizeH };
-    int wTex{ (int)width };
-    int hTex{ (int)height };
+    // execute either if hint received or if the tex size is not initialized
+    if (possibleTexChange || window.getTexStrongSizeW() == 0 || window.getTexStrongSizeH() == 0)
+    {
+      int wWin{ gameSizeW };
+      int hWin{ gameSizeH };
+      int wTex{ (int)width };
+      int hTex{ (int)height };
 
-    // TODO?: seperate tex and window settings
+      //create new bit maps
+      int pixNum{ wTex * hTex };
+      back.createBitData(pixNum);
+      offMain.createBitData(pixNum);
 
-    //create new bit maps
-    int pixNum{ wTex * hTex };
-    back.createBitData(pixNum);
-    offMain.createBitData(pixNum);
+      // change scale
+      // I choose the easy route, algorithm: https://math.stackexchange.com/a/1620375
+      double winToTexW = static_cast<double>(wTex) / wWin;
+      double winToTexH = static_cast<double>(hTex) / hWin;
+      winToTexMult = winToTexH > winToTexW ? winToTexH : winToTexW;
+      double winScaleW = winToTexW / winToTexMult;
+      double winScaleH = winToTexH / winToTexMult;
+      winOffsetW = lround((1.0 - winScaleW) * wWin / 2.0);
+      winOffsetH = lround((1.0 - winScaleH) * hWin / 2.0);
 
-    // change scale
-    // I choose the easy route, algorithm: https://math.stackexchange.com/a/1620375
-    double winToTexW = static_cast<double>(wTex) / wWin;
-    double winToTexH = static_cast<double>(hTex) / hWin;
-    winToTexMult = winToTexH > winToTexW ? winToTexH : winToTexW;
-    double winScaleW = winToTexW / winToTexMult;
-    double winScaleH = winToTexH / winToTexMult;
-    winOffsetW = lround((1.0 - winScaleW) * wWin / 2.0);
-    winOffsetH = lround((1.0 - winScaleH) * hWin / 2.0);
+      window.adjustTexSizeAndViewport(wTex, hTex, wWin, hWin, winScaleW, winScaleH);
 
-    window.adjustTexSizeAndViewport(wTex, hTex, wWin, hWin, winScaleW, winScaleH);
+      possibleTexChange = false;
+    }
+
+    // set clip for cursor -> should be needed for resolution change
+    if (confPtr->control.clipCursor && (confPtr->window.type != TYPE_WINDOW || resChanged))
+    {
+      clipCursor();
+    }
 
     return DD_OK;
   }
@@ -425,5 +504,19 @@ namespace UCPtoOpenGL
     // other possible stuff:
     //GetWindowRect(winHandle, &newWinRect);
     //MoveWindow(winHandle, newWinRect.left, newWinRect.top, newWinRect.right - newWinRect.left, newWinRect.bottom - newWinRect.top, true);
+  }
+
+
+  void CrusaderToOpenGL::clipCursor()
+  {
+    RECT winPos{};
+    GetClientRect(winHandle, &winPos);
+    MapWindowPoints(winHandle, NULL, (LPPOINT)&winPos, 2);
+    winPos.left += winOffsetW;
+    winPos.right -= winOffsetW;
+    winPos.top += winOffsetH;
+    winPos.bottom -= winOffsetH;
+    ClipCursor(&winPos); // clip cursor
+    cursorClipped = true;
   }
 }

@@ -261,11 +261,17 @@ namespace UCPtoOpenGL
       bitData = std::make_unique<unsigned short[]>(size);
     }
 
+    void setPixelFormat(PixelFormat pixelFormat)
+    {
+      pixFormat = pixelFormat;
+    };
+
   private:
 
     // 16 bpp -> short; needs to change
     std::unique_ptr<unsigned short[]> bitData{}; // = std::make_unique<unsigned short[]>(16000);
     WindowCore* const win;
+    PixelFormat pixFormat{ ARGB_1555 };
   };
 
 
@@ -323,12 +329,17 @@ namespace UCPtoOpenGL
       bitData = std::make_unique<unsigned short[]>(size);
     }
 
+    void setPixelFormat(PixelFormat pixelFormat)
+    {
+      pixFormat = pixelFormat;
+    };
+
   private:
 
     // 16 bpp -> short; needs to change
     std::unique_ptr<unsigned short[]> bitData{}; // = std::make_unique<unsigned short[]>(16000);
     WindowCore* const win;
-
+    PixelFormat pixFormat{ ARGB_1555 };
   };
 
   // will fake the primary surface
@@ -345,6 +356,5 @@ namespace UCPtoOpenGL
 
     WindowCore* const win;
     FakeBackbuffer* const back;
-
   };
 }

@@ -31,10 +31,13 @@ namespace UCPtoOpenGL
     
     HRESULT renderNextScreen(unsigned short* backData);
 
+    void releaseContext(HWND hwnd);  // for a bit clean up
+
   private:
 
     // config:
     ToOpenGLConfig* confPtr{ nullptr };
+    PixelFormat pixFormat{ ARGB_1555 };
 
     // wgl stuff -> both of these should actually get released and deleted at the end
     // TODO: should it work, create another hook to release them... or let lua do it

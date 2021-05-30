@@ -176,6 +176,17 @@ namespace UCPtoOpenGL
       return winHandle;
     }
 
+
+    // misc
+    void windowActivated(bool active);
+
+    void windowDestroyed();
+
+    void windowEditEnded();
+
+    // send if down in the client
+    void mouseDown();
+
   private:
 
     // config:
@@ -193,6 +204,10 @@ namespace UCPtoOpenGL
     int winOffsetW{ 0 };
     int winOffsetH{ 0 };
     double winToTexMult{ 1.0 };
+    bool hasFocus{ true };  // should have focus at start
+    bool cursorClipped{ false };  // only for window mode
+
+    bool possibleTexChange{ false };  // hint that the texture might have changed
 
     // set during drawing rect inits, removed during DirectDrawCreate
     // sets scroll borders, since they do not react to resolution changes
@@ -217,5 +232,7 @@ namespace UCPtoOpenGL
 
     // config
     void setWindowStyleAndSize();
+
+    void clipCursor();
   };
 }

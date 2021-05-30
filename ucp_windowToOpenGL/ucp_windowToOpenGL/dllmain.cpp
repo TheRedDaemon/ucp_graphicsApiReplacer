@@ -30,23 +30,28 @@ static void ReplaceDWORD(DWORD destination, DWORD newDWORD)
 }
 
 
-// create own callbackProc -> everything has to pass through here for now -> I care only about the mouse
+// create own callbackProc -> everything has to pass through here for now
 LRESULT CALLBACK WindowProcCallbackFake(_In_ HWND hwnd, _In_ UINT uMsg, _In_ WPARAM wParam, _In_ LPARAM lParam)
 {
   // transform all mouse coords
   switch (uMsg)
   {
+  case WM_LBUTTONDOWN:
+  case WM_RBUTTONDOWN:
+  case WM_MBUTTONDOWN:
+  {
+    ToOpenGL.mouseDown(); // tell the backend that there was an interaction with the client area
+    lParam = ToOpenGL.transformMouseMovePos(lParam);
+    break;
+  }
   case WM_MOUSEMOVE:
   case WM_LBUTTONDBLCLK:
-  case WM_LBUTTONDOWN:
   case WM_LBUTTONUP:
   case WM_MBUTTONDBLCLK:
-  case WM_MBUTTONDOWN:
   case WM_MBUTTONUP:
   case WM_MOUSEHWHEEL:
   case WM_MOUSEHOVER:
   case WM_RBUTTONDBLCLK:
-  case WM_RBUTTONDOWN:
   case WM_RBUTTONUP:
     lParam = ToOpenGL.transformMouseMovePos(lParam);
     break;
@@ -55,6 +60,15 @@ LRESULT CALLBACK WindowProcCallbackFake(_In_ HWND hwnd, _In_ UINT uMsg, _In_ WPA
     break;
   case WM_SETFOCUS:
     ToOpenGL.windowSetFocus();  // allows to receive the new scroll border resolution -> I do not like this
+    break;
+  case WM_ACTIVATEAPP:
+    ToOpenGL.windowActivated(wParam);
+    break;
+  case WM_DESTROY:
+    ToOpenGL.windowDestroyed();
+    break;
+  case WM_EXITSIZEMOVE:
+    ToOpenGL.windowEditEnded(); // called if user stopped an interaction with a window (title bar, etc.)
     break;
   default:
     break;
@@ -149,7 +163,13 @@ extern "C" __declspec(dllexport) int __cdecl luaopen_ucp_windowToOpenGL(lua_Stat
   //conf.window.type = UCPtoOpenGL::TYPE_BORDERLESS_WINDOW;
   //conf.window.type = UCPtoOpenGL::TYPE_BORDERLESS_FULLSCREEN;
   //conf.window.type = UCPtoOpenGL::TYPE_FULLSCREEN;
-  conf.window.pos = UCPtoOpenGL::POS_TOP_LEFT;
+  //conf.window.pos = UCPtoOpenGL::POS_TOP_LEFT;
+  //conf.graphic.filterLinear = false;
+  //conf.graphic.pixFormat = UCPtoOpenGL::RGB_565;
+  //conf.control.clipCursor = false;
+  //conf.graphic.vsync = false;
+  //conf.window.height = 1000;
+  //conf.window.width = 500;
 
   //lua_newtable(L); // push a new table on the stack
   //lua_pushinteger(L, &dummyFunction); // The value we want to set
@@ -162,7 +182,7 @@ extern "C" __declspec(dllexport) int __cdecl luaopen_ucp_windowToOpenGL(lua_Stat
 
   // extreme window creation function: 0x00470189
   // -> it is a thisCall
-  // needed callback: 004b2ae0 
+  // needed callback: 0x004B2C50 
   VirtualProtect(reinterpret_cast<DWORD*>(0x00470189), 5, PAGE_EXECUTE_READWRITE, &oldAddressProtection);
 
   unsigned char* call = reinterpret_cast<unsigned char*>(0x00470189);
@@ -189,7 +209,7 @@ extern "C" __declspec(dllexport) int __cdecl luaopen_ucp_windowToOpenGL(lua_Stat
   // some weird stuff happens during the window creation... why is this a different number in other cases...
   // maybe the combination of window and exlusiv mode already changes the resolution, the SetDisplayMode is just for DirectDraw?
   // other address, for general jump: 0059E200
-  ReplaceDWORD(0x0059E200, (DWORD)SetRectCall); // not used at the moment -> likely set thorugh other means
+  ReplaceDWORD(0x0059E200, (DWORD)SetRectCall);
 
 
   // try to get more control over window:
@@ -282,4 +302,42 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 
     - it might also be possible to remove the create window hook and use the received window
       - changing class values is possible after all: SetClassLongPtrA
+
+    - Borderless fullscreen vs fullscreen:
+      - I am now confused if the difference is basically: fullscreen set screen resolution to own res, borderless fullscreen not
+*/
+
+/*
+  Borderless Fullscreen:
+    - Windows Game Bar
+      - "Borderless" fullscreen:
+        - not working, recording broken
+        - screenshot shortcut works
+          - altough it starts to make the screen brighter and brighter
+        - first recording fails after one second
+          - then the gamebar can be openend once + one normal recording is possible
+        -> default settings (outside of window type)
+          - currently no idea, maybe sokmething related to the focus switch?
+      -> apperantly this is related to OpenGL:
+        - https://docs.microsoft.com/en-us/gaming/game-bar/known-issues
+        - the driver renders the game likely without DWM, I assume this is what they need to use...
+          - maybe it works after the failed recording attempt, becasue it becomes connected to the DWM for a moment 
+        - this could be the reason why VSync is needed in fullscreen...
+
+    - Steam:
+      - Overlay works
+
+  Borderless Window:
+    - Steam
+      - no problems
+
+    - Gamebar
+      - no problems
+
+  Window:
+    - Steam
+      - no problems
+
+    - Gamebar
+      - Screenshots to not take titlebar into account
 */
