@@ -59,8 +59,8 @@ namespace UCPtoOpenGL
     bool clipCursor{ true }; // cursor is bound to the game screen (problems with title bar?)
     
     bool scrollActive{ true };
-    int padding{ 0 }; // window pixels to extend the scroll zone inward
     int margin{ 0 }; // window pixels to extend the scroll zone outward (for window)
+    int padding{ 0 }; // window pixels to extend the scroll zone inward
   };
 
 

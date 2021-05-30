@@ -161,7 +161,7 @@ extern "C" __declspec(dllexport) int __cdecl luaopen_ucp_windowToOpenGL(lua_Stat
 
   // test
   //conf.window.type = UCPtoOpenGL::TYPE_BORDERLESS_WINDOW;
-  //conf.window.type = UCPtoOpenGL::TYPE_BORDERLESS_FULLSCREEN;
+  conf.window.type = UCPtoOpenGL::TYPE_BORDERLESS_FULLSCREEN;
   //conf.window.type = UCPtoOpenGL::TYPE_FULLSCREEN;
   //conf.window.pos = UCPtoOpenGL::POS_TOP_LEFT;
   //conf.graphic.filterLinear = false;
@@ -170,6 +170,9 @@ extern "C" __declspec(dllexport) int __cdecl luaopen_ucp_windowToOpenGL(lua_Stat
   //conf.graphic.vsync = false;
   //conf.window.height = 1000;
   //conf.window.width = 500;
+  //conf.control.scrollActive = false;
+  //conf.control.padding = 10;
+  //conf.control.margin = 10;
 
   //lua_newtable(L); // push a new table on the stack
   //lua_pushinteger(L, &dummyFunction); // The value we want to set

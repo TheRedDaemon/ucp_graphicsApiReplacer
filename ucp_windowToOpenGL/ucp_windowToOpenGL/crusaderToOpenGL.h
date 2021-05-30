@@ -199,11 +199,14 @@ namespace UCPtoOpenGL
     // window stuff
     HWND winHandle{ 0 };	// the actual window -> stronghold should clean this up
     bool windowDone{ false };
-    int gameSizeW{ 1280 };
-    int gameSizeH{ 720 };
+    int gameWinSizeW{ 1280 };
+    int gameWinSizeH{ 720 };
     int winOffsetW{ 0 };
     int winOffsetH{ 0 };
-    double winToTexMult{ 1.0 };
+    int gameScreenSizeW{ 1280 };
+    int gameScreenSizeH{ 720 };
+    double winToTexMult{ 1.0 }; // used for sizes, ranging from 0 to width
+    double winToTexPosMult{ 1.0 };  // used for positions, since they range from 0 to width - 1
     bool hasFocus{ true };  // should have focus at start
     bool cursorClipped{ false };  // only for window mode
 
@@ -213,8 +216,8 @@ namespace UCPtoOpenGL
     // sets scroll borders, since they do not react to resolution changes
     bool rectInit{ false };
     bool resChanged{ false };
-    int scrollSizeW{ 0 };
-    int scrollSizeH{ 0 };
+    int scrollMaxW{ 0 };  // width - 1, because scroll max
+    int scrollMaxH{ 0 };
     int scrollDeadZone{ 0 }; // zone in render pixels outside of window where it still scrolls
     int scrollZoneWidth{ 0 };  // zone in render pixels inside the window where it already scrolls
 

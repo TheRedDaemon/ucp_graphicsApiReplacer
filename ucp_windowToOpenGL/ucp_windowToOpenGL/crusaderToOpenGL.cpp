@@ -84,8 +84,8 @@ namespace UCPtoOpenGL
       }
 
       RECT winRect{ GetWindowRect(confPtr->window) };
-      gameSizeW = GetGameWidth(confPtr->window);
-      gameSizeH = GetGameHeight(confPtr->window);
+      gameWinSizeW = GetGameWidth(confPtr->window);
+      gameWinSizeH = GetGameHeight(confPtr->window);
 
       winHandle = CreateWindowExA(
         GetExtendedWindowStyle(confPtr->window.type),
@@ -204,14 +204,14 @@ namespace UCPtoOpenGL
       {
         if (startUpDone)
         {
-          scrollSizeW = mainDrawRect->right;
-          scrollSizeH = mainDrawRect->bottom;
+          scrollMaxW = mainDrawRect->right - 1;
+          scrollMaxH = mainDrawRect->bottom - 1;
           resChanged = true;
         }
         else
         {
-          scrollSizeW = xRight;
-          scrollSizeH = yBottom;
+          scrollMaxW = xRight - 1;;
+          scrollMaxH = yBottom - 1;;
           startUpDone = true;
         }
 
@@ -223,8 +223,8 @@ namespace UCPtoOpenGL
       }
       else if (!rectInit)
       {
-        scrollSizeW = xRight;
-        scrollSizeH = yBottom;
+        scrollMaxW = xRight - 1;
+        scrollMaxH = yBottom - 1;
         rectInit = true;
         startUpDone = true; // for the case that same size -> if this is reached, not additional handling of start needed
       }
@@ -242,48 +242,61 @@ namespace UCPtoOpenGL
       return GetCursorPos(lpPoint);
     }
 
+    // deactivate by setting return pos to scroll middle
+    if (!confPtr->control.scrollActive)
+    {
+      lpPoint->x = scrollMaxW / 2;
+      lpPoint->y = scrollMaxH / 2;
+      return true;
+    }
+
     bool success{ GetCursorPos(lpPoint) && ScreenToClient(winHandle, lpPoint) };
     if (success)
     {
-      int texW{ window.getTexStrongSizeW() };
-      int texH{ window.getTexStrongSizeH() };
+      int intCursorX{ lpPoint->x - winOffsetW };
+      int intCursorY{ lpPoint->y - winOffsetH };
 
-      double cursorX{ (static_cast<double>(lpPoint->x) - winOffsetW) * winToTexMult };
-      double cursorY{ (static_cast<double>(lpPoint->y) - winOffsetH) * winToTexMult };
-
-      if (resChanged)
+      // using screen pixels to define ranges
+      // margin disabled if the cursor is clipped or no window mode
+      int margin{ confPtr->control.clipCursor || confPtr->window.type == TYPE_BORDERLESS_FULLSCREEN ||
+        confPtr->window.type == TYPE_FULLSCREEN ? 0 : confPtr->control.margin };
+      if (intCursorX < -margin || intCursorX > gameScreenSizeW - 1 + margin || intCursorY < -margin || intCursorY > gameScreenSizeH - 1 + margin)
       {
-        // need to adapt to tex/scroll differences after resolution change
-        cursorX *= static_cast<double>(scrollSizeW) / texW;
-        cursorY *= static_cast<double>(scrollSizeH) / texH;
-      }
-
-      // range limit test
-      if (cursorX < -5.0 || cursorX > scrollSizeW + 5.0 || cursorY < -5.0 || cursorY > scrollSizeH + 5.0)
-      {
-        cursorX = static_cast<double>(scrollSizeW) / 2.0;
-        cursorY = static_cast<double>(scrollSizeH) / 2.0;
+        lpPoint->x = scrollMaxW / 2;
+        lpPoint->y = scrollMaxH / 2;
+        return true;
       }
       else
       {
-        // increased border test
-        if (cursorX < 10.0)
+        // increased border
+        int padding{ confPtr->control.padding };
+        if (intCursorX < padding)
         {
-          cursorX = 0;
+          intCursorX = 0;
         }
-        else if (cursorX > scrollSizeW - 10.0)
+        else if (intCursorX > gameScreenSizeW - 1 - padding)
         {
-          cursorX = scrollSizeW;
+          intCursorX = gameScreenSizeW - 1;
         }
 
-        if (cursorY < 10.0)
+        if (intCursorY < padding)
         {
-          cursorY = 0;
+          intCursorY = 0;
         }
-        else if (cursorY > scrollSizeH - 10.0)
+        else if (intCursorY > gameScreenSizeH - 1 - padding)
         {
-          cursorY = scrollSizeH;
+          intCursorY = gameScreenSizeH - 1;
         }
+      }
+
+      // transform to game
+      double cursorX{ static_cast<double>(intCursorX) * winToTexPosMult };
+      double cursorY{ static_cast<double>(intCursorY) * winToTexPosMult };
+
+      if (resChanged)
+      {
+        cursorX = scrollMaxW * cursorX / (window.getTexStrongSizeW() - 1.0);
+        cursorY = scrollMaxH * cursorY / (window.getTexStrongSizeH() - 1.0);
       }
 
       lpPoint->x = lround(cursorX);
@@ -322,14 +335,14 @@ namespace UCPtoOpenGL
 
     int texW{ window.getTexStrongSizeW() };
     int texH{ window.getTexStrongSizeH() };
-    if (texW == gameSizeW && texH == gameSizeH)
+    if (texW == gameWinSizeW && texH == gameWinSizeH)
     {
       return lParam;
     }
 
     POINTS mousePos{ MAKEPOINTS(lParam) };
-    mousePos.x = static_cast<short>(lround((static_cast<double>(mousePos.x) - winOffsetW) * winToTexMult));
-    mousePos.y = static_cast<short>(lround((static_cast<double>(mousePos.y) - winOffsetH) * winToTexMult));
+    mousePos.x = static_cast<short>(lround((static_cast<double>(mousePos.x) - winOffsetW) * winToTexPosMult));
+    mousePos.y = static_cast<short>(lround((static_cast<double>(mousePos.y) - winOffsetH) * winToTexPosMult));
     return MAKELPARAM(mousePos.x, mousePos.y);
   }
 
@@ -425,8 +438,8 @@ namespace UCPtoOpenGL
     // execute either if hint received or if the tex size is not initialized
     if (possibleTexChange || window.getTexStrongSizeW() == 0 || window.getTexStrongSizeH() == 0)
     {
-      int wWin{ gameSizeW };
-      int hWin{ gameSizeH };
+      int wWin{ gameWinSizeW };
+      int hWin{ gameWinSizeH };
       int wTex{ (int)width };
       int hTex{ (int)height };
 
@@ -439,11 +452,17 @@ namespace UCPtoOpenGL
       // I choose the easy route, algorithm: https://math.stackexchange.com/a/1620375
       double winToTexW = static_cast<double>(wTex) / wWin;
       double winToTexH = static_cast<double>(hTex) / hWin;
-      winToTexMult = winToTexH > winToTexW ? winToTexH : winToTexW;
+      
+      bool vertScale{ winToTexH > winToTexW };
+      winToTexMult = vertScale ? winToTexH : winToTexW;
+      winToTexPosMult = vertScale ? (static_cast<double>(hTex) - 1.0) / (hWin - 1.0) : (static_cast<double>(wTex) - 1.0) / (wWin - 1.0);
+      
       double winScaleW = winToTexW / winToTexMult;
       double winScaleH = winToTexH / winToTexMult;
       winOffsetW = lround((1.0 - winScaleW) * wWin / 2.0);
       winOffsetH = lround((1.0 - winScaleH) * hWin / 2.0);
+      gameScreenSizeW = gameWinSizeW - winOffsetW * 2;
+      gameScreenSizeH = gameWinSizeH - winOffsetH * 2;
 
       window.adjustTexSizeAndViewport(wTex, hTex, wWin, hWin, winScaleW, winScaleH);
 
@@ -488,8 +507,8 @@ namespace UCPtoOpenGL
   void CrusaderToOpenGL::setWindowStyleAndSize()
   {
     RECT newWinRect{ GetWindowRect(confPtr->window) };
-    gameSizeW = GetGameWidth(confPtr->window);
-    gameSizeH = GetGameHeight(confPtr->window);
+    gameWinSizeW = GetGameWidth(confPtr->window);
+    gameWinSizeH = GetGameHeight(confPtr->window);
 
     // this would set a new style and adjust the window
     // however, screenshots stil do not work
