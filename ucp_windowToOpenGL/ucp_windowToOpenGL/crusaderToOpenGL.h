@@ -206,7 +206,8 @@ namespace UCPtoOpenGL
     int gameScreenSizeW{ 1280 };
     int gameScreenSizeH{ 720 };
     double winToTexMult{ 1.0 }; // used for sizes, ranging from 0 to width
-    double winToTexPosMult{ 1.0 };  // used for positions, since they range from 0 to width - 1
+    double winToGamePosX{ 1.0 };  // used for positions, since they range from 0 to width - 1 and need handling for both axes
+    double winToGamePosY{ 1.0 };  // used for positions, since they range from 0 to width - 1 and need handling for both axes
     bool hasFocus{ true };  // should have focus at start
     bool cursorClipped{ false };  // only for window mode
 

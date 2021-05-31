@@ -268,8 +268,8 @@ namespace UCPtoOpenGL
       }
 
       // transform to game
-      double cursorX{ static_cast<double>(intCursorX) * winToTexPosMult };
-      double cursorY{ static_cast<double>(intCursorY) * winToTexPosMult };
+      double cursorX{ static_cast<double>(intCursorX) * winToGamePosX };
+      double cursorY{ static_cast<double>(intCursorY) * winToGamePosY };
 
       if (resChanged)
       {
@@ -339,8 +339,8 @@ namespace UCPtoOpenGL
     }
 
     POINTS mousePos{ MAKEPOINTS(lParam) };
-    mousePos.x = static_cast<short>(lround((static_cast<double>(mousePos.x) - winOffsetW) * winToTexPosMult));
-    mousePos.y = static_cast<short>(lround((static_cast<double>(mousePos.y) - winOffsetH) * winToTexPosMult));
+    mousePos.x = static_cast<short>(lround((static_cast<double>(mousePos.x) - winOffsetW) * winToGamePosX));
+    mousePos.y = static_cast<short>(lround((static_cast<double>(mousePos.y) - winOffsetH) * winToGamePosY));
     return MAKELPARAM(mousePos.x, mousePos.y);
   }
 
@@ -453,14 +453,16 @@ namespace UCPtoOpenGL
       
       bool vertScale{ winToTexH > winToTexW };
       winToTexMult = vertScale ? winToTexH : winToTexW;
-      winToTexPosMult = vertScale ? (static_cast<double>(hTex) - 1.0) / (hWin - 1.0) : (static_cast<double>(wTex) - 1.0) / (wWin - 1.0);
-      
       double winScaleW = winToTexW / winToTexMult;
       double winScaleH = winToTexH / winToTexMult;
       winOffsetW = lround((1.0 - winScaleW) * wWin / 2.0);
       winOffsetH = lround((1.0 - winScaleH) * hWin / 2.0);
+
       gameScreenSizeW = gameWinSizeW - winOffsetW * 2;
       gameScreenSizeH = gameWinSizeH - winOffsetH * 2;
+      // for positions, I need to use the relation between the size of the game in the window, and the tex (the pixel size of the game)
+      winToGamePosX = (static_cast<double>(wTex) - 1.0) / (gameScreenSizeW - 1.0);
+      winToGamePosY = (static_cast<double>(hTex) - 1.0) / (gameScreenSizeH - 1.0);
 
       window.adjustTexSizeAndViewport(wTex, hTex, wWin, hWin, winScaleW, winScaleH);
 

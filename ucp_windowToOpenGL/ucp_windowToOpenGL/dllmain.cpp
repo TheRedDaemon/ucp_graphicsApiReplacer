@@ -19,7 +19,7 @@ namespace UCPtoOpenGL
   // static objects
   static CrusaderToOpenGL ToOpenGL;
   static ToOpenGLConfig conf;  // managed from here
-  static WNDPROC WindowProcCallbackFunc{ (WNDPROC)0x004B2C50 };  // currently hardcoded, later received from lua, gynt gave me this address: 0x004B2AE0 (Crusader maybe?)
+  static WNDPROC WindowProcCallbackFunc{ 0x0 };  // 0x004B2C50, currently hardcoded, later received from lua, gynt gave me this address: 0x004B2AE0 (Crusader maybe?)
 
   // static debug helper
 
@@ -153,7 +153,7 @@ namespace UCPtoOpenGL
   // first chars -> dll name, function name
   static void WINAPI DetouredWindowLongPtrReceive(char*, char*, DWORD* ptrToWindowLongPtr, DWORD, DWORD)
   {
-    // e8 call
+    // e8 call -> but needs direct address
     *ptrToWindowLongPtr = reinterpret_cast<DWORD>(SetWindowLongACall);
   }
 
@@ -286,6 +286,9 @@ namespace UCPtoOpenGL
   // lua module load
   extern "C" __declspec(dllexport) int __cdecl luaopen_ucp_windowToOpenGL(lua_State * L)
   {
+
+    // std::this_thread::sleep_for(std::chrono::seconds(10)); // 20 seconds to attach
+
     lua_newtable(L); // push a new table on the stack
 
     // config function
@@ -332,7 +335,9 @@ namespace UCPtoOpenGL
     lua_pushinteger(L, (DWORD)DetouredWindowLongPtrReceive);
     lua_setfield(L, -2, "funcAddress_DetouredWindowLongPtrReceive");
 
-    // The table is left on top of the stack, so it is now easy to tell lua we will return one value (the table).
+    // need to write window callback func to the returned address
+    lua_pushinteger(L, (DWORD)&WindowProcCallbackFunc);
+    lua_setfield(L, -2, "address_FillWithWindowProcCallback");
    
 
 
@@ -426,8 +431,6 @@ namespace UCPtoOpenGL
 
 
     ToOpenGL.setConf(&conf);
-
-    //std::this_thread::sleep_for(std::chrono::seconds(10)); // 20 seconds to attach
 
     return 1;
   }

@@ -228,7 +228,7 @@ namespace UCPtoOpenGL
   protected:
 
     // The blt methods are an issue. For the moment I ignore potential scaling
-    // and also guess that black (NULL) will be transparent: 
+    // and also guess that black (NULL) will be transparent: -> works
     void FakeBlt(unsigned short* bltTo, int toX, int toY, int toWidth,
       unsigned short* bltFrom, int fromX, int fromY, int lenX, int lenY, int fromWidth);
 
@@ -269,7 +269,7 @@ namespace UCPtoOpenGL
   private:
 
     // 16 bpp -> short; needs to change
-    std::unique_ptr<unsigned short[]> bitData{}; // = std::make_unique<unsigned short[]>(16000);
+    std::unique_ptr<unsigned short[]> bitData{};
     WindowCore* const win;
     PixelFormat pixFormat{ ARGB_1555 };
   };
@@ -287,7 +287,7 @@ namespace UCPtoOpenGL
     // helper
     unsigned short* getBitmapPtr() override
     {
-      return bitData;
+      return bitData.get();
     }
 
     int getSurfaceWidth() override
@@ -297,8 +297,8 @@ namespace UCPtoOpenGL
 
   private:
 
-    // 16 bpp -> short; unchanged
-    unsigned short bitData[4056 * 2076]{ 0 }; // create zero array
+    // 16 bpp -> short; unchanged, but need to go on "heap"
+    std::unique_ptr<unsigned short[]> bitData{ std::make_unique<unsigned short[]>(4056 * 2076) };
   };
 
 
@@ -337,7 +337,7 @@ namespace UCPtoOpenGL
   private:
 
     // 16 bpp -> short; needs to change
-    std::unique_ptr<unsigned short[]> bitData{}; // = std::make_unique<unsigned short[]>(16000);
+    std::unique_ptr<unsigned short[]> bitData{};
     WindowCore* const win;
     PixelFormat pixFormat{ ARGB_1555 };
   };
