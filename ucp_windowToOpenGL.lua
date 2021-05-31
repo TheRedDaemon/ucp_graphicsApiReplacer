@@ -19,6 +19,10 @@ writeCode(0x0059E1FC, {ucpOpenGL.funcAddress_AdjustWindowRect})
 -- already a call, replacing only address
 writeCode(0x0057CCCA + 1, {ucpOpenGL.funcAddress_DetouredWindowLongPtrReceive - 0x0057CCCA - 5})
 
+-- address of crusaders windowProcCallback needed, fill address of given variable with callback address
+writeCode(ucpOpenGL.address_FillWithWindowProcCallback, {0x004B2C50})
+
+
 --[[
     Configuration:
     The struct is structured like this:
@@ -57,9 +61,10 @@ writeCode(0x0057CCCA + 1, {ucpOpenGL.funcAddress_DetouredWindowLongPtrReceive - 
     Modifications after will cause undefined behavior.
     
     NOTES:
-        - Very high differences between window and game size may cause the scrolling algorithm to break.
-          In this cases, try to set a padding zone, to increase the border.
-          (Could also be that the transformation is still broken, but there was already a lot of time spend.)
+        - There is still stuff going on that I do not understand.
+            - Crusader still can execute a few window functions. It does not seems to have much of an effect.
+            - Sometimes the screen breaks during a switch. This can then only be seen in the minimized window in windows, not in-game. So no real effect.
+            - Sometimes the extreme effect list goes missing... bug of the new system, or vanilla?
 ]]--
 
 
