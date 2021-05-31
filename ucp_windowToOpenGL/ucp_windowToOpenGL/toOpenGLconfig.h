@@ -22,8 +22,8 @@ namespace UCPtoOpenGL
   {
     TYPE_WINDOW,
     TYPE_BORDERLESS_WINDOW,
-    TYPE_FULLSCREEN,              // NOT_IMPL, currently like borderless fullscreen -> what should it do? -> maybe like normal crusader, adapt screen size to set resolution
-    TYPE_BORDERLESS_FULLSCREEN
+    TYPE_BORDERLESS_FULLSCREEN,
+    TYPE_FULLSCREEN              // NOT_IMPL, currently like borderless fullscreen -> what should it do? -> maybe like normal crusader, adapt screen size to set resolution
   };
 
   struct WindowConfig

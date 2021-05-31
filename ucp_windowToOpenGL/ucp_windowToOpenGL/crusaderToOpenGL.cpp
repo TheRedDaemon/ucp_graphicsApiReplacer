@@ -266,28 +266,6 @@ namespace UCPtoOpenGL
         lpPoint->y = scrollMaxH / 2;
         return true;
       }
-      else
-      {
-        // increased border
-        int padding{ confPtr->control.padding };
-        if (intCursorX < padding)
-        {
-          intCursorX = 0;
-        }
-        else if (intCursorX > gameScreenSizeW - 1 - padding)
-        {
-          intCursorX = gameScreenSizeW - 1;
-        }
-
-        if (intCursorY < padding)
-        {
-          intCursorY = 0;
-        }
-        else if (intCursorY > gameScreenSizeH - 1 - padding)
-        {
-          intCursorY = gameScreenSizeH - 1;
-        }
-      }
 
       // transform to game
       double cursorX{ static_cast<double>(intCursorX) * winToTexPosMult };
@@ -297,6 +275,26 @@ namespace UCPtoOpenGL
       {
         cursorX = scrollMaxW * cursorX / (window.getTexStrongSizeW() - 1.0);
         cursorY = scrollMaxH * cursorY / (window.getTexStrongSizeH() - 1.0);
+      }
+
+      // increased border -> checking here to allow easier overwrite
+      int padding{ confPtr->control.padding };
+      if (intCursorX < padding)
+      {
+        cursorX = 0.0;
+      }
+      else if (intCursorX > gameScreenSizeW - 1 - padding)
+      {
+        cursorX = window.getTexStrongSizeW() - 1.0;
+      }
+
+      if (intCursorY < padding)
+      {
+        cursorY = 0.0;
+      }
+      else if (intCursorY > gameScreenSizeH - 1 - padding)
+      {
+        cursorY = window.getTexStrongSizeH() - 1.0;
       }
 
       lpPoint->x = lround(cursorX);
