@@ -45,7 +45,10 @@ namespace UCPtoOpenGL
       case WM_MBUTTONDOWN:
       {
         ToOpenGL.mouseDown(); // tell the backend that there was an interaction with the client area
-        lParam = ToOpenGL.transformMouseMovePos(lParam);
+        if (!ToOpenGL.transformMouseMovePos(&lParam))
+        {
+          return 0; // devours message, since mouse in invalid area
+        }
         break;
       }
       case WM_MOUSEMOVE:
@@ -57,8 +60,13 @@ namespace UCPtoOpenGL
       case WM_MOUSEHOVER:
       case WM_RBUTTONDBLCLK:
       case WM_RBUTTONUP:
-        lParam = ToOpenGL.transformMouseMovePos(lParam);
+      {
+        if (!ToOpenGL.transformMouseMovePos(&lParam))
+        {
+          return 0; // devours message, since mouse in invalid area
+        }
         break;
+      }
       case WM_KILLFOCUS:
         ToOpenGL.windowLostFocus();  // allows to receive the new scroll border resolution -> I do not like this
         break;

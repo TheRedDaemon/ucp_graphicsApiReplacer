@@ -324,24 +324,40 @@ namespace UCPtoOpenGL
     return windowDone ? true : SetWindowLongA(hWnd, nIndex, dwNewLong); // 0 could mean error
   }
 
-  LPARAM CrusaderToOpenGL::transformMouseMovePos(LPARAM lParam)
+  bool CrusaderToOpenGL::transformMouseMovePos(LPARAM* ptrlParam)
   {
     if (!windowDone)
     {
-      return lParam;
+      return true;
+    }
+
+    POINTS mousePos{ MAKEPOINTS(*ptrlParam) };
+
+    // mouse position in game window
+    int gameWinMousePosX{ mousePos.x - winOffsetW }; 
+    int gameWinMousePosY{ mousePos.y - winOffsetH };
+
+    // discard if outside screen
+    if (gameWinMousePosX < 0 || gameWinMousePosX > gameScreenSizeW - 1 ||
+      gameWinMousePosY < 0 || gameWinMousePosY > gameScreenSizeH - 1)
+    {
+      return false;
     }
 
     int texW{ window.getTexStrongSizeW() };
     int texH{ window.getTexStrongSizeH() };
+
+    // no tranform needed if crusader screen size equal to game window
     if (texW == gameWinSizeW && texH == gameWinSizeH)
     {
-      return lParam;
+      return true;
     }
 
-    POINTS mousePos{ MAKEPOINTS(lParam) };
-    mousePos.x = static_cast<short>(lround((static_cast<double>(mousePos.x) - winOffsetW) * winToGamePosX));
-    mousePos.y = static_cast<short>(lround((static_cast<double>(mousePos.y) - winOffsetH) * winToGamePosY));
-    return MAKELPARAM(mousePos.x, mousePos.y);
+    // transform and return
+    mousePos.x = static_cast<short>(lround(gameWinMousePosX * winToGamePosX)); // just hoping that it does not end at texW/texH + 1
+    mousePos.y = static_cast<short>(lround(gameWinMousePosY * winToGamePosY));
+    *ptrlParam = MAKELPARAM(mousePos.x, mousePos.y);
+    return true;
   }
 
   void CrusaderToOpenGL::windowLostFocus()

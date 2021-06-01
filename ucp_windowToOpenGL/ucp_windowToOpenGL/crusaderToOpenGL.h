@@ -165,7 +165,8 @@ namespace UCPtoOpenGL
 
     LONG WINAPI setWindowLongAFake(HWND hWnd, int nIndex, LONG dwNewLong);
 
-    LPARAM transformMouseMovePos(LPARAM lParam);
+    // returns 'true' if the mouse action should get transported, 'false' if it should get discarded
+    bool transformMouseMovePos(LPARAM* ptrlParam);
 
     void windowLostFocus();
 
