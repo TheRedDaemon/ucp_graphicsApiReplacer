@@ -9,6 +9,8 @@
 #include "crusaderToOpenGL.h"
 
 #include <string>
+
+// for test
 //#include <chrono>
 //#include <thread>
 
@@ -257,6 +259,10 @@ namespace UCPtoOpenGL
       {
         success = setIntField(L, 3, (int*)&conf.graphic.pixFormat, 0, 1);
       }
+      else if (field == "debug")
+      {
+        success = setIntField(L, 3, (int*)&conf.graphic.debug, 0, 2);
+      }
     }
     else if (option == "control")
     {
@@ -295,7 +301,7 @@ namespace UCPtoOpenGL
   extern "C" __declspec(dllexport) int __cdecl luaopen_ucp_windowToOpenGL(lua_State * L)
   {
 
-    // std::this_thread::sleep_for(std::chrono::seconds(10)); // 20 seconds to attach
+    //std::this_thread::sleep_for(std::chrono::seconds(20)); // 20 seconds to attach
 
     lua_newtable(L); // push a new table on the stack
 

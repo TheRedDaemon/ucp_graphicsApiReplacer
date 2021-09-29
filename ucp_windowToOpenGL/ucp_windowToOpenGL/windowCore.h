@@ -13,6 +13,7 @@ namespace UCPtoOpenGL
       confPtr = conf;
     };
 
+    bool loadWGLFunctions(HINSTANCE hInstance);  // creates fake context to get OpenGL functions
     bool createWindow(HWND win);
 
     // does nothing, only sets tex size
@@ -65,7 +66,11 @@ namespace UCPtoOpenGL
 
     bool getAnyGLFuncAddress(const char* name, void** ptrToFuncPtr);
 
-    // pointers
+    // pointers WGL functions
+    PFNWGLCREATECONTEXTATTRIBSARBPROC ownPtr_wglCreateContextAttribsARB{ nullptr };
+    PFNWGLCHOOSEPIXELFORMATARBPROC ownPtr_wglChoosePixelFormatARB{ nullptr };
+
+    // pointers GL functions
     PFNGLGENVERTEXARRAYSPROC ownPtr_glGenVertexArrays{ nullptr };
     PFNGLBINDVERTEXARRAYPROC ownPtr_glBindVertexArray{ nullptr };
 

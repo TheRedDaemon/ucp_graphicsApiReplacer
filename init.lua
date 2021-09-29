@@ -181,6 +181,7 @@ exports.enable = function(self, moduleConfig, globalConfig)
           vsync               -- default: true        -- bool     -- most likely only relevant for fullscreen modes
           waitWithGLFinish    -- default: false       -- bool     -- calls glFinish after swap -> also seems to prevent tearing, do not know what is better...
           pixFormat           -- default: argb1555                -- see ucpOpenGL.pixelFormat table
+          debug               -- default: off                     -- 
         }
         
         control
@@ -231,9 +232,18 @@ exports.enable = function(self, moduleConfig, globalConfig)
     argb1555              =   0,
     rgb565                =   1,
   }
+  
+  ucpOpenGL.debugOpenGL = {
+    off                   =   0,
+    enabled               =   1,  -- just enabled debug messages, might have no effect        
+    debugContextEnabled   =   2,  -- tries to create a debug context, this should produce messages
+  }
 
 
   -- do actual configuration
+  
+  -- debugOpenGL
+  ucpOpenGL.setConfigField("graphic", "debug", ucpOpenGL.debugOpenGL.debugContextEnabled)
 
   -- moduleConfig.window.type
   -- ucpOpenGL.setConfigField("window", "type", ucpOpenGL.windowType[moduleConfig.window.type])

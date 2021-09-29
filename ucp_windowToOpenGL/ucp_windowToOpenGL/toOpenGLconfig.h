@@ -43,12 +43,21 @@ namespace UCPtoOpenGL
     RGB_565
   };
 
+  enum DebugOption
+  {
+    OFF,
+    ENABLED,
+    DEBUG_CONTEXT_ENABLED
+  };
+
   struct GraphicConfig
   {
     bool filterLinear{ true };  // if the texture filter should be linear, otherwise nearest
     bool vsync{ true }; // there might be issue with the win10 screen composition...
     bool waitWithGLFinish{ false }; // calls glFinish after swap -> also seems to prevent tearing, do not know what is better...
     PixelFormat pixFormat{ ARGB_1555 };
+
+    DebugOption debug{ OFF };
   };
 
 

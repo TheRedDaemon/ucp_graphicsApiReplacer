@@ -29,6 +29,88 @@ namespace UCPtoOpenGL
     return p != nullptr;
   }
 
+  // code largely unchanged
+  // returns false if something goes wrong along the way
+  // source: https://gist.github.com/nickrolfe/1127313ed1dbf80254b614a721b3ee9c
+  bool WindowCore::loadWGLFunctions(HINSTANCE hInstance)
+  {
+    // Before we can load extensions, we need a dummy OpenGL context, created using a dummy window
+    WNDCLASSA windowClass{};
+    windowClass.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
+    windowClass.lpfnWndProc = DefWindowProcA;
+    windowClass.hInstance = hInstance;
+    windowClass.lpszClassName = "Dummy_WGL_Window";
+
+    if (!RegisterClassA(&windowClass))
+    {
+      return false;
+    }
+
+    HWND dummyWindow = CreateWindowExA(
+      0,
+      windowClass.lpszClassName,
+      "Dummy OpenGL Window",
+      0,
+      CW_USEDEFAULT,
+      CW_USEDEFAULT,
+      CW_USEDEFAULT,
+      CW_USEDEFAULT,
+      0,
+      0,
+      windowClass.hInstance,
+      0
+    );
+
+    if (!dummyWindow)
+    {
+      return false;
+    }
+
+    HDC dummyDC = GetDC(dummyWindow);
+
+    PIXELFORMATDESCRIPTOR pfd{ sizeof(pfd), 1 };
+    pfd.iPixelType = PFD_TYPE_RGBA;
+    pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
+    pfd.cColorBits = 32;
+    pfd.cAlphaBits = 8;
+    pfd.iLayerType = PFD_MAIN_PLANE;
+    pfd.cDepthBits = 24;
+    pfd.cStencilBits = 8;
+
+    int pixelFormat = ChoosePixelFormat(dummyDC, &pfd);
+    if (!pixelFormat)
+    {
+      return false;
+    }
+    if (!SetPixelFormat(dummyDC, pixelFormat, &pfd))
+    {
+      return false;
+    }
+
+    HGLRC dummyContext = wglCreateContext(dummyDC);
+    if (!dummyContext)
+    {
+      return false;
+    }
+
+    if (!wglMakeCurrent(dummyDC, dummyContext))
+    {
+      return false;
+    }
+
+    // get actual functions
+    bool gotFuncs{ true };
+    gotFuncs = gotFuncs && getAnyGLFuncAddress("wglCreateContextAttribsARB", (void**)&ownPtr_wglCreateContextAttribsARB);
+    gotFuncs = gotFuncs && getAnyGLFuncAddress("wglChoosePixelFormatARB", (void**)&ownPtr_wglChoosePixelFormatARB);
+
+    wglMakeCurrent(dummyDC, 0);
+    wglDeleteContext(dummyContext);
+    ReleaseDC(dummyWindow, dummyDC);
+    DestroyWindow(dummyWindow);
+
+    return gotFuncs;
+  }
+
 
   bool WindowCore::loadGLFunctions()
   {
@@ -111,6 +193,8 @@ namespace UCPtoOpenGL
     }
     // until here -> but maybe needd to validate that windows choose a fitting thing?
 
+    // TODO:
+    // after a certain point, the context creation is not cleaned up properly!
 
     renderingContext = wglCreateContext(deviceContext);
 
@@ -119,7 +203,7 @@ namespace UCPtoOpenGL
       return false;
     }
 
-    std::string test{ reinterpret_cast<const char*>(glGetString(GL_VERSION)) };
+    //std::string test{ reinterpret_cast<const char*>(glGetString(GL_VERSION)) };
 
     // load functions -> currently no checks are made before
     // if the functions are not found in the context, the game window will simply close

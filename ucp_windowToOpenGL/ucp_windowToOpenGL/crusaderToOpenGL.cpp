@@ -65,6 +65,14 @@ namespace UCPtoOpenGL
       HINSTANCE hInstance{ *(HINSTANCE*)(that + 0xA8) };
       LPCSTR className{ "FFwinClass" };
 
+
+      // trying to get WGL functions, if this fails, return false, Crusader crashes
+      if (!window.loadWGLFunctions(hInstance))
+      {
+        return false;
+      }
+
+
       WNDCLASSA wndClass;
       wndClass.hInstance = hInstance;
       wndClass.lpfnWndProc = windowCallbackFunc;
@@ -104,7 +112,7 @@ namespace UCPtoOpenGL
 
       // this is an issue -> if something here fails, then the whole thing might be busted...
       // TODO: is there a possible way around? -> close everything until then, then recreate with original Stronghold?
-      // until then, this will return false, and I assume stronghold will close
+      // until then, this will return false, and I assume stronghold will close (or crash, not tested here yet)
       window.setConf(confPtr);
       windowDone = winHandle && window.createWindow(winHandle);
 
