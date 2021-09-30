@@ -58,9 +58,7 @@ namespace UCPtoOpenGL
     // dummy currently 
     void initSystems();
 
-    // also -> if possible (should one day the stuff work), try to get clean up point
-
-
+    // also -> if possible (should the stuff work some day), try to get clean up point
 
     // load shader functions
 
@@ -71,6 +69,8 @@ namespace UCPtoOpenGL
     PFNWGLCHOOSEPIXELFORMATARBPROC ownPtr_wglChoosePixelFormatARB{ nullptr };
 
     // pointers GL functions
+    PFNGLDEBUGMESSAGECALLBACKPROC ownPtr_glDebugMessageCallback{ nullptr };
+
     PFNGLGENVERTEXARRAYSPROC ownPtr_glGenVertexArrays{ nullptr };
     PFNGLBINDVERTEXARRAYPROC ownPtr_glBindVertexArray{ nullptr };
 
@@ -99,5 +99,15 @@ namespace UCPtoOpenGL
     PFNWGLSWAPINTERVALEXTPROC ownPtr_wglSwapIntervalEXT{ nullptr };
 
     bool loadGLFunctions();
+
+
+    // debug functions
+
+    // the proxy is kinda stupid
+    static void APIENTRY debugMsgProxy(GLenum source, GLenum type, GLuint id, GLenum severity,
+      GLsizei length, const GLchar* message, const void* userParam);
+
+    void debugMsg(GLenum source, GLenum type, GLuint id, GLenum severity,
+      GLsizei length, const GLchar* message, const void* userParam);
   };
 }

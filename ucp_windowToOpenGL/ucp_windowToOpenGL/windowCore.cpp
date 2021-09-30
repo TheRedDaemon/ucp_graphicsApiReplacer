@@ -144,6 +144,26 @@ namespace UCPtoOpenGL
   }
 
 
+  // debugging information
+
+  void APIENTRY WindowCore::debugMsgProxy(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
+    const GLchar* message, const void* userParam)
+  {
+    // TODO: c-style cast breaks const contract -> this is awful... and it stays for the moment
+    ((WindowCore*)userParam)->debugMsg(source, type, id, severity, length, message, userParam);
+  }
+
+  void WindowCore::debugMsg(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
+    const GLchar* message, const void* userParam)
+  {
+    if (GL_DEBUG_TYPE_ERROR)
+    {
+      std::string errorMsg{ message };
+    }
+  }
+
+
+  // window creation
 
   bool WindowCore::createWindow(HWND win)
   {
@@ -191,12 +211,23 @@ namespace UCPtoOpenGL
     {
       return false;
     }
-    // until here -> but maybe needd to validate that windows choose a fitting thing?
+    // until here -> but maybe need to validate that windows choose a fitting thing?
 
     // TODO:
-    // after a certain point, the context creation is not cleaned up properly!
+    // after a certain point, the context creation is not cleaned up properly if it fails! (although, it might be to late anyway)
 
-    renderingContext = wglCreateContext(deviceContext);
+    // create attribute list
+    const int attribList[] =
+    {
+      WGL_CONTEXT_MAJOR_VERSION_ARB, 4, // asking for OpenGL 4.0+ (can be changed based on requirements)
+      WGL_CONTEXT_MINOR_VERSION_ARB, 0,
+      WGL_CONTEXT_PROFILE_MASK_ARB,  WGL_CONTEXT_CORE_PROFILE_BIT_ARB,  // core profile
+
+      WGL_CONTEXT_FLAGS_ARB, confPtr->graphic.debug == DEBUG_DEBUG_CONTEXT_ENABLED ? WGL_CONTEXT_DEBUG_BIT_ARB : NULL ,
+      0, // End (needed to indicate end of list)
+    };
+
+    renderingContext = ownPtr_wglCreateContextAttribsARB(deviceContext, NULL, attribList);//wglCreateContext(deviceContext);
 
     if (!renderingContext || !wglMakeCurrent(deviceContext, renderingContext))
     {
@@ -204,6 +235,22 @@ namespace UCPtoOpenGL
     }
 
     //std::string test{ reinterpret_cast<const char*>(glGetString(GL_VERSION)) };
+
+    // enable debug (should already be if create with debug bit) and set return message
+    if (confPtr->graphic.debug != DEBUG_OFF)
+    {
+      if (getAnyGLFuncAddress("glDebugMessageCallback", (void**)&ownPtr_glDebugMessageCallback))
+      {
+        glEnable(GL_DEBUG_OUTPUT);
+        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS); // slower, but you in theory able to do more stuff
+        ownPtr_glDebugMessageCallback(debugMsgProxy, this);
+      }
+      else
+      {
+        glDisable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+        glDisable(GL_DEBUG_OUTPUT);
+      }
+    }
 
     // load functions -> currently no checks are made before
     // if the functions are not found in the context, the game window will simply close

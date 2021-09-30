@@ -45,9 +45,9 @@ namespace UCPtoOpenGL
 
   enum DebugOption
   {
-    OFF,
-    ENABLED,
-    DEBUG_CONTEXT_ENABLED
+    DEBUG_OFF,
+    DEBUG_ENABLED,
+    DEBUG_DEBUG_CONTEXT_ENABLED
   };
 
   struct GraphicConfig
@@ -57,7 +57,7 @@ namespace UCPtoOpenGL
     bool waitWithGLFinish{ false }; // calls glFinish after swap -> also seems to prevent tearing, do not know what is better...
     PixelFormat pixFormat{ ARGB_1555 };
 
-    DebugOption debug{ OFF };
+    DebugOption debug{ DEBUG_OFF };
   };
 
 

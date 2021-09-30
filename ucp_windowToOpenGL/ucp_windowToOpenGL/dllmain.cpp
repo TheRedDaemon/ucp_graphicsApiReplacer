@@ -467,6 +467,13 @@ namespace UCPtoOpenGL
   }
 }
 
+/* ISSUES:
+    - 1366x768 problem:
+      - at 0x0046905E: 0xC0000005: Access denied while writting to position 0x1709D000
+      - Try to find reason
+
+*/
+
 /* NOTE:
     - There might be a chance that bink video will be of interest in the future.
     - for example:
