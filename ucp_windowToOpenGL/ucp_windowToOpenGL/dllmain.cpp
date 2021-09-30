@@ -472,6 +472,13 @@ namespace UCPtoOpenGL
       - at 0x0046905E: 0xC0000005: Access denied while writting to position 0x1709D000
       - Try to find reason
 
+      - 00468ea0 in normal Crusader:
+        - function seems to move something on one of the surfaces
+        - idea:
+          - might be used to transform (or maybe stretch?) something on the surface
+          - the surface size is fixed, so the issue should be on something else...
+            - maybe the breaking res can actually not be renderend, so Crusader needs to tranform something
+            and since I aggressivly set the drawing rects, it breaks...?
 */
 
 /* NOTE:

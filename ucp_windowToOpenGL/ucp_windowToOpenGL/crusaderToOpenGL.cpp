@@ -142,9 +142,8 @@ namespace UCPtoOpenGL
     HRESULT res;
     if (windowDone)
     {
-      // use own if successful
-      res = create(lpGUID, &realInterface, pUnkOuter);
-      *lplpDD = this;
+      *lplpDD = this; // in this case, no interface is created at all
+      res = DD_OK;
     }
     else
     {
@@ -451,6 +450,73 @@ namespace UCPtoOpenGL
 
 
   // DirectDraw
+
+  STDMETHODIMP_(HRESULT __stdcall) CrusaderToOpenGL::EnumDisplayModes(DWORD, LPDDSURFACEDESC,
+    LPVOID lpvoid, LPDDENUMMODESCALLBACK callback)
+  {
+    // an other method could be to get every possible mode from crusader and send them back, but
+    // here will do it for now
+
+    DWORD modeNum{ 0 };
+    DEVMODEA displaySettings{};
+    displaySettings.dmSize = sizeof(DEVMODEA);
+    DDSURFACEDESC des{};
+    
+    DWORD neededFlags{ DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY };
+    while (EnumDisplaySettingsExA(NULL, modeNum, &displaySettings, EDS_RAWMODE))
+    {
+      // check if all required flags set and if the mode is 16 bit, because crusader is 16 bit anyway
+      if ((displaySettings.dmFields & neededFlags) == neededFlags && displaySettings.dmBitsPerPel == 16
+        && displaySettings.dmDisplayFixedOutput == 0) // only need one version of a resolution
+      {
+        // clean structure
+        ZeroMemory(&des, sizeof(des));
+        des.dwSize = sizeof(des);
+
+        // set content
+        des.dwFlags = DDSD_HEIGHT | DDSD_WIDTH | DDSD_PITCH | DDSD_REFRESHRATE | DDSD_PIXELFORMAT;
+        
+        /* this would add 2560 instead of 1080
+        if (displaySettings.dmPelsHeight == 1080)
+        {
+          displaySettings.dmPelsHeight = 1440;
+          displaySettings.dmPelsWidth = 2560;
+        }
+        */
+
+        des.dwHeight = displaySettings.dmPelsHeight;
+        des.dwWidth = displaySettings.dmPelsWidth;
+        des.lPitch = 2 * des.dwWidth;  // lPitch is the number of bytes from the start of one line to the next
+        des.dwRefreshRate = displaySettings.dmDisplayFrequency;
+
+        FakeSurface::fillPixelFormat(&des.ddpfPixelFormat, confPtr->graphic.pixFormat);
+
+        callback(&des, lpvoid); // send to callback
+      }
+
+      // reset data and use next mode
+      ZeroMemory(&displaySettings, sizeof(DEVMODEA));
+      displaySettings.dmSize = sizeof(DEVMODEA);
+      ++modeNum;
+    }
+
+    return DD_OK;
+  }
+
+  STDMETHODIMP_(HRESULT __stdcall) CrusaderToOpenGL::GetCaps(THIS_ LPDDCAPS cap1, LPDDCAPS)
+  {
+    //return realInterface->GetCaps(cap1, cap2);
+
+    // the original returned only three values: DDCAPS_NOHARDWARE, DDCAPS2_CANRENDERWINDOWED, DDCAPS2_CERTIFIED
+    // the compatibility mode returns a whole set of values, but the system here still works
+    // I assume this is the result of Crusader having a software renderer
+
+    // using the non-compatibility return now, if some effects are missing in this case... well, maybe it will surface some day
+    // ignore cap2, this was NULL in tests
+    cap1->dwCaps = DDCAPS_NOHARDWARE;
+    cap1->dwCaps2 = DDCAPS2_CANRENDERWINDOWED | DDCAPS2_CERTIFIED;
+    return DD_OK;
+  }
 
   STDMETHODIMP_(HRESULT __stdcall) CrusaderToOpenGL::SetDisplayMode(DWORD width, DWORD height, DWORD)
   {

@@ -404,7 +404,7 @@ namespace UCPtoOpenGL
 
     // set so that OpenGL does not expect midmaps
     // TODO: check more options
-    // -> mipmaps could be possible, but the would need to be created on every frame...
+    // -> mipmaps could be possible, but they would need to be created on every frame...
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
 

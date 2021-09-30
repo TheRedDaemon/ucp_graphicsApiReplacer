@@ -110,28 +110,19 @@ namespace UCPtoOpenGL
       return DD_OK;	// not called by Crusader
     }
 
-    /*** original ***/
-
-    STDMETHOD(EnumDisplayModes)(THIS_ DWORD dw, LPDDSURFACEDESC lpsurf, LPVOID lpvoid, LPDDENUMMODESCALLBACK callback)
-    {
-      // calls original, mode for values is set somewhere else
-      return realInterface->EnumDisplayModes(dw, lpsurf, lpvoid, callback);
-    }
-
-    STDMETHOD(GetCaps)(THIS_ LPDDCAPS cap1, LPDDCAPS cap2)
-    {
-      // calls original, since there are currently many open questions regarding the needed return
-      return realInterface->GetCaps(cap1, cap2);
-    }
-
     STDMETHOD_(ULONG, Release) (THIS)
     {
-      // calls normal release, since it should get created again afterwards
-      return realInterface->Release();
+      return DD_OK; // called, by now ignored, there is no interface to free
     }
 
 
     /*** modified ***/
+
+    // uses windows function to get the display modes
+    STDMETHOD(EnumDisplayModes)(THIS_ DWORD dw, LPDDSURFACEDESC lpsurf, LPVOID lpvoid, LPDDENUMMODESCALLBACK callback);
+
+    // return as if no compatibility
+    STDMETHOD(GetCaps)(THIS_ LPDDCAPS cap1, LPDDCAPS cap2);
 
     // needs handling
     STDMETHOD(CreateSurface)(THIS_  LPDDSURFACEDESC, LPDIRECTDRAWSURFACE FAR*, IUnknown FAR*);
@@ -222,9 +213,6 @@ namespace UCPtoOpenGL
     int scrollMaxH{ 0 };
     int scrollDeadZone{ 0 }; // zone in render pixels outside of window where it still scrolls
     int scrollZoneWidth{ 0 };  // zone in render pixels inside the window where it already scrolls
-
-    // DirectDraw interface
-    IDirectDraw* realInterface = nullptr;
 
     // fake interfaces
     FakeOffscreenMain offMain{ &window };

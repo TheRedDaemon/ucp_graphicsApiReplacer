@@ -225,6 +225,8 @@ namespace UCPtoOpenGL
       return 0;
     }
 
+    static void fillPixelFormat(LPDDPIXELFORMAT, PixelFormat);
+
   protected:
 
     // The blt methods are an issue. For the moment I ignore potential scaling
