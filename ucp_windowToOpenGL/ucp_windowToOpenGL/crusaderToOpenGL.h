@@ -3,6 +3,49 @@
 
 namespace UCPtoOpenGL
 {
+  // holds possible render resolutions
+  enum GameResolution
+  {
+    RES_800_X_600	      = 0x1         ,
+    RES_1024_X_768	    = 0x2         ,
+    RES_1280_X_720	    = 0x3         ,
+    RES_1280_X_1024	    = 0x4         ,
+    RES_1366_X_768	    = 0x5         ,
+    RES_1440_X_900	    = 0x6         ,
+    RES_1600_X_900	    = 0x7         ,
+    RES_1600_X_1200	    = 0x8         ,
+    RES_1680_X_1050	    = 0x9         ,
+    RES_1920_X_1080	    = 0xa         ,
+    RES_1920_X_1200	    = 0xb         ,
+    RES_2560_X_1440	    = 0xc         ,
+    RES_2560_X_1600	    = 0xd         ,
+    RES_1360_X_768	    = 0xe         ,
+    RES_1024_X_600	    = 0xf         ,
+    RES_640_X_480	      = 0x14        ,
+    RES_NONE	          = 0xffffffff  ,
+  };
+
+  // hardcoded const resolutions of the game, index is the GameResolution enum
+  inline constexpr std::array<int[2], 17> RESOLUTIONS { {
+    { 0     ,   0     },  // 0 has none
+    { 800   ,   600   },
+    { 1024  ,   768   },
+    { 1280  ,   720   },
+    { 1280  ,   1024  },
+    { 1366  ,   768   },
+    { 1440  ,   900   },
+    { 1600  ,   900   },
+    { 1600  ,   1200  },
+    { 1680  ,   1050  },
+    { 1920  ,   1080  },
+    { 1920  ,   1200  },
+    { 2560  ,   1440  },
+    { 2560  ,   1600  },
+    { 1360  ,   768   },
+    { 1024  ,   600   },
+    { 640   ,   480   },
+  } };
+
   class CrusaderToOpenGL : public IDirectDraw
   {
   public:
@@ -156,28 +199,31 @@ namespace UCPtoOpenGL
 
     LONG WINAPI setWindowLongAFake(HWND hWnd, int nIndex, LONG dwNewLong);
 
+    HWND WINAPI GetForegroundWindowFake();
+
     // returns 'true' if the mouse action should get transported, 'false' if it should get discarded
     bool transformMouseMovePos(LPARAM* ptrlParam);
 
-    void windowLostFocus();
+    // false, if the message should be devoured
+    bool windowLostFocus();
 
-    void windowSetFocus();
+    // false, if the message should be devoured
+    bool windowSetFocus();
 
-    HWND getWindowHandle()
-    {
-      return winHandle;
-    }
-
-
-    // misc
-    void windowActivated(bool active);
+    // false, if the message should be devoured
+    bool windowActivated(bool active);
 
     void windowDestroyed();
 
     void windowEditEnded();
 
     // send if down in the client
-    void mouseDown();
+    bool mouseDown();
+
+    HWND getWindowHandle()
+    {
+      return winHandle;
+    }
 
   private:
 
@@ -201,6 +247,7 @@ namespace UCPtoOpenGL
     double winToGamePosX{ 1.0 };  // used for positions, since they range from 0 to width - 1 and need handling for both axes
     double winToGamePosY{ 1.0 };  // used for positions, since they range from 0 to width - 1 and need handling for both axes
     bool hasFocus{ true };  // should have focus at start
+    bool devourAfterFocus{ false }; // only window continue without render, after the foucs is regained, it requires a first click to get the input again
     bool cursorClipped{ false };  // only for window mode
 
     bool possibleTexChange{ false };  // hint that the texture might have changed

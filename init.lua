@@ -54,6 +54,7 @@ local addresses = {
   updateWindowAddr                  = {"FF 15 ? ? ? ? 8B 86 ? ? ? ? 50 FF 15 ? ? ? ? 5F 5E 5D 5B 83 C4 10 C3"},
   adjustWindowRectAddr              = {"FF 15 ? ? ? ? 8B 56 ? 8B 46 ? 52 50 6A 00 6A 00 B9"},
   windowProcCallAddr                = {"83 EC 48 A1 ? ? ? ? 33 C4 89 44 ? ? 8B 44 ? ? 8B 4C ? ? 53 55 56 57"},
+  getForegroundWindowAddr           = {"FF 15 ? ? ? ? 3b 86 ac 00 00 00 0f 85 d4 00 00 00 39 ae f8 00 00 00"},
   
   -- handling different
   windowLongStrAddr                 = {strToHexStr("SetWindowLongA")}
@@ -144,6 +145,11 @@ exports.enable = function(self, moduleConfig, globalConfig)
     getPtrAddrFromCall(addresses.adjustWindowRectAddr[2]), -- extreme 1.41.1-E address: 0x0059E1FC
     {ucpOpenGL.funcAddress_AdjustWindowRect}
   )
+  
+  writeCode(
+    getPtrAddrFromCall(addresses.getForegroundWindowAddr[2]), -- extreme 1.41.1-E address: 0x0059E20C
+    {ucpOpenGL.funcAddress_GetForegroundWindow}
+  )
 
 
   -- already a call, replacing only address
@@ -173,6 +179,7 @@ exports.enable = function(self, moduleConfig, globalConfig)
           width               -- default: 1280;       -- num >= 0 (and <= 20000)
           height              -- default: 720;        -- num >= 0 (and <= 20000)
           pos                 -- default: middle      -- see ucpOpenGL.windowPos table
+          continueOutOfFocus  -- default: pause       -- see ucpOpenGL.windowContinue table
         }
         
         graphic
@@ -181,7 +188,7 @@ exports.enable = function(self, moduleConfig, globalConfig)
           vsync               -- default: true        -- bool     -- most likely only relevant for fullscreen modes
           waitWithGLFinish    -- default: false       -- bool     -- calls glFinish after swap -> also seems to prevent tearing, do not know what is better...
           pixFormat           -- default: argb1555                -- see ucpOpenGL.pixelFormat table
-          debug               -- default: off                     -- 
+          debug               -- default: none                    -- (no use at the moment) see ucpOpenGL.debugOpenGL table
         }
         
         control
@@ -212,47 +219,62 @@ exports.enable = function(self, moduleConfig, globalConfig)
 
 
   -- enum helper tables:
+  -- name is equal to option
+  ucpOpenGL.window = {}
+  ucpOpenGL.graphic = {}
+  ucpOpenGL.control = {}
 
-  ucpOpenGL.windowType = {
+  ucpOpenGL.window.type = {
     window                =   0,
     borderlessWindow      =   1,
     borderlessFullscreen  =   2,
   }
 
   -- only relevant for windowed modes
-  ucpOpenGL.windowPos = {
+  ucpOpenGL.window.pos = {
     middle                =   0,
     topLeft               =   1,
     bottomLeft            =   2,
     topRight              =   3,
     bottomRight           =   4,
   }
+  
+  ucpOpenGL.window.continueOutOfFocus = {
+    pause                 =   0,
+    continue              =   1,
+    render                =   2,
+  }
 
-  ucpOpenGL.pixelFormat = {
+  ucpOpenGL.graphic.pixFormat = {
     argb1555              =   0,
     rgb565                =   1,
   }
   
-  ucpOpenGL.debugOpenGL = {
-    off                   =   0,
+  -- no effect at the moment
+  ucpOpenGL.graphic.debug = {
+    none                  =   0,
     enabled               =   1,  -- just enabled debug messages, might have no effect        
     debugContextEnabled   =   2,  -- tries to create a debug context, this should produce messages
   }
 
-
   -- do actual configuration
   
-  -- debugOpenGL
-  ucpOpenGL.setConfigField("graphic", "debug", ucpOpenGL.debugOpenGL.debugContextEnabled)
+  for option, fields in pairs(moduleConfig) do
+    for field, value in pairs(fields) do
+      local enum = ucpOpenGL[option]
+      if enum ~= nil then
+        enum = enum[field]
+        if enum ~= nil then
+          value = enum[value]
+        end
+      end
 
-  -- moduleConfig.window.type
-  -- ucpOpenGL.setConfigField("window", "type", ucpOpenGL.windowType[moduleConfig.window.type])
-  
-  ucpOpenGL.setConfigField("window", "type", ucpOpenGL.windowType[moduleConfig.window.type])
-  ucpOpenGL.setConfigField("control", "clipCursor", moduleConfig.control.clipCursor)
-  ucpOpenGL.setConfigField("window", "width", moduleConfig.window.width)
-  ucpOpenGL.setConfigField("window", "height", moduleConfig.window.height)
-  ucpOpenGL.setConfigField("window", "pos", ucpOpenGL.windowPos[moduleConfig.window.pos])
+      local status, err = pcall(ucpOpenGL.setConfigField, option, field, value)
+      if not status then
+        print(err);
+      end
+    end
+  end
 end
 
 exports.disable = function(self, moduleConfig, globalConfig) error("not implemented") end

@@ -250,7 +250,8 @@ namespace UCPtoOpenGL
     }
 
     // deactivate by setting return pos to scroll middle
-    if (!confPtr->control.scrollActive)
+    // also if no focus and window stops
+    if (!confPtr->control.scrollActive || (confPtr->window.continueOutOfFocus == NOFOCUS_CONTINUE && !hasFocus))
     {
       lpPoint->x = scrollMaxW / 2;
       lpPoint->y = scrollMaxH / 2;
@@ -331,11 +332,22 @@ namespace UCPtoOpenGL
     return windowDone ? true : SetWindowLongA(hWnd, nIndex, dwNewLong); // 0 could mean error
   }
 
+  HWND WINAPI CrusaderToOpenGL::GetForegroundWindowFake()
+  {
+    return (confPtr->window.continueOutOfFocus == NOFOCUS_RENDER) ? winHandle : GetForegroundWindow();
+  }
+
   bool CrusaderToOpenGL::transformMouseMovePos(LPARAM* ptrlParam)
   {
     if (!windowDone)
     {
       return true;
+    }
+
+    // discard if game has no focus and continues without it being rendered
+    if (confPtr->window.continueOutOfFocus == NOFOCUS_CONTINUE && !hasFocus)
+    {
+      return false;
     }
 
     POINTS mousePos{ MAKEPOINTS(*ptrlParam) };
@@ -367,11 +379,11 @@ namespace UCPtoOpenGL
     return true;
   }
 
-  void CrusaderToOpenGL::windowLostFocus()
+  bool CrusaderToOpenGL::windowLostFocus()
   {
     if (!windowDone)
     {
-      return;
+      return true;
     }
 
     // found no other way to proper minimize
@@ -388,33 +400,49 @@ namespace UCPtoOpenGL
       ClipCursor(NULL); // free cursor
       cursorClipped = false;
     }
+
+    return !(confPtr->window.continueOutOfFocus); // if zero (NOFOCUS_PAUSE), continue
   }
 
-  void CrusaderToOpenGL::windowSetFocus()
+  bool CrusaderToOpenGL::windowSetFocus()
   {
     if (!windowDone)
     {
-      return;
+      return true;
     }
 
     hasFocus = true;
     resChanged = false;
+
+    if (confPtr->window.continueOutOfFocus == NOFOCUS_CONTINUE)
+    {
+      devourAfterFocus = true;
+    }
 
     // because of interaction with window border needs other handling
     if (confPtr->window.type != TYPE_WINDOW && confPtr->control.clipCursor)
     {
       clipCursor();
     }
+
+    return !(confPtr->window.continueOutOfFocus); // if zero (NOFOCUS_PAUSE), continue
   }
 
-  void CrusaderToOpenGL::windowActivated(bool active) // nothing currently
+  bool CrusaderToOpenGL::windowActivated(bool active) // nothing currently
   {
-    if (active)
+    if (!confPtr->window.continueOutOfFocus)
     {
+      return true;
     }
-    else
+
+    // for continue running config
+    static bool onceActivated{ false };
+    if (onceActivated)
     {
+      return false;
     }
+    onceActivated = true;
+    return true;
   }
 
   void CrusaderToOpenGL::windowDestroyed()
@@ -435,17 +463,25 @@ namespace UCPtoOpenGL
   }
 
 
-  void CrusaderToOpenGL::mouseDown()
+  bool CrusaderToOpenGL::mouseDown()
   {
-    if (confPtr->window.type != TYPE_WINDOW || !confPtr->control.clipCursor)
+    bool ret{ true };
+
+    if (confPtr->window.type == TYPE_WINDOW && confPtr->control.clipCursor)
     {
-      return;
+      if (!cursorClipped && hasFocus)
+      {
+        clipCursor();
+      }
     }
 
-    if (!cursorClipped && hasFocus)
+    if (confPtr->window.continueOutOfFocus == NOFOCUS_CONTINUE && devourAfterFocus)
     {
-      clipCursor();
+      devourAfterFocus = false;
+      ret = ret && false;
     }
+
+    return ret;
   }
 
 
@@ -454,50 +490,24 @@ namespace UCPtoOpenGL
   STDMETHODIMP_(HRESULT __stdcall) CrusaderToOpenGL::EnumDisplayModes(DWORD, LPDDSURFACEDESC,
     LPVOID lpvoid, LPDDENUMMODESCALLBACK callback)
   {
-    // an other method could be to get every possible mode from crusader and send them back, but
-    // here will do it for now
+    // send every possible resolution
 
-    DWORD modeNum{ 0 };
-    DEVMODEA displaySettings{};
-    displaySettings.dmSize = sizeof(DEVMODEA);
-    DDSURFACEDESC des{};
-    
-    DWORD neededFlags{ DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY };
-    while (EnumDisplaySettingsExA(NULL, modeNum, &displaySettings, EDS_RAWMODE))
+    DDSURFACEDESC des{};  // init zero
+    des.dwSize = sizeof(des);
+    des.ddpfPixelFormat.dwRGBBitCount = 16; // could also be 15, but not relevant here
+
+    // since it only checks bit count and height/weight, one can change the bare minimum
+    for (size_t i = 1; i < RESOLUTIONS.size() - 1; i++) // 0 and the last are not available
     {
-      // check if all required flags set and if the mode is 16 bit, because crusader is 16 bit anyway
-      if ((displaySettings.dmFields & neededFlags) == neededFlags && displaySettings.dmBitsPerPel == 16
-        && displaySettings.dmDisplayFixedOutput == 0) // only need one version of a resolution
+      // this res causes a crash, because it is handled differently
+      if (i == RES_1366_X_768)
       {
-        // clean structure
-        ZeroMemory(&des, sizeof(des));
-        des.dwSize = sizeof(des);
-
-        // set content
-        des.dwFlags = DDSD_HEIGHT | DDSD_WIDTH | DDSD_PITCH | DDSD_REFRESHRATE | DDSD_PIXELFORMAT;
-        
-        /* this would add 2560 instead of 1080
-        if (displaySettings.dmPelsHeight == 1080)
-        {
-          displaySettings.dmPelsHeight = 1440;
-          displaySettings.dmPelsWidth = 2560;
-        }
-        */
-
-        des.dwHeight = displaySettings.dmPelsHeight;
-        des.dwWidth = displaySettings.dmPelsWidth;
-        des.lPitch = 2 * des.dwWidth;  // lPitch is the number of bytes from the start of one line to the next
-        des.dwRefreshRate = displaySettings.dmDisplayFrequency;
-
-        FakeSurface::fillPixelFormat(&des.ddpfPixelFormat, confPtr->graphic.pixFormat);
-
-        callback(&des, lpvoid); // send to callback
+        continue; // -> disabled at the moment
       }
 
-      // reset data and use next mode
-      ZeroMemory(&displaySettings, sizeof(DEVMODEA));
-      displaySettings.dmSize = sizeof(DEVMODEA);
-      ++modeNum;
+      des.dwWidth = RESOLUTIONS[i][0];
+      des.dwHeight = RESOLUTIONS[i][1];
+      callback(&des, lpvoid); // send to callback
     }
 
     return DD_OK;

@@ -26,12 +26,21 @@ namespace UCPtoOpenGL
     TYPE_FULLSCREEN              // NOT_IMPL, currently like borderless fullscreen -> what should it do? -> maybe like normal crusader, adapt screen size to set resolution
   };
 
+  enum ContinueOutOfFocus
+  {
+    NOFOCUS_PAUSE,      // normal
+    NOFOCUS_CONTINUE,   // the game continues to run, but it does not render (sound is active, though)
+    NOFOCUS_RENDER      // the game continues to run and render
+  };
+
   struct WindowConfig
   {
     WindowType type{ TYPE_WINDOW };
     int width{ 1280 };            // only relevant for window modes
     int height{ 720 };
     WindowPos pos{ POS_MIDDLE };  // only used for non fullscreen
+
+    ContinueOutOfFocus continueOutOfFocus{ NOFOCUS_PAUSE }; // the game and the rendering continue
   };
 
 

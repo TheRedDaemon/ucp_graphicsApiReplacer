@@ -46,10 +46,9 @@ namespace UCPtoOpenGL
       case WM_RBUTTONDOWN:
       case WM_MBUTTONDOWN:
       {
-        ToOpenGL.mouseDown(); // tell the backend that there was an interaction with the client area
-        if (!ToOpenGL.transformMouseMovePos(&lParam))
+        if (!ToOpenGL.mouseDown() || !ToOpenGL.transformMouseMovePos(&lParam))
         {
-          return 0; // devours message, since mouse in invalid area
+          return 0; // devours message, since mouse in invalid area, or click should be discarded
         }
         break;
       }
@@ -70,14 +69,29 @@ namespace UCPtoOpenGL
         break;
       }
       case WM_KILLFOCUS:
-        ToOpenGL.windowLostFocus();  // allows to receive the new scroll border resolution -> I do not like this
+      {
+        if (!ToOpenGL.windowLostFocus())
+        {
+          return 0;
+        }
         break;
+      }
       case WM_SETFOCUS:
-        ToOpenGL.windowSetFocus();  // allows to receive the new scroll border resolution -> I do not like this
+      {
+        if (!ToOpenGL.windowSetFocus())
+        {
+          return 0;
+        }
         break;
+      }
       case WM_ACTIVATEAPP:
-        ToOpenGL.windowActivated(wParam);
+      {
+        if (!ToOpenGL.windowActivated(wParam))
+        {
+          return 0;
+        }
         break;
+      }
       case WM_DESTROY:
         ToOpenGL.windowDestroyed();
         break;
@@ -109,7 +123,7 @@ namespace UCPtoOpenGL
     return ToOpenGL.createDirectDraw(lpGUID, lplpDD, pUnkOuter);
   }
 
-  // stronghold gets the size of the screen sometimes times
+  // stronghold gets the size of the screen sometimes
   // only handles 0 and 1, the first SetDisplayMode needs to happen before
   // TODO: Replacing the jump routes all code through here, maybe there are less hard methods?
   //  - depends on how other stuff gets handeld
@@ -140,6 +154,10 @@ namespace UCPtoOpenGL
     return ToOpenGL.getWindowCursorPos(lpPoint);
   }
 
+  static HWND WINAPI GetForegroundWindowCall()
+  {
+    return ToOpenGL.GetForegroundWindowFake();
+  }
 
   // further tests
 
@@ -159,6 +177,7 @@ namespace UCPtoOpenGL
   {
     return ToOpenGL.setWindowLongAFake(hWnd, nIndex, dwNewLong);
   }
+
 
   // first chars -> dll name, function name
   static void WINAPI DetouredWindowLongPtrReceive(char*, char*, DWORD* ptrToWindowLongPtr, DWORD, DWORD)
@@ -222,6 +241,7 @@ namespace UCPtoOpenGL
     std::string field{ lua_tostring(L, 2) };
 
     bool success{ false };
+    bool fieldUnknown{ false };
     if (option == "window")
     {
       if (field == "type")
@@ -239,6 +259,14 @@ namespace UCPtoOpenGL
       else if (field == "pos")
       {
         success = setIntField(L, 3, (int*)&conf.window.pos, 0, 4);
+      }
+      else if (field == "continueOutOfFocus")
+      {
+        success = setIntField(L, 3, (int*)&conf.window.continueOutOfFocus, 0, 2);
+      }
+      else
+      {
+        fieldUnknown = true;
       }
     }
     else if (option == "graphic")
@@ -263,6 +291,10 @@ namespace UCPtoOpenGL
       {
         success = setIntField(L, 3, (int*)&conf.graphic.debug, 0, 2);
       }
+      else
+      {
+        fieldUnknown = true;
+      }
     }
     else if (option == "control")
     {
@@ -282,15 +314,24 @@ namespace UCPtoOpenGL
       {
         success = setIntField(L, 3, &conf.control.padding, 0, 1000); // using ridiculous max
       }
+      else
+      {
+        fieldUnknown = true;
+      }
     }
     else
     {
-      luaL_error(L, "ToOpenGL-Config: Invalid option.");
+      luaL_error(L, ("ToOpenGL-Config: Invalid option: " + option).c_str());
+    }
+
+    if (fieldUnknown)
+    {
+      luaL_error(L, ("ToOpenGL-Config: Invalid field name for option '" + option + "': " + field).c_str());
     }
 
     if (!success)
     {
-      luaL_error(L, "ToOpenGL-Config: Invalid field value.");
+      luaL_error(L, ("ToOpenGL-Config: Invalid value for field '" + field + "' of option '" + option + "'.").c_str());
     }
 
     return 0;  /* number of results */
@@ -326,10 +367,6 @@ namespace UCPtoOpenGL
     lua_setfield(L, -2, "funcAddress_SetRect");
 
     // simple replace
-    lua_pushinteger(L, (DWORD)SetRectCall);
-    lua_setfield(L, -2, "funcAddress_SetRect");
-
-    // simple replace
     lua_pushinteger(L, (DWORD)SetWindowPosCall);
     lua_setfield(L, -2, "funcAddress_SetWindowPos");
 
@@ -344,6 +381,10 @@ namespace UCPtoOpenGL
     // simple replace
     lua_pushinteger(L, (DWORD)AdjustWindowRectCall);
     lua_setfield(L, -2, "funcAddress_AdjustWindowRect");
+
+    // simple replace
+    lua_pushinteger(L, (DWORD)GetForegroundWindowCall);
+    lua_setfield(L, -2, "funcAddress_GetForegroundWindow");
 
     // already a call
     lua_pushinteger(L, (DWORD)DetouredWindowLongPtrReceive);
@@ -443,6 +484,11 @@ namespace UCPtoOpenGL
     //ReplaceDWORD(0x0057CCCA + 1, reinterpret_cast<DWORD>(DetouredWindowLongPtrReceive) - 0x0057CCCA - 5);
 
 
+    /* DetouredWindowLongPtrReceive */
+
+    // game tests if it is in the foreground
+
+    // ReplaceDWORD(0x0059E20C, (DWORD)GetForegroundWindowCall);
 
     ToOpenGL.setConf(&conf);
 
@@ -488,6 +534,10 @@ namespace UCPtoOpenGL
         - RADEXPFUNC s32 RADEXPLINK BinkCopyToBuffer(HBINK bnk,void* dest,s32 destpitch,u32 destheight,u32 destx,u32 desty,u32 flags); (0x004091D6) -> blt to surface
     - structure ref (maybe): https://github.com/ioquake/jedi-outcast/blob/master/code/win32/bink.h
 
+    - older bink: https://github.com/miohtama/aliens-vs-predator/blob/master/source/AvP_vc/3dc/win95/bink.h
+
+    - for mss: https://github.com/VSES/SourceEngine2007/blob/master/src_main/common/Miles/MSS.H
+
     - Crusader (likely as part of development?) seems to have (leftovers?) of console output.
       - The biggest hint should be the printf(?) structures gynt found.
       - But they also import functions like: (could however just be lowlevel functions of the engine)
@@ -498,6 +548,7 @@ namespace UCPtoOpenGL
       - Could also be that they were included for tests with code parts, and no real "debug" system in-game ever existed.
         - 272  GetCommandLineA -> maybe they have start parameter?
         - 569  IsDebuggerPresent -> they might have a debuging system?
+      - gynt found a debugging menu. This might be related.
 
     - There are multiple functions that likely effect the window (excluding already detoured) (jump addresses):
       -   13  BeginPaint          -> 0x0059E1A8

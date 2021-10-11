@@ -23,4 +23,7 @@
 // config is needed everywhere
 #include "toOpenGLconfig.h"
 
+// for structures
+#include <array>
+
 #endif //PCH_H
