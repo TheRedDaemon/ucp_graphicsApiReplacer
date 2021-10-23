@@ -5,10 +5,8 @@
 #include "lua.hpp"
 
 #include "windowCore.h"
-#include "fakeSurfaces.h"
+#include "fakeDDClasses.h"
 #include "crusaderToOpenGL.h"
-
-#include <string>
 
 // for test
 //#include <chrono>
@@ -92,6 +90,13 @@ namespace UCPtoOpenGL
         }
         break;
       }
+      /*
+      case WM_DISPLAYCHANGE:
+      case WM_SIZE: 
+      {
+        return 0; // prevent game from knowing, that the game size or the display + bit depth changed
+      }
+      */
       case WM_DESTROY:
         ToOpenGL.windowDestroyed();
         break;
@@ -111,9 +116,19 @@ namespace UCPtoOpenGL
   // using fastCall hack to get this in global function
   // source: https://www.unknowncheats.me/forum/c-and-c-/154364-detourfunction-__thiscall.html
   // note: the second parameter is EDX and a dummy that should be ignored!
-  static bool __fastcall CreateWindowComplete(void* that, DWORD, LPSTR windowName, unsigned int unknown)
+  static bool __fastcall CreateWindowComplete(SHCWindowOrMainStructFake* that, DWORD, LPSTR windowName, unsigned int unknown)
   {
-    return ToOpenGL.createWindow((DWORD)that, windowName, unknown, WindowProcCallbackFake);
+    return ToOpenGL.createWindow(that, windowName, unknown, WindowProcCallbackFake);
+  }
+
+  // callback function missing
+  static bool __declspec(naked) NakedCreateWindowComplete()
+  {
+    __asm {
+      push    ecx   // push that pointer
+      mov     ecx, ToOpenGL // mov toOpenGL this pointer
+      jmp     CrusaderToOpenGL::createWindow  // jump to actual func
+    }
   }
 
 
@@ -285,7 +300,7 @@ namespace UCPtoOpenGL
       }
       else if (field == "pixFormat")
       {
-        success = setIntField(L, 3, (int*)&conf.graphic.pixFormat, 0, 1);
+        success = setIntField(L, 3, (int*)&conf.graphic.pixFormat, 0x555, 0x555) ? true : setIntField(L, 3, (int*)&conf.graphic.pixFormat, 0x565, 0x565);
       }
       else if (field == "debug")
       {
@@ -353,6 +368,9 @@ namespace UCPtoOpenGL
     // needs CALL to the value
     lua_pushinteger(L, (DWORD)CreateWindowComplete);
     lua_setfield(L, -2, "funcAddress_CreateWindow");
+
+    //lua_pushinteger(L, (DWORD)NakedCreateWindowComplete);
+    //lua_setfield(L, -2, "funcAddress_CreateWindow");
 
     // simple replace
     lua_pushinteger(L, (DWORD)DirectDrawCreateCall);

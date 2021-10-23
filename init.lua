@@ -246,8 +246,8 @@ exports.enable = function(self, moduleConfig, globalConfig)
   }
 
   ucpOpenGL.graphic.pixFormat = {
-    argb1555              =   0,
-    rgb565                =   1,
+    argb1555              =   0x555,
+    rgb565                =   0x565,
   }
   
   -- no effect at the moment

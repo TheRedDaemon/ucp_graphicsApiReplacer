@@ -27,13 +27,16 @@
     <ClInclude Include="windowCore.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="fakeSurfaces.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
     <ClInclude Include="toOpenGLconfig.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
     <ClInclude Include="configUtil.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="fakeDDClasses.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="shcRelatedStructures.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
   </ItemGroup>
@@ -50,7 +53,7 @@
     <ClCompile Include="windowCore.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
-    <ClCompile Include="fakeSurfaces.cpp">
+    <ClCompile Include="fakeDDSurfaces.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="configUtil.cpp">

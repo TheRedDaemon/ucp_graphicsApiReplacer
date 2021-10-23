@@ -17,17 +17,13 @@ namespace UCPtoOpenGL
     bool createWindow(HWND win);
 
     // does nothing, only sets tex size
-    void setOnlyTexSize(int wTex, int hTex);
+    void setOnlyTexSize(Size<int> texSize);
 
-    void adjustTexSizeAndViewport(int wTex, int hTex, int wView, int hView, double scaleW, double scaleH);
+    void adjustTexSizeAndViewport(Size<int> texSize, Size<int> viewSize, Size<double> scale);
     
-    int getTexStrongSizeW()
+    Size<int> getTexStrongSize()
     {
-      return strongTexW;
-    }
-    int getTexStrongSizeH()
-    {
-      return strongTexH;
+      return strongTexSize;
     }
     
     HRESULT renderNextScreen(unsigned short* backData);
@@ -46,8 +42,7 @@ namespace UCPtoOpenGL
     HGLRC renderingContext{ 0 };
 
     // data infos:
-    int strongTexW{ 0 };
-    int strongTexH{ 0 };
+    Size<int> strongTexSize{ 0, 0 };
 
     // openGL pointer
     GLuint vertexArrayID{ NULL };

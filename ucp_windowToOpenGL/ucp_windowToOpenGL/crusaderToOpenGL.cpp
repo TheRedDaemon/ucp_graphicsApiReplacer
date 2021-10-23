@@ -1,26 +1,164 @@
 
 #include "pch.h"
 
-#include <string>
 
 #include "windowCore.h"
-#include "fakeSurfaces.h"
+
+#include "shcRelatedStructures.h"
 #include "crusaderToOpenGL.h"
+
 
 #include "configUtil.h"
 
 
 namespace UCPtoOpenGL
 {
+  /** Override **/
 
-  // lua calls
 
-  bool CrusaderToOpenGL::createWindow(DWORD that, LPSTR windowName, unsigned int unknown, WNDPROC windowCallbackFunc)
+  // impl virtual
+
+  HRESULT CrusaderToOpenGL::renderNextFrame(unsigned short* sourcePtr)
   {
+    return window.renderNextScreen(sourcePtr);
+  }
+  int CrusaderToOpenGL::getRenderTexWidth()
+  {
+    return d.gameTexSize.w;
+  }
+  int CrusaderToOpenGL::getRenderTexHeight()
+  {
+    return d.gameTexSize.h;
+  }
+  PixelFormat CrusaderToOpenGL::getPixelFormat()
+  {
+    return confPtr->graphic.pixFormat;
+  }
+
+
+  // DirectDraw
+
+  STDMETHODIMP_(HRESULT __stdcall) CrusaderToOpenGL::EnumDisplayModes(DWORD, LPDDSURFACEDESC,
+    LPVOID, LPDDENUMMODESCALLBACK)
+  {
+    // ignore callback, just fill struct:
+    for (size_t i = 1; i < RESOLUTIONS.size() - 1; i++) // 0 and the last are not available
+    {
+      // this res causes a crash, because it is handled differently
+      if (i == RES_1366_X_768)
+      {
+        continue; // -> disabled at the moment
+      }
+
+      shcWinStrucPtr->resolutionSupported[i] = 1;
+    }
+
+    return DD_OK;
+  }
+
+  STDMETHODIMP_(HRESULT __stdcall) CrusaderToOpenGL::GetCaps(THIS_ LPDDCAPS cap1, LPDDCAPS)
+  {
+    //return realInterface->GetCaps(cap1, cap2);
+
+    // the original returned only three values: DDCAPS_NOHARDWARE, DDCAPS2_CANRENDERWINDOWED, DDCAPS2_CERTIFIED
+    // the compatibility mode returns a whole set of values, but the system here still works
+    // I assume this is the result of Crusader having a software renderer
+
+    // using the non-compatibility return now, if some effects are missing in this case... well, maybe it will surface some day
+    // ignore cap2, this was NULL in tests
+    cap1->dwCaps = DDCAPS_NOHARDWARE;
+    cap1->dwCaps2 = DDCAPS2_CANRENDERWINDOWED | DDCAPS2_CERTIFIED;
+    return DD_OK;
+  }
+
+  STDMETHODIMP_(HRESULT __stdcall) CrusaderToOpenGL::SetDisplayMode(DWORD width, DWORD height, DWORD)
+  {
+    // in-theory, the earliest to adapt to screen changes where the tex heights are known is now the
+    // setRectFake function on the second call per request
+
+    // execute either if hint received or if the tex size is not initialized
+    Size<int>& texS{ d.gameTexSize };
+    if (possibleTexChange || texS.w == 0 || texS.h == 0)
+    {
+      Size<int>& winS{ d.windowSize };
+      Size<int>& winOff{ d.windowOffset };
+      double& mul{ d.winToTexMult };
+      Size<int>& screenS{ d.gameScreenSize };
+      Size<double>& winToGame{ d.winToGamePos };
+
+      texS = { (int)width, (int)height };
+
+      //create new bit maps
+      int pixNum{ texS.w * texS.h };
+      back.createBitData(pixNum);
+      offMain.createBitData(pixNum);
+
+      // change scale
+      // I choose the easy route, algorithm: https://math.stackexchange.com/a/1620375
+      
+      // compute needed base values
+      Size<double> winToTex{ static_cast<double>(texS.w) / winS.w, static_cast<double>(texS.h) / winS.h };
+      mul = winToTex.h > winToTex.w ? winToTex.h : winToTex.w;
+      Size<double> winScale{ winToTex.w / mul, winToTex.h / mul };
+      
+      // offset in window pixels
+      winOff = { lround((1.0 - winScale.w) * winS.w / 2.0), lround((1.0 - winScale.h) * winS.h / 2.0) };
+
+      // size of the game in the window
+      screenS = { winS.w - winOff.w * 2, winS.h - winOff.h * 2 };
+
+      // for positions, I need to use the relation between the size of the game in the window, and the tex (the pixel size of the game)
+      winToGame = { (static_cast<double>(texS.w) - 1.0) / (screenS.w - 1.0), (static_cast<double>(texS.h) - 1.0) / (screenS.h - 1.0) };
+
+      window.adjustTexSizeAndViewport(texS, winS, winScale);
+
+      possibleTexChange = false;
+    }
+
+    // set clip for cursor -> should be needed for resolution change
+    if (confPtr->control.clipCursor && (confPtr->window.type != TYPE_WINDOW || resChanged))
+    {
+      clipCursor();
+    }
+
+    return DD_OK;
+  }
+
+  STDMETHODIMP_(HRESULT __stdcall) CrusaderToOpenGL::CreateSurface(LPDDSURFACEDESC des, LPDIRECTDRAWSURFACE* retSurfPtr, IUnknown*)
+  {
+    if (des->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
+    {
+      *retSurfPtr = &prim;
+      return DD_OK;
+    }
+
+    // offscreen surfaces (backbuffer is gathered different)
+    if (des->dwHeight == 2076 && des->dwWidth == 4056)	// lets hope this resolution will never be supported
+    {
+      *retSurfPtr = &offMap;
+    }
+    else
+    {
+      *retSurfPtr = &offMain;
+    }
+
+    return DD_OK;
+  }
+
+
+
+
+  // lua bound calls
+
+  bool CrusaderToOpenGL::createWindow(SHCWindowOrMainStructFake* that, LPSTR windowName, unsigned int cursorResource, WNDPROC windowCallbackFunc)
+  {
+    // keep ref
+    shcWinStrucPtr = that;
+
     if (!confPtr) // no config, so everything normal
     {
       // recreated original window func
-      HINSTANCE hInstance{ *(HINSTANCE*)(that + 0xA8) };
+      HINSTANCE hInstance{ shcWinStrucPtr->gameHInstance };
       LPCSTR className{ "FFwinClass" };
 
       WNDCLASSA wndClass;
@@ -29,7 +167,7 @@ namespace UCPtoOpenGL
       wndClass.style = NULL;	// this needs changes later
       wndClass.cbClsExtra = NULL;
       wndClass.cbWndExtra = NULL;
-      wndClass.hIcon = LoadIconA(hInstance, (LPCSTR)(unknown & 0xFFFF));	// weird... is this a downcast, so unknown would be an address?
+      wndClass.hIcon = LoadIconA(hInstance, (LPCSTR)(cursorResource & 0xFFFF));	// this is apparently the cursor resource?
       wndClass.hCursor = NULL;
       wndClass.hbrBackground = NULL;
       wndClass.lpszMenuName = NULL;
@@ -41,7 +179,7 @@ namespace UCPtoOpenGL
         return false;
       }
 
-      winHandle = CreateWindowExA(
+      shcWinStrucPtr->gameWindowHandle = CreateWindowExA(
         NULL,
         className,
         windowName,
@@ -56,13 +194,12 @@ namespace UCPtoOpenGL
         NULL
       );
 
-      *(DWORD*)(that + 0xAC) = (DWORD)winHandle;
-      return winHandle != NULL;
+      return shcWinStrucPtr->gameWindowHandle != NULL;
     }
     else
     {
       // try to change stuff
-      HINSTANCE hInstance{ *(HINSTANCE*)(that + 0xA8) };
+      HINSTANCE hInstance{ shcWinStrucPtr->gameHInstance };
       LPCSTR className{ "FFwinClass" };
 
 
@@ -79,7 +216,7 @@ namespace UCPtoOpenGL
       wndClass.style = CS_OWNDC | CS_HREDRAW | CS_VREDRAW;	// CS_OWNDC apperantly needed to allow a constant device context CS_HREDRAW | CS_VREDRAW
       wndClass.cbClsExtra = NULL;
       wndClass.cbWndExtra = NULL;
-      wndClass.hIcon = LoadIconA(hInstance, (LPCSTR)(unknown & 0xFFFF));	// weird... is this a downcast, so unknown would be a address?
+      wndClass.hIcon = LoadIconA(hInstance, (LPCSTR)(cursorResource & 0xFFFF));	// this is apparently the cursor resource?
       wndClass.hCursor = NULL;
       wndClass.hbrBackground = NULL;
       wndClass.lpszMenuName = NULL;
@@ -92,10 +229,9 @@ namespace UCPtoOpenGL
       }
 
       RECT winRect{ GetWindowRect(confPtr->window) };
-      gameWinSizeW = GetGameWidth(confPtr->window);
-      gameWinSizeH = GetGameHeight(confPtr->window);
+      d.windowSize = { GetGameWidth(confPtr->window), GetGameHeight(confPtr->window) };
 
-      winHandle = CreateWindowExA(
+      shcWinStrucPtr->gameWindowHandle = CreateWindowExA(
         GetExtendedWindowStyle(confPtr->window.type),
         className,
         windowName,
@@ -110,21 +246,16 @@ namespace UCPtoOpenGL
         NULL
       );
 
+      HWND handle{ shcWinStrucPtr->gameWindowHandle };
+
       // this is an issue -> if something here fails, then the whole thing might be busted...
       // TODO: is there a possible way around? -> close everything until then, then recreate with original Stronghold?
       // until then, this will return false, and I assume stronghold will close (or crash, not tested here yet)
       window.setConf(confPtr);
-      windowDone = winHandle && window.createWindow(winHandle);
-
-      // give pixel format to
-      offMain.setPixelFormat(confPtr->graphic.pixFormat);
-      back.setPixelFormat(confPtr->graphic.pixFormat);
+      d.windowDone = handle && window.createWindow(handle);
 
       // failing at this part can will cause issues
-
-      // end -> do not touch
-      *(DWORD*)(that + 0xAC) = (DWORD)winHandle;
-      return winHandle != NULL;
+      return handle != NULL;
     }
   }
 
@@ -140,7 +271,7 @@ namespace UCPtoOpenGL
     }
 
     HRESULT res;
-    if (windowDone)
+    if (d.windowDone)
     {
       *lplpDD = this; // in this case, no interface is created at all
       res = DD_OK;
@@ -158,13 +289,13 @@ namespace UCPtoOpenGL
     // The fake window size can only be set after a refocus. Before that, it likely sets the choosen render size
     // before or around the "SetDisplayMode" method.
     // TODO: Find out how to change this. It also effects other parts. -> Using real screen size as return for now.
-    if (windowDone)
+    if (d.windowDone)
     {
       switch (nIndex)
       {
       case SM_CXSCREEN:
       {
-        int texWidth{ window.getTexStrongSizeW() };
+        int texWidth{ d.gameTexSize.w };
         if (texWidth > 0)
         {
           return texWidth;
@@ -173,7 +304,7 @@ namespace UCPtoOpenGL
       }
       case SM_CYSCREEN:
       {
-        int texHeight{ window.getTexStrongSizeH() };
+        int texHeight{ d.gameTexSize.h };
         if (texHeight > 0)
         {
           return texHeight;
@@ -211,27 +342,24 @@ namespace UCPtoOpenGL
       {
         if (startUpDone)
         {
-          scrollMaxW = mainDrawRect->right - 1;
-          scrollMaxH = mainDrawRect->bottom - 1;
+          d.scrollMax = { mainDrawRect->right - 1, mainDrawRect->bottom - 1 };
           resChanged = true;
         }
         else
         {
-          scrollMaxW = xRight - 1;;
-          scrollMaxH = yBottom - 1;;
+          d.scrollMax = { xRight - 1, yBottom - 1 };
           startUpDone = true;
         }
 
         mainDrawRect->right = xRight;
         mainDrawRect->bottom = yBottom;
-        window.setOnlyTexSize(xRight, yBottom);
+        d.gameTexSize = { xRight, yBottom };
         possibleTexChange = true;
         rectInit = true;
       }
       else if (!rectInit)
       {
-        scrollMaxW = xRight - 1;
-        scrollMaxH = yBottom - 1;
+        d.scrollMax = { xRight - 1, yBottom - 1 };
         rectInit = true;
         startUpDone = true; // for the case that same size -> if this is reached, not additional handling of start needed
       }
@@ -244,7 +372,7 @@ namespace UCPtoOpenGL
   // this adjusts scrolling only -> maybe use custom code later, this stuff here is kinda horrible
   BOOL CrusaderToOpenGL::getWindowCursorPos(LPPOINT lpPoint)
   {
-    if (!windowDone)
+    if (!d.windowDone)
     {
       return GetCursorPos(lpPoint);
     }
@@ -253,60 +381,61 @@ namespace UCPtoOpenGL
     // also if no focus and window stops
     if (!confPtr->control.scrollActive || (confPtr->window.continueOutOfFocus == NOFOCUS_CONTINUE && !hasFocus))
     {
-      lpPoint->x = scrollMaxW / 2;
-      lpPoint->y = scrollMaxH / 2;
+      *lpPoint = { d.scrollMax.w / 2, d.scrollMax.h / 2 };
       return true;
     }
 
-    bool success{ GetCursorPos(lpPoint) && ScreenToClient(winHandle, lpPoint) };
+    bool success{ GetCursorPos(lpPoint) && ScreenToClient(shcWinStrucPtr->gameWindowHandle, lpPoint) };
     if (success)
     {
-      int intCursorX{ lpPoint->x - winOffsetW };
-      int intCursorY{ lpPoint->y - winOffsetH };
+      Size<int>& texS{ d.gameTexSize };
+      Size<int>& scrollM{ d.scrollMax };
+
+      Size<int> intCursor{ lpPoint->x - d.windowOffset.x, lpPoint->y - d.windowOffset.y };
 
       // using screen pixels to define ranges
       // margin disabled if the cursor is clipped or no window mode
       int margin{ confPtr->control.clipCursor || confPtr->window.type == TYPE_BORDERLESS_FULLSCREEN ||
         confPtr->window.type == TYPE_FULLSCREEN ? 0 : confPtr->control.margin };
-      if (intCursorX < -margin || intCursorX > gameScreenSizeW - 1 + margin || intCursorY < -margin || intCursorY > gameScreenSizeH - 1 + margin)
+      
+      if (intCursor.x < -margin || intCursor.x > d.gameScreenSize.w - 1 + margin ||
+        intCursor.y < -margin || intCursor.y > d.gameScreenSize.h - 1 + margin)
       {
-        lpPoint->x = scrollMaxW / 2;
-        lpPoint->y = scrollMaxH / 2;
+        *lpPoint = { scrollM.w / 2, scrollM.h / 2 };
         return true;
       }
 
       // transform to game
-      double cursorX{ static_cast<double>(intCursorX) * winToGamePosX };
-      double cursorY{ static_cast<double>(intCursorY) * winToGamePosY };
+      Size<double> cursor{ static_cast<double>(intCursor.x) * d.winToGamePos.x, static_cast<double>(intCursor.y) * d.winToGamePos.y };
 
-      if (resChanged)
+      // if the game never stops, a tab switch will not reset the cursor control
+      // this can cause issues if the initial resolution is rather high or vice versa
+      if (resChanged /* || confPtr->window.continueOutOfFocus*/)
       {
-        cursorX = scrollMaxW * cursorX / (window.getTexStrongSizeW() - 1.0);
-        cursorY = scrollMaxH * cursorY / (window.getTexStrongSizeH() - 1.0);
+        cursor = { scrollM.w * cursor.x / (texS.w - 1.0), scrollM.h * cursor.y / (texS.h - 1.0) };
       }
 
       // increased border -> checking here to allow easier overwrite
       int padding{ confPtr->control.padding };
-      if (intCursorX < padding)
+      if (intCursor.x < padding)
       {
-        cursorX = 0.0;
+        cursor.x = 0.0;
       }
-      else if (intCursorX > gameScreenSizeW - 1 - padding)
+      else if (intCursor.x > d.gameScreenSize.w - 1 - padding)
       {
-        cursorX = window.getTexStrongSizeW() - 1.0;
-      }
-
-      if (intCursorY < padding)
-      {
-        cursorY = 0.0;
-      }
-      else if (intCursorY > gameScreenSizeH - 1 - padding)
-      {
-        cursorY = window.getTexStrongSizeH() - 1.0;
+        cursor.x = texS.w - 1.0;
       }
 
-      lpPoint->x = lround(cursorX);
-      lpPoint->y = lround(cursorY);
+      if (intCursor.y < padding)
+      {
+        cursor.y = 0.0;
+      }
+      else if (intCursor.y > d.gameScreenSize.h - 1 - padding)
+      {
+        cursor.y = texS.h - 1.0;
+      }
+
+      *lpPoint = { lround(cursor.x), lround(cursor.y) };
     }
 
     return success;
@@ -314,32 +443,32 @@ namespace UCPtoOpenGL
 
   BOOL CrusaderToOpenGL::setWindowPosFake(HWND hWnd, HWND hWndInsertAfter, int X, int Y, int cx, int cy, UINT uFlag)
   {
-    return windowDone ? true : SetWindowPos(hWnd, hWndInsertAfter, X, Y, cx, cy, uFlag);
+    return d.windowDone ? true : SetWindowPos(hWnd, hWndInsertAfter, X, Y, cx, cy, uFlag);
   }
 
   BOOL WINAPI CrusaderToOpenGL::updateWindowFake(HWND hWnd)
   {
-    return windowDone ? true : UpdateWindow(hWnd);
+    return d.windowDone ? true : UpdateWindow(hWnd);
   }
 
   BOOL WINAPI CrusaderToOpenGL::adjustWindowRectFake(LPRECT lpRect, DWORD dwStyle, BOOL bMenu)
   {
-    return windowDone ? true : AdjustWindowRect(lpRect, dwStyle, bMenu);
+    return d.windowDone ? true : AdjustWindowRect(lpRect, dwStyle, bMenu);
   };
 
   LONG WINAPI CrusaderToOpenGL::setWindowLongAFake(HWND hWnd, int nIndex, LONG dwNewLong)
   {
-    return windowDone ? true : SetWindowLongA(hWnd, nIndex, dwNewLong); // 0 could mean error
+    return d.windowDone ? true : SetWindowLongA(hWnd, nIndex, dwNewLong); // 0 could mean error
   }
 
   HWND WINAPI CrusaderToOpenGL::GetForegroundWindowFake()
   {
-    return (confPtr->window.continueOutOfFocus == NOFOCUS_RENDER) ? winHandle : GetForegroundWindow();
+    return (confPtr->window.continueOutOfFocus == NOFOCUS_RENDER) ? shcWinStrucPtr->gameWindowHandle : GetForegroundWindow();
   }
 
   bool CrusaderToOpenGL::transformMouseMovePos(LPARAM* ptrlParam)
   {
-    if (!windowDone)
+    if (!d.windowDone)
     {
       return true;
     }
@@ -353,35 +482,30 @@ namespace UCPtoOpenGL
     POINTS mousePos{ MAKEPOINTS(*ptrlParam) };
 
     // mouse position in game window
-    int gameWinMousePosX{ mousePos.x - winOffsetW }; 
-    int gameWinMousePosY{ mousePos.y - winOffsetH };
+    Size<int> gameWinMousePos{ mousePos.x - d.windowOffset.x, mousePos.y - d.windowOffset.y };
 
     // discard if outside screen
-    if (gameWinMousePosX < 0 || gameWinMousePosX > gameScreenSizeW - 1 ||
-      gameWinMousePosY < 0 || gameWinMousePosY > gameScreenSizeH - 1)
+    if (gameWinMousePos.x < 0 || gameWinMousePos.x > d.gameScreenSize.w - 1 ||
+      gameWinMousePos.y < 0 || gameWinMousePos.y > d.gameScreenSize.h - 1)
     {
       return false;
     }
 
-    int texW{ window.getTexStrongSizeW() };
-    int texH{ window.getTexStrongSizeH() };
-
     // no tranform needed if crusader screen size equal to game window
-    if (texW == gameWinSizeW && texH == gameWinSizeH)
+    if (d.gameTexSize.w == d.windowSize.w && d.gameTexSize.h == d.windowSize.h)
     {
       return true;
     }
 
     // transform and return
-    mousePos.x = static_cast<short>(lround(gameWinMousePosX * winToGamePosX)); // just hoping that it does not end at texW/texH + 1
-    mousePos.y = static_cast<short>(lround(gameWinMousePosY * winToGamePosY));
+    mousePos = { static_cast<short>(lround(gameWinMousePos.x * d.winToGamePos.x)), static_cast<short>(lround(gameWinMousePos.y * d.winToGamePos.y)) };
     *ptrlParam = MAKELPARAM(mousePos.x, mousePos.y);
     return true;
   }
 
   bool CrusaderToOpenGL::windowLostFocus()
   {
-    if (!windowDone)
+    if (!d.windowDone)
     {
       return true;
     }
@@ -389,7 +513,7 @@ namespace UCPtoOpenGL
     // found no other way to proper minimize
     if (confPtr->window.type == TYPE_BORDERLESS_FULLSCREEN || confPtr->window.type == TYPE_FULLSCREEN)
     {
-      ShowWindow(winHandle, SW_MINIMIZE);
+      ShowWindow(shcWinStrucPtr->gameWindowHandle, SW_MINIMIZE);
     }
 
     hasFocus = false;
@@ -406,7 +530,7 @@ namespace UCPtoOpenGL
 
   bool CrusaderToOpenGL::windowSetFocus()
   {
-    if (!windowDone)
+    if (!d.windowDone)
     {
       return true;
     }
@@ -455,7 +579,7 @@ namespace UCPtoOpenGL
     }
 
     // windows spoke: https://docs.microsoft.com/en-us/windows/win32/opengl/deleting-a-rendering-context
-    window.releaseContext(winHandle);
+    window.releaseContext(shcWinStrucPtr->gameWindowHandle);
   }
 
   void CrusaderToOpenGL::windowEditEnded()  // currently unused
@@ -485,139 +609,23 @@ namespace UCPtoOpenGL
   }
 
 
-  // DirectDraw
-
-  STDMETHODIMP_(HRESULT __stdcall) CrusaderToOpenGL::EnumDisplayModes(DWORD, LPDDSURFACEDESC,
-    LPVOID lpvoid, LPDDENUMMODESCALLBACK callback)
-  {
-    // send every possible resolution
-
-    DDSURFACEDESC des{};  // init zero
-    des.dwSize = sizeof(des);
-    des.ddpfPixelFormat.dwRGBBitCount = 16; // could also be 15, but not relevant here
-
-    // since it only checks bit count and height/weight, one can change the bare minimum
-    for (size_t i = 1; i < RESOLUTIONS.size() - 1; i++) // 0 and the last are not available
-    {
-      // this res causes a crash, because it is handled differently
-      if (i == RES_1366_X_768)
-      {
-        continue; // -> disabled at the moment
-      }
-
-      des.dwWidth = RESOLUTIONS[i][0];
-      des.dwHeight = RESOLUTIONS[i][1];
-      callback(&des, lpvoid); // send to callback
-    }
-
-    return DD_OK;
-  }
-
-  STDMETHODIMP_(HRESULT __stdcall) CrusaderToOpenGL::GetCaps(THIS_ LPDDCAPS cap1, LPDDCAPS)
-  {
-    //return realInterface->GetCaps(cap1, cap2);
-
-    // the original returned only three values: DDCAPS_NOHARDWARE, DDCAPS2_CANRENDERWINDOWED, DDCAPS2_CERTIFIED
-    // the compatibility mode returns a whole set of values, but the system here still works
-    // I assume this is the result of Crusader having a software renderer
-
-    // using the non-compatibility return now, if some effects are missing in this case... well, maybe it will surface some day
-    // ignore cap2, this was NULL in tests
-    cap1->dwCaps = DDCAPS_NOHARDWARE;
-    cap1->dwCaps2 = DDCAPS2_CANRENDERWINDOWED | DDCAPS2_CERTIFIED;
-    return DD_OK;
-  }
-
-  STDMETHODIMP_(HRESULT __stdcall) CrusaderToOpenGL::SetDisplayMode(DWORD width, DWORD height, DWORD)
-  {
-    // in-theory, the earliest to adapt to screen changes where the tex heights are known is now the
-    // setRectFake function on the second call per request
-
-    // execute either if hint received or if the tex size is not initialized
-    if (possibleTexChange || window.getTexStrongSizeW() == 0 || window.getTexStrongSizeH() == 0)
-    {
-      int wWin{ gameWinSizeW };
-      int hWin{ gameWinSizeH };
-      int wTex{ (int)width };
-      int hTex{ (int)height };
-
-      //create new bit maps
-      int pixNum{ wTex * hTex };
-      back.createBitData(pixNum);
-      offMain.createBitData(pixNum);
-
-      // change scale
-      // I choose the easy route, algorithm: https://math.stackexchange.com/a/1620375
-      double winToTexW = static_cast<double>(wTex) / wWin;
-      double winToTexH = static_cast<double>(hTex) / hWin;
-      
-      bool vertScale{ winToTexH > winToTexW };
-      winToTexMult = vertScale ? winToTexH : winToTexW;
-      double winScaleW = winToTexW / winToTexMult;
-      double winScaleH = winToTexH / winToTexMult;
-      winOffsetW = lround((1.0 - winScaleW) * wWin / 2.0);
-      winOffsetH = lround((1.0 - winScaleH) * hWin / 2.0);
-
-      gameScreenSizeW = gameWinSizeW - winOffsetW * 2;
-      gameScreenSizeH = gameWinSizeH - winOffsetH * 2;
-      // for positions, I need to use the relation between the size of the game in the window, and the tex (the pixel size of the game)
-      winToGamePosX = (static_cast<double>(wTex) - 1.0) / (gameScreenSizeW - 1.0);
-      winToGamePosY = (static_cast<double>(hTex) - 1.0) / (gameScreenSizeH - 1.0);
-
-      window.adjustTexSizeAndViewport(wTex, hTex, wWin, hWin, winScaleW, winScaleH);
-
-      possibleTexChange = false;
-    }
-
-    // set clip for cursor -> should be needed for resolution change
-    if (confPtr->control.clipCursor && (confPtr->window.type != TYPE_WINDOW || resChanged))
-    {
-      clipCursor();
-    }
-
-    return DD_OK;
-  }
-
-  STDMETHODIMP_(HRESULT __stdcall) CrusaderToOpenGL::CreateSurface(LPDDSURFACEDESC des, LPDIRECTDRAWSURFACE* retSurfPtr, IUnknown*)
-  {
-    if (des->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
-    {
-      *retSurfPtr = &prim;
-      return DD_OK;
-    }
-
-    // offscreen surfaces (backbuffer is gathered different)
-    if (des->dwHeight == 2076 && des->dwWidth == 4056)	// lets hope this resolution will never be supported
-    {
-      *retSurfPtr = &offMap;
-    }
-    else
-    {
-      *retSurfPtr = &offMain;
-    }
-    
-    return DD_OK;
-  }
-
-
-
   /** internal helper functions **/
   
   // NOTE: currently unused
   void CrusaderToOpenGL::setWindowStyleAndSize()
   {
     RECT newWinRect{ GetWindowRect(confPtr->window) };
-    gameWinSizeW = GetGameWidth(confPtr->window);
-    gameWinSizeH = GetGameHeight(confPtr->window);
+    d.windowSize = { GetGameWidth(confPtr->window), GetGameHeight(confPtr->window) };
 
     // this would set a new style and adjust the window
-    // however, screenshots stil do not work
+    // however, screenshots still do not work
     DWORD newStyle{ GetWindowStyle(confPtr->window.type) };
     DWORD newExStyle{ GetExtendedWindowStyle(confPtr->window.type) };
-    SetWindowLongPtr(winHandle, GWL_STYLE, newStyle);
-    SetWindowLongPtr(winHandle, GWL_EXSTYLE, newExStyle);
 
-    SetWindowPos(winHandle, HWND_TOP, newWinRect.left, newWinRect.top, newWinRect.right - newWinRect.left,
+    HWND handle{ shcWinStrucPtr->gameWindowHandle };
+    SetWindowLongPtr(handle, GWL_STYLE, newStyle);
+    SetWindowLongPtr(handle, GWL_EXSTYLE, newExStyle);
+    SetWindowPos(handle, HWND_TOP, newWinRect.left, newWinRect.top, newWinRect.right - newWinRect.left,
       newWinRect.bottom - newWinRect.top, SWP_SHOWWINDOW | SWP_FRAMECHANGED);
 
     // other possible stuff:
@@ -628,13 +636,14 @@ namespace UCPtoOpenGL
 
   void CrusaderToOpenGL::clipCursor()
   {
+    HWND handle{ shcWinStrucPtr->gameWindowHandle };
     RECT winPos{};
-    GetClientRect(winHandle, &winPos);
-    MapWindowPoints(winHandle, NULL, (LPPOINT)&winPos, 2);
-    winPos.left += winOffsetW;
-    winPos.right -= winOffsetW;
-    winPos.top += winOffsetH;
-    winPos.bottom -= winOffsetH;
+    GetClientRect(handle, &winPos);
+    MapWindowPoints(handle, NULL, (LPPOINT)&winPos, 2);
+    winPos.left += d.windowOffset.w;
+    winPos.right -= d.windowOffset.w;
+    winPos.top += d.windowOffset.h;
+    winPos.bottom -= d.windowOffset.h;
     ClipCursor(&winPos); // clip cursor
     cursorClipped = true;
   }

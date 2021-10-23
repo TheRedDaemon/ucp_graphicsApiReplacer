@@ -48,8 +48,8 @@ namespace UCPtoOpenGL
 
   enum PixelFormat
   {
-    ARGB_1555,
-    RGB_565
+    ARGB_1555 = 0x555,
+    RGB_565   = 0565,
   };
 
   enum DebugOption

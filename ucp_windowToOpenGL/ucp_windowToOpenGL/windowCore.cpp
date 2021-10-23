@@ -156,7 +156,7 @@ namespace UCPtoOpenGL
   void WindowCore::debugMsg(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
     const GLchar* message, const void* userParam)
   {
-    if (GL_DEBUG_TYPE_ERROR)
+    if (type == GL_DEBUG_TYPE_ERROR)
     {
       std::string errorMsg{ message };
     }
@@ -273,20 +273,18 @@ namespace UCPtoOpenGL
     return true;
   }
 
-  void WindowCore::setOnlyTexSize(int wTex, int hTex)
+  void WindowCore::setOnlyTexSize(Size<int> texSize)
   {
-    strongTexW = wTex;
-    strongTexH = hTex;
+    strongTexSize = texSize;
   }
 
-  void WindowCore::adjustTexSizeAndViewport(int wTex, int hTex, int wView, int hView, double scaleW, double scaleH)
+  void WindowCore::adjustTexSizeAndViewport(Size<int> texSize, Size<int> viewSize, Size<double> scale)
   {
-    glViewport(0, 0, wView, hView);
-    strongTexW = wTex;
-    strongTexH = hTex;
+    glViewport(0, 0, viewSize.w, viewSize.h);
+    strongTexSize = texSize;
 
-    float sW{ static_cast<float>(scaleW) };
-    float sH{ static_cast<float>(scaleH) };
+    float sW{ static_cast<float>(scale.w) };
+    float sH{ static_cast<float>(scale.h) };
     GLfloat newPos[]{
       -1.0f * sW, -1.0f * sH,
       1.0f * sW, -1.0f * sH,
@@ -301,11 +299,11 @@ namespace UCPtoOpenGL
     switch (pixFormat)
     {
       case RGB_565:
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, wTex, hTex, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, nullptr); // RGB565
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texSize.w, texSize.h, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, nullptr); // RGB565
         break;
       case ARGB_1555:
       default:
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB5_A1, wTex, hTex, 0, GL_BGRA, GL_UNSIGNED_SHORT_1_5_5_5_REV, nullptr); // ARGB1555
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB5_A1, texSize.w, texSize.h, 0, GL_BGRA, GL_UNSIGNED_SHORT_1_5_5_5_REV, nullptr); // ARGB1555
         break;
     }
   }
@@ -317,11 +315,11 @@ namespace UCPtoOpenGL
     switch (pixFormat)
     {
       case RGB_565:
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, strongTexW, strongTexH, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, backData); // RGB565
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, strongTexSize.w, strongTexSize.h, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, backData); // RGB565
         break;
       case ARGB_1555:
       default:
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, strongTexW, strongTexH, GL_BGRA, GL_UNSIGNED_SHORT_1_5_5_5_REV, backData); // ARGB1555
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, strongTexSize.w, strongTexSize.h, GL_BGRA, GL_UNSIGNED_SHORT_1_5_5_5_REV, backData); // ARGB1555
         break;
     }
 

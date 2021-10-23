@@ -26,4 +26,25 @@
 // for structures
 #include <array>
 
+// one can always use a string
+#include <string>
+
+// adding simple Size template
+
+// w and x, and h and y are the same values (unions)
+template <typename T>
+struct Size
+{
+  union
+  {
+    T w;  // width
+    T x;
+  };
+  union
+  {
+    T h;  // height
+    T y;
+  };
+};
+
 #endif //PCH_H
