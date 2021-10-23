@@ -39,6 +39,9 @@
     <ClInclude Include="shcRelatedStructures.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="controlAndDetour.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -57,6 +60,12 @@
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="configUtil.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="detourFuncs.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="control.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
   </ItemGroup>

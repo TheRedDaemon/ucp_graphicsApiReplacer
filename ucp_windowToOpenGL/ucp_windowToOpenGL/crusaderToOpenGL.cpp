@@ -13,6 +13,10 @@
 
 namespace UCPtoOpenGL
 {
+  CrusaderToOpenGL::CrusaderToOpenGL(ToOpenGLConfig* conf) : confPtr{ conf }, window{ std::make_unique<WindowCore>() } {};
+  CrusaderToOpenGL::~CrusaderToOpenGL() {};
+
+
   /** Override **/
 
 
@@ -20,7 +24,7 @@ namespace UCPtoOpenGL
 
   HRESULT CrusaderToOpenGL::renderNextFrame(unsigned short* sourcePtr)
   {
-    return window.renderNextScreen(sourcePtr);
+    return window->renderNextScreen(sourcePtr);
   }
   int CrusaderToOpenGL::getRenderTexWidth()
   {
@@ -110,7 +114,7 @@ namespace UCPtoOpenGL
       // for positions, I need to use the relation between the size of the game in the window, and the tex (the pixel size of the game)
       winToGame = { (static_cast<double>(texS.w) - 1.0) / (screenS.w - 1.0), (static_cast<double>(texS.h) - 1.0) / (screenS.h - 1.0) };
 
-      window.adjustTexSizeAndViewport(texS, winS, winScale);
+      window->adjustTexSizeAndViewport(texS, winS, winScale);
 
       possibleTexChange = false;
     }
@@ -204,7 +208,7 @@ namespace UCPtoOpenGL
 
 
       // trying to get WGL functions, if this fails, return false, Crusader crashes
-      if (!window.loadWGLFunctions(hInstance))
+      if (!window->loadWGLFunctions(hInstance))
       {
         return false;
       }
@@ -251,8 +255,8 @@ namespace UCPtoOpenGL
       // this is an issue -> if something here fails, then the whole thing might be busted...
       // TODO: is there a possible way around? -> close everything until then, then recreate with original Stronghold?
       // until then, this will return false, and I assume stronghold will close (or crash, not tested here yet)
-      window.setConf(confPtr);
-      d.windowDone = handle && window.createWindow(handle);
+      window->setConf(confPtr);
+      d.windowDone = handle && window->createWindow(handle);
 
       // failing at this part can will cause issues
       return handle != NULL;
@@ -579,7 +583,7 @@ namespace UCPtoOpenGL
     }
 
     // windows spoke: https://docs.microsoft.com/en-us/windows/win32/opengl/deleting-a-rendering-context
-    window.releaseContext(shcWinStrucPtr->gameWindowHandle);
+    window->releaseContext(shcWinStrucPtr->gameWindowHandle);
   }
 
   void CrusaderToOpenGL::windowEditEnded()  // currently unused

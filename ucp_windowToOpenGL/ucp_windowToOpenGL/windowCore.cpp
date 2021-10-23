@@ -6,11 +6,11 @@
 
 #include "windowCore.h"
 
-// test
-#include <string>
-
 namespace UCPtoOpenGL
 {
+  WindowCore::WindowCore() {};
+  WindowCore::~WindowCore() {};
+
   // used to get function pointers, mostly based on:
   // source: https://www.khronos.org/opengl/wiki/Load_OpenGL_Functions
   bool WindowCore::getAnyGLFuncAddress(const char* name, void** ptrToFuncPtr)

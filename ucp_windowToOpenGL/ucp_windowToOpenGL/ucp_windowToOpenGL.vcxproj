@@ -160,6 +160,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="configUtil.h" />
+    <ClInclude Include="controlAndDetour.h" />
     <ClInclude Include="fakeDDClasses.h" />
     <ClInclude Include="shcRelatedStructures.h" />
     <ClInclude Include="toOpenGLconfig.h" />
@@ -170,7 +171,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="configUtil.cpp" />
+    <ClCompile Include="control.cpp" />
     <ClCompile Include="crusaderToOpenGL.cpp" />
+    <ClCompile Include="detourFuncs.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="fakeDDSurfaces.cpp" />
     <ClCompile Include="pch.cpp">

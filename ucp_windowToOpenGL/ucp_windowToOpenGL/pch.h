@@ -32,6 +32,8 @@
 // adding simple Size template
 
 // w and x, and h and y are the same values (unions)
+// there is std::valarray, but this more similar to vector, not size save and overkill here
+// maybe something if more complicated math (without other libs) is needed
 template <typename T>
 struct Size
 {

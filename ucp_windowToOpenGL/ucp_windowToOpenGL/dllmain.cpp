@@ -4,9 +4,7 @@
 // lua
 #include "lua.hpp"
 
-#include "windowCore.h"
-#include "fakeDDClasses.h"
-#include "crusaderToOpenGL.h"
+#include "controlAndDetour.h"
 
 // for test
 //#include <chrono>
@@ -15,344 +13,6 @@
 
 namespace UCPtoOpenGL
 {
-
-  // static objects
-  static CrusaderToOpenGL ToOpenGL;
-  static ToOpenGLConfig conf;  // managed from here
-  static WNDPROC WindowProcCallbackFunc{ 0x0 };  // 0x004B2C50, currently hardcoded, later received from lua, gynt gave me this address: 0x004B2AE0 (Crusader maybe?)
-
-  // static debug helper
-
-  static void ReplaceDWORD(DWORD destination, DWORD newDWORD)
-  {
-    DWORD* des{ reinterpret_cast<DWORD*>(destination) };
-
-    DWORD oldAddressProtection;
-    VirtualProtect(des, 4, PAGE_EXECUTE_READWRITE, &oldAddressProtection);
-    *des = newDWORD;
-    VirtualProtect(des, 4, oldAddressProtection, &oldAddressProtection);
-  }
-
-
-  // create own callbackProc -> everything has to pass through here for now
-  static LRESULT CALLBACK WindowProcCallbackFake(_In_ HWND hwnd, _In_ UINT uMsg, _In_ WPARAM wParam, _In_ LPARAM lParam)
-  {
-    // transform all mouse coords
-    switch (uMsg)
-    {
-      case WM_LBUTTONDOWN:
-      case WM_RBUTTONDOWN:
-      case WM_MBUTTONDOWN:
-      {
-        if (!ToOpenGL.mouseDown() || !ToOpenGL.transformMouseMovePos(&lParam))
-        {
-          return 0; // devours message, since mouse in invalid area, or click should be discarded
-        }
-        break;
-      }
-      case WM_MOUSEMOVE:
-      case WM_LBUTTONDBLCLK:
-      case WM_LBUTTONUP:
-      case WM_MBUTTONDBLCLK:
-      case WM_MBUTTONUP:
-      case WM_MOUSEHWHEEL:
-      case WM_MOUSEHOVER:
-      case WM_RBUTTONDBLCLK:
-      case WM_RBUTTONUP:
-      {
-        if (!ToOpenGL.transformMouseMovePos(&lParam))
-        {
-          return 0; // devours message, since mouse in invalid area
-        }
-        break;
-      }
-      case WM_KILLFOCUS:
-      {
-        if (!ToOpenGL.windowLostFocus())
-        {
-          return 0;
-        }
-        break;
-      }
-      case WM_SETFOCUS:
-      {
-        if (!ToOpenGL.windowSetFocus())
-        {
-          return 0;
-        }
-        break;
-      }
-      case WM_ACTIVATEAPP:
-      {
-        if (!ToOpenGL.windowActivated(wParam))
-        {
-          return 0;
-        }
-        break;
-      }
-      /*
-      case WM_DISPLAYCHANGE:
-      case WM_SIZE: 
-      {
-        return 0; // prevent game from knowing, that the game size or the display + bit depth changed
-      }
-      */
-      case WM_DESTROY:
-        ToOpenGL.windowDestroyed();
-        break;
-      case WM_EXITSIZEMOVE:
-        ToOpenGL.windowEditEnded(); // called if user stopped an interaction with a window (title bar, etc.)
-        break;
-      default:
-        break;
-    }
-
-    return WindowProcCallbackFunc(hwnd, uMsg, wParam, lParam);
-  }
-
-
-  // lua functions to bind
-
-  // using fastCall hack to get this in global function
-  // source: https://www.unknowncheats.me/forum/c-and-c-/154364-detourfunction-__thiscall.html
-  // note: the second parameter is EDX and a dummy that should be ignored!
-  static bool __fastcall CreateWindowComplete(SHCWindowOrMainStructFake* that, DWORD, LPSTR windowName, unsigned int unknown)
-  {
-    return ToOpenGL.createWindow(that, windowName, unknown, WindowProcCallbackFake);
-  }
-
-  // callback function missing
-  static bool __declspec(naked) NakedCreateWindowComplete()
-  {
-    __asm {
-      push    ecx   // push that pointer
-      mov     ecx, ToOpenGL // mov toOpenGL this pointer
-      jmp     CrusaderToOpenGL::createWindow  // jump to actual func
-    }
-  }
-
-
-
-  static HRESULT WINAPI DirectDrawCreateCall(GUID* lpGUID, LPDIRECTDRAW* lplpDD, IUnknown* pUnkOuter)
-  {
-    return ToOpenGL.createDirectDraw(lpGUID, lplpDD, pUnkOuter);
-  }
-
-  // stronghold gets the size of the screen sometimes
-  // only handles 0 and 1, the first SetDisplayMode needs to happen before
-  // TODO: Replacing the jump routes all code through here, maybe there are less hard methods?
-  //  - depends on how other stuff gets handeld
-  static int WINAPI GetSystemMetricsCall(int nIndex)
-  {
-    return ToOpenGL.getFakeSystemMetrics(nIndex);
-  }
-
-  // the main drawing rect is set via a user call -> keep the pointer, change it on demand
-  // TODO: Replacing the jump routes all code through here, maybe there are less hard methods?
-  //  - depends on how other stuff gets handeld
-
-  static BOOL WINAPI SetRectCall(LPRECT lprc, int xLeft, int yTop, int xRight, int yBottom)
-  {
-    return ToOpenGL.setFakeRect(lprc, xLeft, yTop, xRight, yBottom);
-  };
-
-
-  // set window call -> simply deactivate
-  static BOOL WINAPI SetWindowPosCall(HWND hWnd, HWND hWndInsertAfter, int X, int Y, int cx, int cy, UINT uFlag)
-  {
-    return ToOpenGL.setWindowPosFake(hWnd, hWndInsertAfter, X, Y, cx, cy, uFlag);
-  }
-
-  // cursor -> to window (not to screen)
-  static BOOL WINAPI GetCursorPosCall(LPPOINT lpPoint)
-  {
-    return ToOpenGL.getWindowCursorPos(lpPoint);
-  }
-
-  static HWND WINAPI GetForegroundWindowCall()
-  {
-    return ToOpenGL.GetForegroundWindowFake();
-  }
-
-  // further tests
-
-  // what does it update?
-  static BOOL WINAPI UpdateWindowCall(HWND hWnd)
-  {
-    return ToOpenGL.updateWindowFake(hWnd);
-  }
-
-  static BOOL WINAPI AdjustWindowRectCall(LPRECT lpRect, DWORD dwStyle, BOOL bMenu)
-  {
-    return ToOpenGL.adjustWindowRectFake(lpRect, dwStyle, bMenu);
-  };
-
-
-  static LONG WINAPI SetWindowLongACall(HWND hWnd, int nIndex, LONG dwNewLong)
-  {
-    return ToOpenGL.setWindowLongAFake(hWnd, nIndex, dwNewLong);
-  }
-
-
-  // first chars -> dll name, function name
-  static void WINAPI DetouredWindowLongPtrReceive(char*, char*, DWORD* ptrToWindowLongPtr, DWORD, DWORD)
-  {
-    // e8 call -> but needs direct address
-    *ptrToWindowLongPtr = reinterpret_cast<DWORD>(SetWindowLongACall);
-  }
-
-
-  // helper
-  static bool isInRange(int num, int min, int max)
-  {
-    return num >= min && num <= max;
-  }
-
-  static bool setIntField(lua_State* L, int luaStackNum, int* ptrToSet, int min, int max)
-  {
-    if (!lua_isinteger(L, luaStackNum))
-    {
-      return false;
-    }
-
-    int value{ static_cast<int>(lua_tointeger(L, luaStackNum)) };
-    if (!isInRange(value, min, max))
-    {
-      return false;
-    }
-
-    *ptrToSet = value;
-    return true;
-  }
-
-  static bool setBoolField(lua_State* L, int luaStackNum, bool* ptrToSet)
-  {
-    if (!lua_isboolean(L, luaStackNum))
-    {
-      return false;
-    }
-
-    *ptrToSet = lua_toboolean(L, luaStackNum);
-    return true;
-  }
-
-  // https://www.lua.org/manual/5.1/manual.html#lua_CFunction
-  // static set field table
-  static int setConfigField(lua_State* L)
-  {
-    int n = lua_gettop(L);    /* number of arguments */
-    if (n != 3)
-    {
-      luaL_error(L, "ToOpenGL-Config: Invalid number of args.");
-    }
-
-    // func structure: setConfigField(char* option, char* field, ? value)
-    if (!lua_isstring(L, 1) || !lua_isstring(L, 2))
-    {
-      luaL_error(L, "ToOpenGL-Config: Field identifiers wrong.");
-    }
-
-    std::string option{ lua_tostring(L, 1) };
-    std::string field{ lua_tostring(L, 2) };
-
-    bool success{ false };
-    bool fieldUnknown{ false };
-    if (option == "window")
-    {
-      if (field == "type")
-      {
-        success = setIntField(L, 3, (int*)&conf.window.type, 0, 3);
-      }
-      else if (field == "width")
-      {
-        success = setIntField(L, 3, &conf.window.width, 0, 20000); // using ridiculous max 
-      }
-      else if (field == "height")
-      {
-        success = setIntField(L, 3, &conf.window.height, 0, 20000); // using ridiculous max
-      }
-      else if (field == "pos")
-      {
-        success = setIntField(L, 3, (int*)&conf.window.pos, 0, 4);
-      }
-      else if (field == "continueOutOfFocus")
-      {
-        success = setIntField(L, 3, (int*)&conf.window.continueOutOfFocus, 0, 2);
-      }
-      else
-      {
-        fieldUnknown = true;
-      }
-    }
-    else if (option == "graphic")
-    {
-      if (field == "filterLinear")
-      {
-        success = setBoolField(L, 3, &conf.graphic.filterLinear);
-      }
-      else if (field == "vsync")
-      {
-        success = setBoolField(L, 3, &conf.graphic.vsync);
-      }
-      else if (field == "waitWithGLFinish")
-      {
-        success = setBoolField(L, 3, &conf.graphic.waitWithGLFinish);
-      }
-      else if (field == "pixFormat")
-      {
-        success = setIntField(L, 3, (int*)&conf.graphic.pixFormat, 0x555, 0x555) ? true : setIntField(L, 3, (int*)&conf.graphic.pixFormat, 0x565, 0x565);
-      }
-      else if (field == "debug")
-      {
-        success = setIntField(L, 3, (int*)&conf.graphic.debug, 0, 2);
-      }
-      else
-      {
-        fieldUnknown = true;
-      }
-    }
-    else if (option == "control")
-    {
-      if (field == "clipCursor")
-      {
-        success = setBoolField(L, 3, &conf.control.clipCursor);
-      }
-      else if (field == "scrollActive")
-      {
-        success = setBoolField(L, 3, &conf.control.scrollActive);
-      }
-      else if (field == "margin")
-      {
-        success = setIntField(L, 3, &conf.control.margin, 0, 1000); // using ridiculous max
-      }
-      else if (field == "padding")
-      {
-        success = setIntField(L, 3, &conf.control.padding, 0, 1000); // using ridiculous max
-      }
-      else
-      {
-        fieldUnknown = true;
-      }
-    }
-    else
-    {
-      luaL_error(L, ("ToOpenGL-Config: Invalid option: " + option).c_str());
-    }
-
-    if (fieldUnknown)
-    {
-      luaL_error(L, ("ToOpenGL-Config: Invalid field name for option '" + option + "': " + field).c_str());
-    }
-
-    if (!success)
-    {
-      luaL_error(L, ("ToOpenGL-Config: Invalid value for field '" + field + "' of option '" + option + "'.").c_str());
-    }
-
-    return 0;  /* number of results */
-  }
-
-
   // lua module load
   extern "C" __declspec(dllexport) int __cdecl luaopen_ucp_windowToOpenGL(lua_State * L)
   {
@@ -362,54 +22,54 @@ namespace UCPtoOpenGL
     lua_newtable(L); // push a new table on the stack
 
     // config function
-    lua_pushcfunction(L, setConfigField);
+    lua_pushcfunction(L, LuaFunc::setConfigField);
     lua_setfield(L, -2, "setConfigField");
 
     // needs CALL to the value
-    lua_pushinteger(L, (DWORD)CreateWindowComplete);
+    lua_pushinteger(L, (DWORD)DetourFunc::CreateWindowComplete);
     lua_setfield(L, -2, "funcAddress_CreateWindow");
 
     //lua_pushinteger(L, (DWORD)NakedCreateWindowComplete);
     //lua_setfield(L, -2, "funcAddress_CreateWindow");
 
     // simple replace
-    lua_pushinteger(L, (DWORD)DirectDrawCreateCall);
+    lua_pushinteger(L, (DWORD)DetourFunc::DirectDrawCreateCall);
     lua_setfield(L, -2, "funcAddress_DirectDrawCreate");
 
     // simple replace
-    lua_pushinteger(L, (DWORD)GetSystemMetricsCall);
+    lua_pushinteger(L, (DWORD)DetourFunc::GetSystemMetricsCall);
     lua_setfield(L, -2, "funcAddress_GetSystemMetrics");
 
     // simple replace
-    lua_pushinteger(L, (DWORD)SetRectCall);
+    lua_pushinteger(L, (DWORD)DetourFunc::SetRectCall);
     lua_setfield(L, -2, "funcAddress_SetRect");
 
     // simple replace
-    lua_pushinteger(L, (DWORD)SetWindowPosCall);
+    lua_pushinteger(L, (DWORD)DetourFunc::SetWindowPosCall);
     lua_setfield(L, -2, "funcAddress_SetWindowPos");
 
     // simple replace
-    lua_pushinteger(L, (DWORD)GetCursorPosCall);
+    lua_pushinteger(L, (DWORD)DetourFunc::GetCursorPosCall);
     lua_setfield(L, -2, "funcAddress_GetCursorPos");
 
     // simple replace
-    lua_pushinteger(L, (DWORD)UpdateWindowCall);
+    lua_pushinteger(L, (DWORD)DetourFunc::UpdateWindowCall);
     lua_setfield(L, -2, "funcAddress_UpdateWindow");
 
     // simple replace
-    lua_pushinteger(L, (DWORD)AdjustWindowRectCall);
+    lua_pushinteger(L, (DWORD)DetourFunc::AdjustWindowRectCall);
     lua_setfield(L, -2, "funcAddress_AdjustWindowRect");
 
     // simple replace
-    lua_pushinteger(L, (DWORD)GetForegroundWindowCall);
+    lua_pushinteger(L, (DWORD)DetourFunc::GetForegroundWindowCall);
     lua_setfield(L, -2, "funcAddress_GetForegroundWindow");
 
     // already a call
-    lua_pushinteger(L, (DWORD)DetouredWindowLongPtrReceive);
+    lua_pushinteger(L, (DWORD)DetourFunc::DetouredWindowLongPtrReceive);
     lua_setfield(L, -2, "funcAddress_DetouredWindowLongPtrReceive");
 
     // need to write window callback func to the returned address
-    lua_pushinteger(L, (DWORD)&WindowProcCallbackFunc);
+    lua_pushinteger(L, (DWORD)&FillAddress::WindowProcCallbackFunc);
     lua_setfield(L, -2, "address_FillWithWindowProcCallback");
    
 
@@ -508,7 +168,7 @@ namespace UCPtoOpenGL
 
     // ReplaceDWORD(0x0059E20C, (DWORD)GetForegroundWindowCall);
 
-    ToOpenGL.setConf(&conf);
+    //ToOpenGL.setConf(&conf);
 
     return 1;
   }

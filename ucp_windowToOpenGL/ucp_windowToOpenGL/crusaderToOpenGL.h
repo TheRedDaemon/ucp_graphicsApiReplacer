@@ -6,13 +6,15 @@
 
 namespace UCPtoOpenGL
 {
-  struct SHCWindowOrMainStructFake; // forward declared
+  // forward declared
+  struct SHCWindowOrMainStructFake;
+  class WindowCore;
 
   class CrusaderToOpenGL : public FakeDirectDraw
   {
   public:
-    CrusaderToOpenGL() {};
-    virtual ~CrusaderToOpenGL() {};
+    CrusaderToOpenGL(ToOpenGLConfig* conf);
+    virtual ~CrusaderToOpenGL();
 
     /*** need impl ***/
 
@@ -23,11 +25,6 @@ namespace UCPtoOpenGL
 
 
     /* copied structure end */
-
-    void setConf(ToOpenGLConfig* conf)
-    {
-      confPtr = conf;
-    };
 
     // that -> the stronghold object(whatever it is)
     bool createWindow(SHCWindowOrMainStructFake* that, LPSTR windowName, unsigned int cursorResource, WNDPROC keyboardCallbackFunc);
@@ -84,11 +81,11 @@ namespace UCPtoOpenGL
   private:  // variables
 
     // config:
-    ToOpenGLConfig* confPtr{ nullptr };
+    ToOpenGLConfig* const confPtr{ nullptr };
 
     // intern:
 
-    WindowCore window;
+    const std::unique_ptr<WindowCore> window;
 
     // contains data values
     struct

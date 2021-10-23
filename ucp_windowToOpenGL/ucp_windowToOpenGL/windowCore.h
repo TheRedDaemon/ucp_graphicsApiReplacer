@@ -5,8 +5,8 @@ namespace UCPtoOpenGL
   class WindowCore
   {
   public:
-    WindowCore() {};
-    ~WindowCore() {};
+    WindowCore();
+    ~WindowCore();
 
     void setConf(ToOpenGLConfig* conf)
     {
