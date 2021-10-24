@@ -35,8 +35,7 @@ namespace UCPtoOpenGL
 
   namespace DetourFunc
   {
-    bool __fastcall CreateWindowComplete(SHCWindowOrMainStructFake* that, DWORD, LPSTR windowName, unsigned int unknown);
-    bool NakedCreateWindowComplete();
+    void CreateWindowComplete();  // naked
 
     HRESULT WINAPI DirectDrawCreateCall(GUID* lpGUID, LPDIRECTDRAW* lplpDD, IUnknown* pUnkOuter);
     int WINAPI GetSystemMetricsCall(int nIndex);

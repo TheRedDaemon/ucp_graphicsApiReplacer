@@ -3,17 +3,18 @@
 
 
 #include "windowCore.h"
-
 #include "shcRelatedStructures.h"
 #include "crusaderToOpenGL.h"
-
-
 #include "configUtil.h"
+
+// included explicitly, since it is one of the by WIN32_LEAN_AND_MEAN removed headers
+// needed to additionally link with Winmm.lib
+#include <timeapi.h>
 
 
 namespace UCPtoOpenGL
 {
-  CrusaderToOpenGL::CrusaderToOpenGL(ToOpenGLConfig* conf) : confPtr{ conf }, window{ std::make_unique<WindowCore>() } {};
+  CrusaderToOpenGL::CrusaderToOpenGL(ToOpenGLConfig& conf) : confRef{ conf }, window{ std::make_unique<WindowCore>() } {};
   CrusaderToOpenGL::~CrusaderToOpenGL() {};
 
 
@@ -36,7 +37,7 @@ namespace UCPtoOpenGL
   }
   PixelFormat CrusaderToOpenGL::getPixelFormat()
   {
-    return confPtr->graphic.pixFormat;
+    return confRef.graphic.pixFormat;
   }
 
 
@@ -120,7 +121,7 @@ namespace UCPtoOpenGL
     }
 
     // set clip for cursor -> should be needed for resolution change
-    if (confPtr->control.clipCursor && (confPtr->window.type != TYPE_WINDOW || resChanged))
+    if (confRef.control.clipCursor && (confRef.window.type != TYPE_WINDOW || resChanged))
     {
       clipCursor();
     }
@@ -152,115 +153,81 @@ namespace UCPtoOpenGL
 
 
 
-  // lua bound calls
+  // detoured calls
 
-  bool CrusaderToOpenGL::createWindow(SHCWindowOrMainStructFake* that, LPSTR windowName, unsigned int cursorResource, WNDPROC windowCallbackFunc)
+  // complete
+  void __thiscall CrusaderToOpenGL::createWindow(WNDPROC windowCallbackFunc, SHCWindowOrMainStructFake* that,
+    HINSTANCE hInstance, LPSTR windowName, unsigned int cursorResource)
   {
+    // removed original shc window init, if interested, check older git versions
+
     // keep ref
     shcWinStrucPtr = that;
+    shcWinStrucPtr->gameHInstance = hInstance;
+    shcWinStrucPtr->gameWindowHandle = NULL;
 
-    if (!confPtr) // no config, so everything normal
+    // trying to get WGL functions, if this fails, return false, Crusader crashes
+    if (!window->loadWGLFunctions(hInstance))
     {
-      // recreated original window func
-      HINSTANCE hInstance{ shcWinStrucPtr->gameHInstance };
-      LPCSTR className{ "FFwinClass" };
-
-      WNDCLASSA wndClass;
-      wndClass.hInstance = hInstance;
-      wndClass.lpfnWndProc = windowCallbackFunc;
-      wndClass.style = NULL;	// this needs changes later
-      wndClass.cbClsExtra = NULL;
-      wndClass.cbWndExtra = NULL;
-      wndClass.hIcon = LoadIconA(hInstance, (LPCSTR)(cursorResource & 0xFFFF));	// this is apparently the cursor resource?
-      wndClass.hCursor = NULL;
-      wndClass.hbrBackground = NULL;
-      wndClass.lpszMenuName = NULL;
-      wndClass.lpszClassName = className;
-
-      ATOM classAtom{ RegisterClassA(&wndClass) };
-      if (classAtom == NULL)
-      {
-        return false;
-      }
-
-      shcWinStrucPtr->gameWindowHandle = CreateWindowExA(
-        NULL,
-        className,
-        windowName,
-        WS_POPUP | WS_VISIBLE, // WS_POPUP is apperantly an indicator that the window is only short li
-        0,
-        0,
-        GetSystemMetrics(0),	// at this point, no hint exist as to how big it should be
-        GetSystemMetrics(1),
-        NULL,
-        NULL,
-        hInstance,
-        NULL
-      );
-
-      return shcWinStrucPtr->gameWindowHandle != NULL;
+      return;
     }
-    else
+
+    LPCSTR className{ "FFwinClass" };
+
+    WNDCLASSA wndClass;
+    wndClass.hInstance = hInstance;
+    wndClass.lpfnWndProc = windowCallbackFunc;
+    wndClass.style = CS_OWNDC | CS_HREDRAW | CS_VREDRAW;	// CS_OWNDC apperantly needed to allow a constant device context CS_HREDRAW | CS_VREDRAW
+    wndClass.cbClsExtra = NULL;
+    wndClass.cbWndExtra = NULL;
+    wndClass.hIcon = LoadIconA(hInstance, (LPCSTR)(cursorResource & 0xFFFF));	// this is apparently the cursor resource?
+    wndClass.hCursor = NULL;
+    wndClass.hbrBackground = NULL;
+    wndClass.lpszMenuName = NULL;
+    wndClass.lpszClassName = className;
+
+    ATOM classAtom{ RegisterClassA(&wndClass) };
+    if (classAtom == NULL)
     {
-      // try to change stuff
-      HINSTANCE hInstance{ shcWinStrucPtr->gameHInstance };
-      LPCSTR className{ "FFwinClass" };
-
-
-      // trying to get WGL functions, if this fails, return false, Crusader crashes
-      if (!window->loadWGLFunctions(hInstance))
-      {
-        return false;
-      }
-
-
-      WNDCLASSA wndClass;
-      wndClass.hInstance = hInstance;
-      wndClass.lpfnWndProc = windowCallbackFunc;
-      wndClass.style = CS_OWNDC | CS_HREDRAW | CS_VREDRAW;	// CS_OWNDC apperantly needed to allow a constant device context CS_HREDRAW | CS_VREDRAW
-      wndClass.cbClsExtra = NULL;
-      wndClass.cbWndExtra = NULL;
-      wndClass.hIcon = LoadIconA(hInstance, (LPCSTR)(cursorResource & 0xFFFF));	// this is apparently the cursor resource?
-      wndClass.hCursor = NULL;
-      wndClass.hbrBackground = NULL;
-      wndClass.lpszMenuName = NULL;
-      wndClass.lpszClassName = className;
-
-      ATOM classAtom{ RegisterClassA(&wndClass) };
-      if (classAtom == NULL)
-      {
-        return false;
-      }
-
-      RECT winRect{ GetWindowRect(confPtr->window) };
-      d.windowSize = { GetGameWidth(confPtr->window), GetGameHeight(confPtr->window) };
-
-      shcWinStrucPtr->gameWindowHandle = CreateWindowExA(
-        GetExtendedWindowStyle(confPtr->window.type),
-        className,
-        windowName,
-        GetWindowStyle(confPtr->window.type),
-        winRect.left,
-        winRect.top,
-        winRect.right - winRect.left,
-        winRect.bottom - winRect.top,
-        NULL,
-        NULL,
-        hInstance,
-        NULL
-      );
-
-      HWND handle{ shcWinStrucPtr->gameWindowHandle };
-
-      // this is an issue -> if something here fails, then the whole thing might be busted...
-      // TODO: is there a possible way around? -> close everything until then, then recreate with original Stronghold?
-      // until then, this will return false, and I assume stronghold will close (or crash, not tested here yet)
-      window->setConf(confPtr);
-      d.windowDone = handle && window->createWindow(handle);
-
-      // failing at this part can will cause issues
-      return handle != NULL;
+      return;
     }
+
+    RECT winRect{ GetWindowRect(confRef.window) };
+    d.windowSize = { GetGameWidth(confRef.window), GetGameHeight(confRef.window) };
+
+    shcWinStrucPtr->gameWindowHandle = CreateWindowExA(
+      GetExtendedWindowStyle(confRef.window.type),
+      className,
+      windowName,
+      GetWindowStyle(confRef.window.type),
+      winRect.left,
+      winRect.top,
+      winRect.right - winRect.left,
+      winRect.bottom - winRect.top,
+      NULL,
+      NULL,
+      hInstance,
+      NULL
+    );
+
+    HWND handle{ shcWinStrucPtr->gameWindowHandle };
+    if (handle == NULL)
+    {
+      return;
+    }
+
+    window->setConf(&confRef);
+    d.windowDone = handle && window->createWindow(handle);
+
+    HRESULT res{ CoInitialize(NULL) };
+    if (res != S_OK)
+    {
+      return;
+    }
+
+    // no other action should be needed -> missing actions from orig are repeated during DirectDraw Setup anyway
+
+    shcWinStrucPtr->windowCreationTime = timeGetTime();
   }
 
   HRESULT CrusaderToOpenGL::createDirectDraw(GUID* lpGUID, LPDIRECTDRAW* lplpDD, IUnknown* pUnkOuter)
@@ -334,39 +301,37 @@ namespace UCPtoOpenGL
     // trying to get as early as possible, issue -> scroll, does not seem to get set
     // by resolution change through this structure
     // -> change scroll method altogether
-    if (confPtr)  // this part will likely create issues should the window creation fail
-    {
-      static LPRECT mainDrawRect{ nullptr };
-      static bool startUpDone{ false };
-      if (!mainDrawRect)
-      {
-        mainDrawRect = lprc;
-      }
-      else if (mainDrawRect->right != xRight || mainDrawRect->bottom != yBottom)
-      {
-        if (startUpDone)
-        {
-          d.scrollMax = { mainDrawRect->right - 1, mainDrawRect->bottom - 1 };
-          resChanged = true;
-        }
-        else
-        {
-          d.scrollMax = { xRight - 1, yBottom - 1 };
-          startUpDone = true;
-        }
 
-        mainDrawRect->right = xRight;
-        mainDrawRect->bottom = yBottom;
-        d.gameTexSize = { xRight, yBottom };
-        possibleTexChange = true;
-        rectInit = true;
+    static LPRECT mainDrawRect{ nullptr };
+    static bool startUpDone{ false };
+    if (!mainDrawRect)
+    {
+      mainDrawRect = lprc;
+    }
+    else if (mainDrawRect->right != xRight || mainDrawRect->bottom != yBottom)
+    {
+      if (startUpDone)
+      {
+        d.scrollMax = { mainDrawRect->right - 1, mainDrawRect->bottom - 1 };
+        resChanged = true;
       }
-      else if (!rectInit)
+      else
       {
         d.scrollMax = { xRight - 1, yBottom - 1 };
-        rectInit = true;
-        startUpDone = true; // for the case that same size -> if this is reached, not additional handling of start needed
+        startUpDone = true;
       }
+
+      mainDrawRect->right = xRight;
+      mainDrawRect->bottom = yBottom;
+      d.gameTexSize = { xRight, yBottom };
+      possibleTexChange = true;
+      rectInit = true;
+    }
+    else if (!rectInit)
+    {
+      d.scrollMax = { xRight - 1, yBottom - 1 };
+      rectInit = true;
+      startUpDone = true; // for the case that same size -> if this is reached, not additional handling of start needed
     }
 
     return SetRect(lprc, xLeft, yTop, xRight, yBottom);
@@ -383,7 +348,7 @@ namespace UCPtoOpenGL
 
     // deactivate by setting return pos to scroll middle
     // also if no focus and window stops
-    if (!confPtr->control.scrollActive || (confPtr->window.continueOutOfFocus == NOFOCUS_CONTINUE && !hasFocus))
+    if (!confRef.control.scrollActive || (confRef.window.continueOutOfFocus == NOFOCUS_CONTINUE && !hasFocus))
     {
       *lpPoint = { d.scrollMax.w / 2, d.scrollMax.h / 2 };
       return true;
@@ -399,8 +364,8 @@ namespace UCPtoOpenGL
 
       // using screen pixels to define ranges
       // margin disabled if the cursor is clipped or no window mode
-      int margin{ confPtr->control.clipCursor || confPtr->window.type == TYPE_BORDERLESS_FULLSCREEN ||
-        confPtr->window.type == TYPE_FULLSCREEN ? 0 : confPtr->control.margin };
+      int margin{ confRef.control.clipCursor || confRef.window.type == TYPE_BORDERLESS_FULLSCREEN ||
+        confRef.window.type == TYPE_FULLSCREEN ? 0 : confRef.control.margin };
       
       if (intCursor.x < -margin || intCursor.x > d.gameScreenSize.w - 1 + margin ||
         intCursor.y < -margin || intCursor.y > d.gameScreenSize.h - 1 + margin)
@@ -420,7 +385,7 @@ namespace UCPtoOpenGL
       }
 
       // increased border -> checking here to allow easier overwrite
-      int padding{ confPtr->control.padding };
+      int padding{ confRef.control.padding };
       if (intCursor.x < padding)
       {
         cursor.x = 0.0;
@@ -467,7 +432,7 @@ namespace UCPtoOpenGL
 
   HWND WINAPI CrusaderToOpenGL::GetForegroundWindowFake()
   {
-    return (confPtr->window.continueOutOfFocus == NOFOCUS_RENDER) ? shcWinStrucPtr->gameWindowHandle : GetForegroundWindow();
+    return (confRef.window.continueOutOfFocus == NOFOCUS_RENDER) ? shcWinStrucPtr->gameWindowHandle : GetForegroundWindow();
   }
 
   bool CrusaderToOpenGL::transformMouseMovePos(LPARAM* ptrlParam)
@@ -478,7 +443,7 @@ namespace UCPtoOpenGL
     }
 
     // discard if game has no focus and continues without it being rendered
-    if (confPtr->window.continueOutOfFocus == NOFOCUS_CONTINUE && !hasFocus)
+    if (confRef.window.continueOutOfFocus == NOFOCUS_CONTINUE && !hasFocus)
     {
       return false;
     }
@@ -515,7 +480,7 @@ namespace UCPtoOpenGL
     }
 
     // found no other way to proper minimize
-    if (confPtr->window.type == TYPE_BORDERLESS_FULLSCREEN || confPtr->window.type == TYPE_FULLSCREEN)
+    if (confRef.window.type == TYPE_BORDERLESS_FULLSCREEN || confRef.window.type == TYPE_FULLSCREEN)
     {
       ShowWindow(shcWinStrucPtr->gameWindowHandle, SW_MINIMIZE);
     }
@@ -523,13 +488,13 @@ namespace UCPtoOpenGL
     hasFocus = false;
     rectInit = false;
 
-    if (confPtr->control.clipCursor)
+    if (confRef.control.clipCursor)
     {
       ClipCursor(NULL); // free cursor
       cursorClipped = false;
     }
 
-    return !(confPtr->window.continueOutOfFocus); // if zero (NOFOCUS_PAUSE), continue
+    return !(confRef.window.continueOutOfFocus); // if zero (NOFOCUS_PAUSE), continue
   }
 
   bool CrusaderToOpenGL::windowSetFocus()
@@ -542,23 +507,23 @@ namespace UCPtoOpenGL
     hasFocus = true;
     resChanged = false;
 
-    if (confPtr->window.continueOutOfFocus == NOFOCUS_CONTINUE)
+    if (confRef.window.continueOutOfFocus == NOFOCUS_CONTINUE)
     {
       devourAfterFocus = true;
     }
 
     // because of interaction with window border needs other handling
-    if (confPtr->window.type != TYPE_WINDOW && confPtr->control.clipCursor)
+    if (confRef.window.type != TYPE_WINDOW && confRef.control.clipCursor)
     {
       clipCursor();
     }
 
-    return !(confPtr->window.continueOutOfFocus); // if zero (NOFOCUS_PAUSE), continue
+    return !(confRef.window.continueOutOfFocus); // if zero (NOFOCUS_PAUSE), continue
   }
 
   bool CrusaderToOpenGL::windowActivated(bool active) // nothing currently
   {
-    if (!confPtr->window.continueOutOfFocus)
+    if (!confRef.window.continueOutOfFocus)
     {
       return true;
     }
@@ -576,7 +541,7 @@ namespace UCPtoOpenGL
   void CrusaderToOpenGL::windowDestroyed()
   {
     // a final free action
-    if (confPtr->control.clipCursor)
+    if (confRef.control.clipCursor)
     {
       ClipCursor(NULL);
       cursorClipped = false;
@@ -595,7 +560,7 @@ namespace UCPtoOpenGL
   {
     bool ret{ true };
 
-    if (confPtr->window.type == TYPE_WINDOW && confPtr->control.clipCursor)
+    if (confRef.window.type == TYPE_WINDOW && confRef.control.clipCursor)
     {
       if (!cursorClipped && hasFocus)
       {
@@ -603,7 +568,7 @@ namespace UCPtoOpenGL
       }
     }
 
-    if (confPtr->window.continueOutOfFocus == NOFOCUS_CONTINUE && devourAfterFocus)
+    if (confRef.window.continueOutOfFocus == NOFOCUS_CONTINUE && devourAfterFocus)
     {
       devourAfterFocus = false;
       ret = ret && false;
@@ -618,13 +583,13 @@ namespace UCPtoOpenGL
   // NOTE: currently unused
   void CrusaderToOpenGL::setWindowStyleAndSize()
   {
-    RECT newWinRect{ GetWindowRect(confPtr->window) };
-    d.windowSize = { GetGameWidth(confPtr->window), GetGameHeight(confPtr->window) };
+    RECT newWinRect{ GetWindowRect(confRef.window) };
+    d.windowSize = { GetGameWidth(confRef.window), GetGameHeight(confRef.window) };
 
     // this would set a new style and adjust the window
     // however, screenshots still do not work
-    DWORD newStyle{ GetWindowStyle(confPtr->window.type) };
-    DWORD newExStyle{ GetExtendedWindowStyle(confPtr->window.type) };
+    DWORD newStyle{ GetWindowStyle(confRef.window.type) };
+    DWORD newExStyle{ GetExtendedWindowStyle(confRef.window.type) };
 
     HWND handle{ shcWinStrucPtr->gameWindowHandle };
     SetWindowLongPtr(handle, GWL_STYLE, newStyle);

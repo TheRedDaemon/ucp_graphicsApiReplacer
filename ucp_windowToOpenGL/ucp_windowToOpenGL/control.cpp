@@ -17,7 +17,7 @@ namespace UCPtoOpenGL
   namespace Control
   {
     ToOpenGLConfig Conf;
-    CrusaderToOpenGL ToOpenGL{ &Conf };
+    CrusaderToOpenGL ToOpenGL{ Conf };
 
     LRESULT CALLBACK WindowProcCallbackFake(_In_ HWND hwnd, _In_ UINT uMsg, _In_ WPARAM wParam, _In_ LPARAM lParam)
     {

@@ -29,9 +29,6 @@ namespace UCPtoOpenGL
     lua_pushinteger(L, (DWORD)DetourFunc::CreateWindowComplete);
     lua_setfield(L, -2, "funcAddress_CreateWindow");
 
-    //lua_pushinteger(L, (DWORD)NakedCreateWindowComplete);
-    //lua_setfield(L, -2, "funcAddress_CreateWindow");
-
     // simple replace
     lua_pushinteger(L, (DWORD)DetourFunc::DirectDrawCreateCall);
     lua_setfield(L, -2, "funcAddress_DirectDrawCreate");

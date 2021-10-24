@@ -13,7 +13,7 @@ namespace UCPtoOpenGL
   class CrusaderToOpenGL : public FakeDirectDraw
   {
   public:
-    CrusaderToOpenGL(ToOpenGLConfig* conf);
+    CrusaderToOpenGL(ToOpenGLConfig& conf);
     virtual ~CrusaderToOpenGL();
 
     /*** need impl ***/
@@ -27,7 +27,8 @@ namespace UCPtoOpenGL
     /* copied structure end */
 
     // that -> the stronghold object(whatever it is)
-    bool createWindow(SHCWindowOrMainStructFake* that, LPSTR windowName, unsigned int cursorResource, WNDPROC keyboardCallbackFunc);
+     void __thiscall createWindow(WNDPROC windowCallbackFunc, SHCWindowOrMainStructFake* that,
+      HINSTANCE hInstance, LPSTR windowName, unsigned int cursorResource);
 
     HRESULT createDirectDraw(GUID* lpGUID, LPDIRECTDRAW* lplpDD, IUnknown* pUnkOuter);
 
@@ -81,7 +82,7 @@ namespace UCPtoOpenGL
   private:  // variables
 
     // config:
-    ToOpenGLConfig* const confPtr{ nullptr };
+    ToOpenGLConfig& confRef;
 
     // intern:
 
@@ -91,7 +92,7 @@ namespace UCPtoOpenGL
     struct
     {
       // flags
-      bool            windowDone        { false };
+      bool            windowDone        { false };      // this might get removed, instead becoming a working or breaking situation
 
       // sizes
       Size<int>       windowSize        { 1280, 720 };  // ignores border etc.

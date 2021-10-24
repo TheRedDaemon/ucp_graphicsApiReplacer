@@ -8,25 +8,26 @@ namespace UCPtoOpenGL
 {
   namespace DetourFunc
   {
-    // using fastCall hack to get this in global function
-    // source: https://www.unknowncheats.me/forum/c-and-c-/154364-detourfunction-__thiscall.html
-    // note: the second parameter is EDX and a dummy that should be ignored!
-    bool __fastcall CreateWindowComplete(SHCWindowOrMainStructFake* that, DWORD, LPSTR windowName, unsigned int unknown)
-    {
-      return Control::ToOpenGL.createWindow(that, windowName, unknown, Control::WindowProcCallbackFake);
-    }
-
-    // callback function missing
-    bool __declspec(naked) NakedCreateWindowComplete()
+    void __declspec(naked) CreateWindowComplete()
     {
       __asm {
-        push    ecx   // push that pointer
-        push    Control::WindowProcCallbackFake
-        mov     ecx, Control::ToOpenGL // mov toOpenGL this pointer
+        // move return
+        sub     esp, 4
+        push    dword ptr [esp + 4]
+        add     esp, 12
+        
+        // push
+        push    ecx
+        push    dword ptr[Control::WindowProcCallbackFake]
+
+        
+        sub     esp, 4  // set return address
+
+        mov     ecx, offset Control::ToOpenGL // mov toOpenGL this pointer
+        
         jmp     CrusaderToOpenGL::createWindow  // jump to actual func
       }
     }
-
 
 
     HRESULT WINAPI DirectDrawCreateCall(GUID* lpGUID, LPDIRECTDRAW* lplpDD, IUnknown* pUnkOuter)
