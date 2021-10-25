@@ -74,12 +74,13 @@ namespace UCPtoOpenGL
           }
           break;
         }
-        /*
         case WM_DISPLAYCHANGE:
         case WM_SIZE:
-        {
-          return 0; // prevent game from knowing, that the game size or the display + bit depth changed
-        }
+          return 0;   // prevent game from knowing, that the size or display + bit depth changed
+        /*
+        case WM_PAINT:  // paint does kinda strange stuff, like requesting a begin and end paint after one another
+          break;        // but since it sets values I do not have access to, I leave it at the moment
+                        // I am wondering if the reason for the not as smooth ALT-TAB to the menu is here
         */
         case WM_DESTROY:
           ToOpenGL.windowDestroyed();

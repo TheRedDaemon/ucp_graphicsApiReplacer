@@ -45,10 +45,12 @@ end
 
 -- get addresses
 local addresses = {
-  windowCreateCallAddr              = {"E8 ? ? ? ? 85 C0 74 2F 6A 00 FF 15"},
+  windowCreateCallAddr              = {"E8 ? ? EF FF 89 2D ? ? F2 00 E8 ? ? EC FF"},
+  releaseDirectDrawAddr             = {"53 8B 5C 24 08 56 57 33 FF 3b DF 8B F1 89 3E 74 1B"},
+  restoreDirectDrawAddr             = {"56 8b f1 83 be f8 00 00 00 01 75 1b 83 be f4"},
+  
   directDrawCreateAddr              = {"E8 ? ? ? ? BE 01 00 00 00 89 B3 F8 00 00 00"},
   getSystemMetricAddr               = {"8B 1D ? ? ? ? 57 50 57 57 6A 01 FF D3"},
-  setRectAddr                       = {"8B 1D ? ? ? ? 51 52 6A 00 6A 00 8D ? ? ? 50"},
   setWindowPosAddr                  = {"FF 15 ? ? ? ? 8B 96 ? ? ? ? 52 FF 15 ? ? ? ? 8B 86 ? ? ? ? 50 FF 15 ? ? ? ? 5F 5E 5D"},
   getCursorPosAddr                  = {"FF 15 ? ? ? ? 8B 44 ? ? 3B C7 8B 4C ? ? 89 ? ? 89 ? ? 7F"},
   updateWindowAddr                  = {"FF 15 ? ? ? ? 8B 86 ? ? ? ? 50 FF 15 ? ? ? ? 5F 5E 5D 5B 83 C4 10 C3"},
@@ -105,8 +107,29 @@ exports.enable = function(self, moduleConfig, globalConfig)
 
   -- actually a _thiscall, but changed to call own function
   writeCode(
-    addresses.windowCreateCallAddr[2], -- extreme 1.41.1-E address: 0x00470189
+    addresses.windowCreateCallAddr[2], -- extreme 1.41.1-E address: 0x0057C390 
     {0xe8, ucpOpenGL.funcAddress_CreateWindow - addresses.windowCreateCallAddr[2] - 5}
+  )
+
+  -- __thiscall function that would release the DirectDraw objects,
+  -- however, only ret -> always able to draw (do not know if this breaks something
+  writeCode(
+    addresses.releaseDirectDrawAddr[2],  -- extreme 1.41.1-E address; 0x00467FB0
+    {
+      -- 0x31, 0xc0,       -- xor    eax,eax               (zero)
+      -- 0x89, 0x01,       -- mov    DWORD PTR [ecx],eax   (set DrawReady to 0)
+      0xc2, 0x04, 0x00  -- ret    0x4                   (remove one strack value)
+    }
+  )
+  
+  -- __thiscall function that would restore the DirectDraw objects,
+  -- however, ret 0, too not trigger window init again
+  writeCode(
+    addresses.restoreDirectDrawAddr[2],  -- extreme 1.41.1-E address; 0x004680F0
+    {
+      0x31, 0xc0,       -- xor    eax,eax               (zero)
+      0xc3              -- ret
+    }
   )
 
 
@@ -119,11 +142,6 @@ exports.enable = function(self, moduleConfig, globalConfig)
   writeCode(
     getPtrAddrFromMov(addresses.getSystemMetricAddr[2]), -- extreme 1.41.1-E address: 0x0059E1D0
     {ucpOpenGL.funcAddress_GetSystemMetrics}
-  )
-
-  writeCode(
-    getPtrAddrFromMov(addresses.setRectAddr[2]), -- extreme 1.41.1-E address: 0x0059E200
-    {ucpOpenGL.funcAddress_SetRect}
   )
 
   writeCode(

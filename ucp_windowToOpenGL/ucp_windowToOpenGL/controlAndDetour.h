@@ -39,7 +39,6 @@ namespace UCPtoOpenGL
 
     HRESULT WINAPI DirectDrawCreateCall(GUID* lpGUID, LPDIRECTDRAW* lplpDD, IUnknown* pUnkOuter);
     int WINAPI GetSystemMetricsCall(int nIndex);
-    BOOL WINAPI SetRectCall(LPRECT lprc, int xLeft, int yTop, int xRight, int yBottom);
     BOOL WINAPI SetWindowPosCall(HWND hWnd, HWND hWndInsertAfter, int X, int Y, int cx, int cy, UINT uFlag);
     BOOL WINAPI GetCursorPosCall(LPPOINT lpPoint);
     HWND WINAPI GetForegroundWindowCall();

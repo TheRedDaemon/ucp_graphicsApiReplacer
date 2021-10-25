@@ -49,10 +49,14 @@ namespace UCPtoOpenGL
     // ignore callback, just fill struct:
     for (size_t i = 1; i < RESOLUTIONS.size() - 1; i++) // 0 and the last are not available
     {
-      // this res causes a crash, because it is handled differently
-      if (i == RES_1366_X_768)
+      // this res has an issue with rendering the endscreen, the elements are too close, you can not leave the screen
+      // I would assume the menu positions are created for RES_1024_X_768
+      // the lose screen func as two flags set for 800x600, maybe this would need to be set for this also?
+      // anyway, this res is functionally broken and I am not sure if this is an issue of my code
+      // func in crusader: 0x004d55d0, flag based on res in that func: 0x004d5629
+      if (i == RES_1024_X_600)
       {
-        continue; // -> disabled at the moment
+        continue; // -> disabled
       }
 
       shcWinStrucPtr->resolutionSupported[i] = 1;
@@ -78,50 +82,44 @@ namespace UCPtoOpenGL
 
   STDMETHODIMP_(HRESULT __stdcall) CrusaderToOpenGL::SetDisplayMode(DWORD width, DWORD height, DWORD)
   {
-    // in-theory, the earliest to adapt to screen changes where the tex heights are known is now the
-    // setRectFake function on the second call per request
-
-    // execute either if hint received or if the tex size is not initialized
-    Size<int>& texS{ d.gameTexSize };
-    if (possibleTexChange || texS.w == 0 || texS.h == 0)
+    // both methods work -> prefer all handle the same
+    if (width == 1366)
     {
-      Size<int>& winS{ d.windowSize };
-      Size<int>& winOff{ d.windowOffset };
-      double& mul{ d.winToTexMult };
-      Size<int>& screenS{ d.gameScreenSize };
-      Size<double>& winToGame{ d.winToGamePos };
-
-      texS = { (int)width, (int)height };
-
-      //create new bit maps
-      int pixNum{ texS.w * texS.h };
-      back.createBitData(pixNum);
-      offMain.createBitData(pixNum);
-
-      // change scale
-      // I choose the easy route, algorithm: https://math.stackexchange.com/a/1620375
-      
-      // compute needed base values
-      Size<double> winToTex{ static_cast<double>(texS.w) / winS.w, static_cast<double>(texS.h) / winS.h };
-      mul = winToTex.h > winToTex.w ? winToTex.h : winToTex.w;
-      Size<double> winScale{ winToTex.w / mul, winToTex.h / mul };
-      
-      // offset in window pixels
-      winOff = { lround((1.0 - winScale.w) * winS.w / 2.0), lround((1.0 - winScale.h) * winS.h / 2.0) };
-
-      // size of the game in the window
-      screenS = { winS.w - winOff.w * 2, winS.h - winOff.h * 2 };
-
-      // for positions, I need to use the relation between the size of the game in the window, and the tex (the pixel size of the game)
-      winToGame = { (static_cast<double>(texS.w) - 1.0) / (screenS.w - 1.0), (static_cast<double>(texS.h) - 1.0) / (screenS.h - 1.0) };
-
-      window->adjustTexSizeAndViewport(texS, winS, winScale);
-
-      possibleTexChange = false;
+      shcWinStrucPtr->gameResolutionXTimes2_2 = width * 2;
+      shcWinStrucPtr->numPixel_GameXTimes2_x_GameY = shcWinStrucPtr->gameResolutionXTimes2_2 * shcWinStrucPtr->gameResolutionY;
+      //width = 1368;
     }
 
-    // set clip for cursor -> should be needed for resolution change
-    if (confRef.control.clipCursor && (confRef.window.type != TYPE_WINDOW || resChanged))
+    d.gameTexSize = { (int)width, (int)height };
+    d.scrollRange = { (int)width - 1, (int)height - 1 };
+
+    //create new bit maps
+    int pixNum{ d.gameTexSize.w * d.gameTexSize.h };
+    back.createBitData(pixNum);
+    offMain.createBitData(pixNum);
+
+    // change scale
+    // I choose the easy route, algorithm: https://math.stackexchange.com/a/1620375
+      
+    // compute needed base values
+    Size<double> winToTex{ static_cast<double>(d.gameTexSize.w) / d.windowSize.w, static_cast<double>(d.gameTexSize.h) / d.windowSize.h };
+    double winToTexMult = winToTex.h > winToTex.w ? winToTex.h : winToTex.w;
+    Size<double> winScale{ winToTex.w / winToTexMult, winToTex.h / winToTexMult };
+      
+    // offset in window pixels
+    d.windowOffset = { lround((1.0 - winScale.w) * d.windowSize.w / 2.0), lround((1.0 - winScale.h) * d.windowSize.h / 2.0) };
+
+    // size of the game in the window
+    d.gameWindowRange = { d.windowSize.w - d.windowOffset.w * 2 - 1, d.windowSize.h - d.windowOffset.h * 2 - 1 };
+
+    // for positions, I need to use the relation between the range ( 0 -> width - 1 ) of the window and the game
+    d.winToGamePos = { static_cast<double>(d.scrollRange.w) / d.gameWindowRange.w, static_cast<double>(d.scrollRange.h) / d.gameWindowRange.h };
+
+    window->adjustTexSizeAndViewport(d.gameTexSize, d.windowSize, winScale);
+
+
+    // set clip for cursor
+    if (confRef.control.clipCursor && confRef.window.type != TYPE_WINDOW)
     {
       clipCursor();
     }
@@ -257,84 +255,19 @@ namespace UCPtoOpenGL
 
   int CrusaderToOpenGL::getFakeSystemMetrics(int nIndex)
   {
-    // The fake window size can only be set after a refocus. Before that, it likely sets the choosen render size
-    // before or around the "SetDisplayMode" method.
-    // TODO: Find out how to change this. It also effects other parts. -> Using real screen size as return for now.
-    if (d.windowDone)
+    // if no infomration was received, the return will be the RES_1280_X_720
+    if (nIndex == SM_CXSCREEN || nIndex == SM_CYSCREEN)
     {
-      switch (nIndex)
+      GameResolution currRes{ GameResolution::RES_1280_X_720 };
+      if (shcWinStrucPtr && shcWinStrucPtr->currentGameResolution != GameResolution::RES_NONE)
       {
-      case SM_CXSCREEN:
-      {
-        int texWidth{ d.gameTexSize.w };
-        if (texWidth > 0)
-        {
-          return texWidth;
-        }
-        break;
+        currRes = shcWinStrucPtr->currentGameResolution;
       }
-      case SM_CYSCREEN:
-      {
-        int texHeight{ d.gameTexSize.h };
-        if (texHeight > 0)
-        {
-          return texHeight;
-        }
-        break;
-      }
-      default:
-        break;
-      }
+
+      return nIndex == SM_CXSCREEN ? RESOLUTIONS[currRes][0] : RESOLUTIONS[currRes][1];
     }
+
     return GetSystemMetrics(nIndex);
-  }
-
-
-  BOOL CrusaderToOpenGL::setFakeRect(LPRECT lprc, int xLeft, int yTop, int xRight, int yBottom)
-  {
-    // There seem to be three Rects (at least around the screen init):
-    // -> The main Rect
-    // -> a second rect for the initialisation (only during init, resolution)
-    // -> a third used during refocus
-    // this structure adapts to the first
-
-    // trying to get as early as possible, issue -> scroll, does not seem to get set
-    // by resolution change through this structure
-    // -> change scroll method altogether
-
-    static LPRECT mainDrawRect{ nullptr };
-    static bool startUpDone{ false };
-    if (!mainDrawRect)
-    {
-      mainDrawRect = lprc;
-    }
-    else if (mainDrawRect->right != xRight || mainDrawRect->bottom != yBottom)
-    {
-      if (startUpDone)
-      {
-        d.scrollMax = { mainDrawRect->right - 1, mainDrawRect->bottom - 1 };
-        resChanged = true;
-      }
-      else
-      {
-        d.scrollMax = { xRight - 1, yBottom - 1 };
-        startUpDone = true;
-      }
-
-      mainDrawRect->right = xRight;
-      mainDrawRect->bottom = yBottom;
-      d.gameTexSize = { xRight, yBottom };
-      possibleTexChange = true;
-      rectInit = true;
-    }
-    else if (!rectInit)
-    {
-      d.scrollMax = { xRight - 1, yBottom - 1 };
-      rectInit = true;
-      startUpDone = true; // for the case that same size -> if this is reached, not additional handling of start needed
-    }
-
-    return SetRect(lprc, xLeft, yTop, xRight, yBottom);
   }
 
 
@@ -346,11 +279,13 @@ namespace UCPtoOpenGL
       return GetCursorPos(lpPoint);
     }
 
+
+
     // deactivate by setting return pos to scroll middle
     // also if no focus and window stops
-    if (!confRef.control.scrollActive || (confRef.window.continueOutOfFocus == NOFOCUS_CONTINUE && !hasFocus))
+    if (!confRef.control.scrollActive || (confRef.window.continueOutOfFocus == NOFOCUS_CONTINUE && !d.hasFocus))
     {
-      *lpPoint = { d.scrollMax.w / 2, d.scrollMax.h / 2 };
+      *lpPoint = { d.scrollRange.w / 2, d.scrollRange.h / 2 };
       return true;
     }
 
@@ -358,7 +293,7 @@ namespace UCPtoOpenGL
     if (success)
     {
       Size<int>& texS{ d.gameTexSize };
-      Size<int>& scrollM{ d.scrollMax };
+      Size<int>& scrollM{ d.scrollRange };
 
       Size<int> intCursor{ lpPoint->x - d.windowOffset.x, lpPoint->y - d.windowOffset.y };
 
@@ -367,8 +302,8 @@ namespace UCPtoOpenGL
       int margin{ confRef.control.clipCursor || confRef.window.type == TYPE_BORDERLESS_FULLSCREEN ||
         confRef.window.type == TYPE_FULLSCREEN ? 0 : confRef.control.margin };
       
-      if (intCursor.x < -margin || intCursor.x > d.gameScreenSize.w - 1 + margin ||
-        intCursor.y < -margin || intCursor.y > d.gameScreenSize.h - 1 + margin)
+      if (intCursor.x < -margin || intCursor.x > d.gameWindowRange.w + margin ||
+        intCursor.y < -margin || intCursor.y > d.gameWindowRange.h + margin)
       {
         *lpPoint = { scrollM.w / 2, scrollM.h / 2 };
         return true;
@@ -377,20 +312,13 @@ namespace UCPtoOpenGL
       // transform to game
       Size<double> cursor{ static_cast<double>(intCursor.x) * d.winToGamePos.x, static_cast<double>(intCursor.y) * d.winToGamePos.y };
 
-      // if the game never stops, a tab switch will not reset the cursor control
-      // this can cause issues if the initial resolution is rather high or vice versa
-      if (resChanged /* || confPtr->window.continueOutOfFocus*/)
-      {
-        cursor = { scrollM.w * cursor.x / (texS.w - 1.0), scrollM.h * cursor.y / (texS.h - 1.0) };
-      }
-
       // increased border -> checking here to allow easier overwrite
       int padding{ confRef.control.padding };
       if (intCursor.x < padding)
       {
         cursor.x = 0.0;
       }
-      else if (intCursor.x > d.gameScreenSize.w - 1 - padding)
+      else if (intCursor.x > d.gameWindowRange.w - padding)
       {
         cursor.x = texS.w - 1.0;
       }
@@ -399,7 +327,7 @@ namespace UCPtoOpenGL
       {
         cursor.y = 0.0;
       }
-      else if (intCursor.y > d.gameScreenSize.h - 1 - padding)
+      else if (intCursor.y > d.gameWindowRange.h - padding)
       {
         cursor.y = texS.h - 1.0;
       }
@@ -443,7 +371,7 @@ namespace UCPtoOpenGL
     }
 
     // discard if game has no focus and continues without it being rendered
-    if (confRef.window.continueOutOfFocus == NOFOCUS_CONTINUE && !hasFocus)
+    if (confRef.window.continueOutOfFocus == NOFOCUS_CONTINUE && !d.hasFocus)
     {
       return false;
     }
@@ -454,8 +382,8 @@ namespace UCPtoOpenGL
     Size<int> gameWinMousePos{ mousePos.x - d.windowOffset.x, mousePos.y - d.windowOffset.y };
 
     // discard if outside screen
-    if (gameWinMousePos.x < 0 || gameWinMousePos.x > d.gameScreenSize.w - 1 ||
-      gameWinMousePos.y < 0 || gameWinMousePos.y > d.gameScreenSize.h - 1)
+    if (gameWinMousePos.x < 0 || gameWinMousePos.x > d.gameWindowRange.w ||
+      gameWinMousePos.y < 0 || gameWinMousePos.y > d.gameWindowRange.h)
     {
       return false;
     }
@@ -478,6 +406,7 @@ namespace UCPtoOpenGL
     {
       return true;
     }
+    d.hasFocus = false;
 
     // found no other way to proper minimize
     if (confRef.window.type == TYPE_BORDERLESS_FULLSCREEN || confRef.window.type == TYPE_FULLSCREEN)
@@ -485,13 +414,10 @@ namespace UCPtoOpenGL
       ShowWindow(shcWinStrucPtr->gameWindowHandle, SW_MINIMIZE);
     }
 
-    hasFocus = false;
-    rectInit = false;
-
     if (confRef.control.clipCursor)
     {
       ClipCursor(NULL); // free cursor
-      cursorClipped = false;
+      d.cursorClipped = false;
     }
 
     return !(confRef.window.continueOutOfFocus); // if zero (NOFOCUS_PAUSE), continue
@@ -503,13 +429,11 @@ namespace UCPtoOpenGL
     {
       return true;
     }
-
-    hasFocus = true;
-    resChanged = false;
+    d.hasFocus = true;
 
     if (confRef.window.continueOutOfFocus == NOFOCUS_CONTINUE)
     {
-      devourAfterFocus = true;
+      d.devourAfterFocus = true;
     }
 
     // because of interaction with window border needs other handling
@@ -523,6 +447,12 @@ namespace UCPtoOpenGL
 
   bool CrusaderToOpenGL::windowActivated(bool active) // nothing currently
   {
+    if (active && shcWinStrucPtr) // setting to process input, to ignore window again request
+    {
+      shcWinStrucPtr->isNotProcessingInputEvents = 0;
+      SetFocus(shcWinStrucPtr->gameWindowHandle);
+    }
+
     if (!confRef.window.continueOutOfFocus)
     {
       return true;
@@ -544,7 +474,7 @@ namespace UCPtoOpenGL
     if (confRef.control.clipCursor)
     {
       ClipCursor(NULL);
-      cursorClipped = false;
+      d.cursorClipped = false;
     }
 
     // windows spoke: https://docs.microsoft.com/en-us/windows/win32/opengl/deleting-a-rendering-context
@@ -562,15 +492,15 @@ namespace UCPtoOpenGL
 
     if (confRef.window.type == TYPE_WINDOW && confRef.control.clipCursor)
     {
-      if (!cursorClipped && hasFocus)
+      if (!d.cursorClipped && d.hasFocus)
       {
         clipCursor();
       }
     }
 
-    if (confRef.window.continueOutOfFocus == NOFOCUS_CONTINUE && devourAfterFocus)
+    if (confRef.window.continueOutOfFocus == NOFOCUS_CONTINUE && d.devourAfterFocus)
     {
-      devourAfterFocus = false;
+      d.devourAfterFocus = false;
       ret = ret && false;
     }
 
@@ -614,6 +544,6 @@ namespace UCPtoOpenGL
     winPos.top += d.windowOffset.h;
     winPos.bottom -= d.windowOffset.h;
     ClipCursor(&winPos); // clip cursor
-    cursorClipped = true;
+    d.cursorClipped = true;
   }
 }

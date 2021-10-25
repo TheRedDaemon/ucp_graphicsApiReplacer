@@ -34,8 +34,6 @@ namespace UCPtoOpenGL
 
     int getFakeSystemMetrics(int nIndex);
 
-    BOOL setFakeRect(LPRECT lprc, int xLeft, int yTop, int xRight, int yBottom);
-
     BOOL getWindowCursorPos(LPPOINT lpPoint);
 
     BOOL setWindowPosFake(HWND, HWND, int, int, int, int, UINT);
@@ -93,33 +91,18 @@ namespace UCPtoOpenGL
     {
       // flags
       bool            windowDone        { false };      // this might get removed, instead becoming a working or breaking situation
+      bool            hasFocus          { true };       // should have focus at start
+      bool            devourAfterFocus  { false };      // only window continue without render, after the foucs is regained, it requires a first click to get the input again
+      bool            cursorClipped     { false };      // only for window mode
 
       // sizes
       Size<int>       windowSize        { 1280, 720 };  // ignores border etc.
       Size<int>       windowOffset      { 0, 0 };
-      Size<int>       gameScreenSize    { 1280, 720 };
+      Size<int>       gameWindowRange   { 1279, 719 };  // window size - 1, because range
       Size<int>       gameTexSize       { 0, 0 };
-      Size<int>       scrollMax         { 0, 0 };       // width - 1, because scroll max
+      Size<int>       scrollRange       { 1279, 719 };  // game size - 1, because scroll max
       Size<double>    winToGamePos      { 1.0, 1.0 };   // used for positions, since they range from 0 to width - 1 and need handling for both axes
-
-      // other value types
-      double          winToTexMult      { 1.0 };        // used for sizes, ranging from 0 to width
-      int             scrollDeadZone    { 0 };          // zone in render pixels outside of window where it still scrolls
-      int             scrollZoneWidth   { 0 };          // zone in render pixels inside the window where it already scrolls
     } d;  // data
-
-   
-    bool hasFocus{ true };  // should have focus at start
-    bool devourAfterFocus{ false }; // only window continue without render, after the foucs is regained, it requires a first click to get the input again
-    bool cursorClipped{ false };  // only for window mode
-
-    bool possibleTexChange{ false };  // hint that the texture might have changed
-
-    // set during drawing rect inits, removed during DirectDrawCreate
-    // sets scroll borders, since they do not react to resolution changes
-    bool rectInit{ false };
-    bool resChanged{ false };
-    
 
     SHCWindowOrMainStructFake* shcWinStrucPtr{ nullptr };
   };

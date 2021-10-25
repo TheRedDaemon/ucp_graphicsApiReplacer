@@ -38,10 +38,6 @@ namespace UCPtoOpenGL
     lua_setfield(L, -2, "funcAddress_GetSystemMetrics");
 
     // simple replace
-    lua_pushinteger(L, (DWORD)DetourFunc::SetRectCall);
-    lua_setfield(L, -2, "funcAddress_SetRect");
-
-    // simple replace
     lua_pushinteger(L, (DWORD)DetourFunc::SetWindowPosCall);
     lua_setfield(L, -2, "funcAddress_SetWindowPos");
 

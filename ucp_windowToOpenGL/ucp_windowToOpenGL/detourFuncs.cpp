@@ -11,17 +11,14 @@ namespace UCPtoOpenGL
     void __declspec(naked) CreateWindowComplete()
     {
       __asm {
-        // move return
-        sub     esp, 4
-        push    dword ptr [esp + 4]
-        add     esp, 12
+        // remove return address (eax should be free to modify
+        mov     eax, dword ptr [esp]
+        add     esp, 4
         
         // push
         push    ecx
         push    dword ptr[Control::WindowProcCallbackFake]
-
-        
-        sub     esp, 4  // set return address
+        push    eax  // set ret address again
 
         mov     ecx, offset Control::ToOpenGL // mov toOpenGL this pointer
         
@@ -43,15 +40,6 @@ namespace UCPtoOpenGL
     {
       return Control::ToOpenGL.getFakeSystemMetrics(nIndex);
     }
-
-    // the main drawing rect is set via a user call -> keep the pointer, change it on demand
-    // TODO: Replacing the jump routes all code through here, maybe there are less hard methods?
-    //  - depends on how other stuff gets handeld
-
-    BOOL WINAPI SetRectCall(LPRECT lprc, int xLeft, int yTop, int xRight, int yBottom)
-    {
-      return Control::ToOpenGL.setFakeRect(lprc, xLeft, yTop, xRight, yBottom);
-    };
 
 
     // set window call -> simply deactivate
