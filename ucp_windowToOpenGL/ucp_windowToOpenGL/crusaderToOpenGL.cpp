@@ -82,14 +82,6 @@ namespace UCPtoOpenGL
 
   STDMETHODIMP_(HRESULT __stdcall) CrusaderToOpenGL::SetDisplayMode(DWORD width, DWORD height, DWORD)
   {
-    // both methods work -> prefer all handle the same
-    if (width == 1366)
-    {
-      shcWinStrucPtr->gameResolutionXTimes2_2 = width * 2;
-      shcWinStrucPtr->numPixel_GameXTimes2_x_GameY = shcWinStrucPtr->gameResolutionXTimes2_2 * shcWinStrucPtr->gameResolutionY;
-      //width = 1368;
-    }
-
     d.gameTexSize = { (int)width, (int)height };
     d.scrollRange = { (int)width - 1, (int)height - 1 };
 
@@ -217,15 +209,45 @@ namespace UCPtoOpenGL
     window->setConf(&confRef);
     d.windowDone = handle && window->createWindow(handle);
 
-    HRESULT res{ CoInitialize(NULL) };
-    if (res != S_OK)
-    {
-      return;
-    }
+    HRESULT res{ CoInitialize(NULL) };  // ignoring res, like SHC
+    shcWinStrucPtr->windowCreationTime = timeGetTime();
 
     // no other action should be needed -> missing actions from orig are repeated during DirectDraw Setup anyway
+  }
 
-    shcWinStrucPtr->windowCreationTime = timeGetTime();
+
+  void CrusaderToOpenGL::drawInit(DWORD winSetRectObjBaseAddr, SHCWindowOrMainStructFake* that)
+  {
+    // at this point, create window should be there, but still
+    if (shcWinStrucPtr != that)
+    {
+      shcWinStrucPtr = that;
+    }
+    SHCWindowOrMainStructFake& mainStruct{ *shcWinStrucPtr };
+    Size<int>& texS{ d.gameTexSize };
+    texS = { getFakeSystemMetrics(SM_CXSCREEN), getFakeSystemMetrics(SM_CYSCREEN) };
+
+    // set getDeviceCaps values
+    mainStruct.colorDepth = 0x10;  // simply to 16
+    mainStruct.screenWidthInPixels = texS.w; // to current res -> defaults to 1280x720
+    mainStruct.screenHeightInPixels = texS.h;
+    mainStruct.runGameAsExclusiveFullscreen = 1;
+
+    // set setWindowStyleAndRect values:
+    mainStruct.clientOnScreenCoords = { 0, 0, texS.w, texS.h };
+
+    // these values might not be used, set them anyway for now
+    int* resRect{ (int*)(winSetRectObjBaseAddr + 0x30) };
+    *resRect = 0;
+    *(resRect + 1) = texS.w;
+    *(resRect + 2) = 0;
+    *(resRect + 3) = texS.h;
+    mainStruct.gameInWindowPosX = 0;
+    mainStruct.gameInWindowPosY = 0;
+    mainStruct.gameOnScreenPosX = 0;
+    mainStruct.gameOnScreenPosX = 0;
+
+    // DirectDrawCreate
   }
 
   HRESULT CrusaderToOpenGL::createDirectDraw(GUID* lpGUID, LPDIRECTDRAW* lplpDD, IUnknown* pUnkOuter)

@@ -27,8 +27,10 @@ namespace UCPtoOpenGL
     /* copied structure end */
 
     // that -> the stronghold object(whatever it is)
-     void __thiscall createWindow(WNDPROC windowCallbackFunc, SHCWindowOrMainStructFake* that,
-      HINSTANCE hInstance, LPSTR windowName, unsigned int cursorResource);
+    void __thiscall createWindow(WNDPROC windowCallbackFunc, SHCWindowOrMainStructFake* that,
+    HINSTANCE hInstance, LPSTR windowName, unsigned int cursorResource);
+
+    void __thiscall drawInit(DWORD winSetRectObjBaseAddr, SHCWindowOrMainStructFake* that);
 
     HRESULT createDirectDraw(GUID* lpGUID, LPDIRECTDRAW* lplpDD, IUnknown* pUnkOuter);
 

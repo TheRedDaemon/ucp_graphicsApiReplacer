@@ -137,7 +137,7 @@ namespace UCPtoOpenGL
 
   STDMETHODIMP_(HRESULT __stdcall) FakeDirectDraw::FakeBackbuffer::GetSurfaceDesc(LPDDSURFACEDESC descriptionPtr)
   {
-    // let hope that this is enoughcreateBitData
+    // let hope that this is enough
 
     DDSURFACEDESC& des{ *descriptionPtr };
     des.dwFlags = DDSD_HEIGHT | DDSD_WIDTH | DDSD_PITCH | DDSD_PIXELFORMAT | DDSD_CAPS;

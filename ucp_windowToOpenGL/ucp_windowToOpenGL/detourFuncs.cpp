@@ -8,21 +8,42 @@ namespace UCPtoOpenGL
 {
   namespace DetourFunc
   {
-    void __declspec(naked) CreateWindowComplete()
+    void __declspec(naked) CreateWindowComplete(SHCWindowOrMainStructFake* that, HINSTANCE hInstance,
+      LPSTR windowName, unsigned int cursorResource)
     {
-      __asm {
+      __asm
+      {
         // remove return address (eax should be free to modify
         mov     eax, dword ptr [esp]
         add     esp, 4
         
         // push
-        push    ecx
+        push    ecx   // shc struct
         push    dword ptr[Control::WindowProcCallbackFake]
-        push    eax  // set ret address again
+        push    eax   // set ret address again
 
         mov     ecx, offset Control::ToOpenGL // mov toOpenGL this pointer
         
         jmp     CrusaderToOpenGL::createWindow  // jump to actual func
+      }
+    }
+
+    void __declspec(naked) MainDrawInit(SHCWindowOrMainStructFake* that)
+    {
+      __asm 
+      {
+        // remove return address (eax should be free to modify
+        mov     eax, dword ptr[esp]
+        add     esp, 4
+
+        // push
+        push    ecx   // shc struct
+        push    dword ptr[FillAddress::WinSetRectObjBaseAddr]
+        push    eax   // set ret address again
+
+        mov     ecx, offset Control::ToOpenGL // mov toOpenGL this pointer
+
+        jmp     CrusaderToOpenGL::drawInit  // jump to actual func
       }
     }
 

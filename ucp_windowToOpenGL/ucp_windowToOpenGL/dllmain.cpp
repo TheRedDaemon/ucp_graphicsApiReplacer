@@ -29,6 +29,10 @@ namespace UCPtoOpenGL
     lua_pushinteger(L, (DWORD)DetourFunc::CreateWindowComplete);
     lua_setfield(L, -2, "funcAddress_CreateWindow");
 
+    // is jmp to after call
+    lua_pushinteger(L, (DWORD)DetourFunc::MainDrawInit);
+    lua_setfield(L, -2, "funcAddress_MainDrawInit");
+
     // simple replace
     lua_pushinteger(L, (DWORD)DetourFunc::DirectDrawCreateCall);
     lua_setfield(L, -2, "funcAddress_DirectDrawCreate");
@@ -64,8 +68,10 @@ namespace UCPtoOpenGL
     // need to write window callback func to the returned address
     lua_pushinteger(L, (DWORD)&FillAddress::WindowProcCallbackFunc);
     lua_setfield(L, -2, "address_FillWithWindowProcCallback");
-   
 
+    // need an address for a window rect set
+    lua_pushinteger(L, (DWORD)&FillAddress::WinSetRectObjBaseAddr);
+    lua_setfield(L, -2, "address_FillWithWinSetRectObjBaseAddr");
 
 
     /** The following structures where created at the start. Maybe some of the comments might prove useful one day. **/

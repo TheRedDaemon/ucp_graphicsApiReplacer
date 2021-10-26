@@ -35,7 +35,9 @@ namespace UCPtoOpenGL
 
   namespace DetourFunc
   {
-    void CreateWindowComplete();  // naked
+    void CreateWindowComplete(SHCWindowOrMainStructFake* that, HINSTANCE hInstance,
+      LPSTR windowName, unsigned int cursorResource);   // naked
+    void MainDrawInit(SHCWindowOrMainStructFake* that); // naked
 
     HRESULT WINAPI DirectDrawCreateCall(GUID* lpGUID, LPDIRECTDRAW* lplpDD, IUnknown* pUnkOuter);
     int WINAPI GetSystemMetricsCall(int nIndex);
@@ -51,5 +53,6 @@ namespace UCPtoOpenGL
   namespace FillAddress
   {
     extern WNDPROC WindowProcCallbackFunc; // will be filled by memory write
+    extern DWORD WinSetRectObjBaseAddr;
   }
 }
