@@ -76,12 +76,6 @@ namespace UCPtoOpenGL
     return parentPtr->renderNextFrame(parentPtr->back.getBitmapPtr());
   }
 
-  STDMETHODIMP_(HRESULT __stdcall) FakeDirectDraw::FakePrimary::GetAttachedSurface(LPDDSCAPS, LPDIRECTDRAWSURFACE* ptrToBackbuffer)
-  {
-    *ptrToBackbuffer = &parentPtr->back;  // return fake backbuffer
-    return DD_OK;
-  }
-
 
 
   /** FakeBackbuffer **/
@@ -132,26 +126,6 @@ namespace UCPtoOpenGL
 
     FakeBlt(bitData.get(), x, y, parentPtr->getRenderTexWidth(), otherSurfData, fromRect->left,
       fromRect->top, fromRect->right - fromRect->left, fromRect->bottom - fromRect->top, otherSurfWidth);
-    return DD_OK;
-  }
-
-  STDMETHODIMP_(HRESULT __stdcall) FakeDirectDraw::FakeBackbuffer::GetSurfaceDesc(LPDDSURFACEDESC descriptionPtr)
-  {
-    // let hope that this is enough
-
-    DDSURFACEDESC& des{ *descriptionPtr };
-    des.dwFlags = DDSD_HEIGHT | DDSD_WIDTH | DDSD_PITCH | DDSD_PIXELFORMAT | DDSD_CAPS;
-
-    des.dwHeight = parentPtr->getRenderTexHeight();
-    des.dwWidth = parentPtr->getRenderTexWidth();
-
-    des.lPitch = 2 * des.dwWidth;  // lPitch is the number of bytes from the start of one line to the next
-    des.lpSurface = getBitmapPtr();
-
-    fillPixelFormat(&des.ddpfPixelFormat, parentPtr->getPixelFormat());
-    
-    des.ddsCaps.dwCaps = DDSCAPS_BACKBUFFER | DDSCAPS_COMPLEX | DDSCAPS_FLIP | DDSCAPS_SYSTEMMEMORY;
-
     return DD_OK;
   }
 

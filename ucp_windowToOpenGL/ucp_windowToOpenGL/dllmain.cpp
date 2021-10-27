@@ -34,36 +34,16 @@ namespace UCPtoOpenGL
     lua_setfield(L, -2, "funcAddress_MainDrawInit");
 
     // simple replace
-    lua_pushinteger(L, (DWORD)DetourFunc::DirectDrawCreateCall);
-    lua_setfield(L, -2, "funcAddress_DirectDrawCreate");
-
-    // simple replace
     lua_pushinteger(L, (DWORD)DetourFunc::GetSystemMetricsCall);
     lua_setfield(L, -2, "funcAddress_GetSystemMetrics");
-
-    // simple replace
-    lua_pushinteger(L, (DWORD)DetourFunc::SetWindowPosCall);
-    lua_setfield(L, -2, "funcAddress_SetWindowPos");
 
     // simple replace
     lua_pushinteger(L, (DWORD)DetourFunc::GetCursorPosCall);
     lua_setfield(L, -2, "funcAddress_GetCursorPos");
 
     // simple replace
-    lua_pushinteger(L, (DWORD)DetourFunc::UpdateWindowCall);
-    lua_setfield(L, -2, "funcAddress_UpdateWindow");
-
-    // simple replace
-    lua_pushinteger(L, (DWORD)DetourFunc::AdjustWindowRectCall);
-    lua_setfield(L, -2, "funcAddress_AdjustWindowRect");
-
-    // simple replace
     lua_pushinteger(L, (DWORD)DetourFunc::GetForegroundWindowCall);
     lua_setfield(L, -2, "funcAddress_GetForegroundWindow");
-
-    // already a call
-    lua_pushinteger(L, (DWORD)DetourFunc::DetouredWindowLongPtrReceive);
-    lua_setfield(L, -2, "funcAddress_DetouredWindowLongPtrReceive");
 
     // need to write window callback func to the returned address
     lua_pushinteger(L, (DWORD)&FillAddress::WindowProcCallbackFunc);
@@ -80,102 +60,6 @@ namespace UCPtoOpenGL
     // address
     lua_pushinteger(L, (DWORD)&FillAddress::SetSomeColorsAddr);
     lua_setfield(L, -2, "address_FillWithSetSomeColorsAddr");
-
-
-    /** The following structures where created at the start. Maybe some of the comments might prove useful one day. **/
-
-
-    /* CreateWindowComplete */
-
-    // extreme window creation function: 0x00470189
-    // -> it is a thisCall
-    // needed callback: 0x004B2C50 
-    
-    /*
-    DWORD oldAddressProtection{ 0 };
-    VirtualProtect(reinterpret_cast<DWORD*>(0x00470189), 5, PAGE_EXECUTE_READWRITE, &oldAddressProtection);
-
-    unsigned char* call = reinterpret_cast<unsigned char*>(0x00470189);
-    DWORD* func = reinterpret_cast<DWORD*>(0x00470189 + 1);
-
-    *call = 0xE8;
-    *func = reinterpret_cast<DWORD>(CreateWindowComplete) - 0x00470189 - 5;
-
-    VirtualProtect(reinterpret_cast<DWORD*>(0x00470189), 5, oldAddressProtection, &oldAddressProtection);
-    */
-
-
-    /* DirectDrawCreateCall */
-
-    // there is another pretty similar call, one condition further // extreme: 0x0046FCB8
-    // extreme jump address: 0x0059E010
-
-    // ReplaceDWORD(0x0059E010, (DWORD)DirectDrawCreateCall);
-
-
-    /* GetSystemMetricsCall */
-
-    // Crusader gets the size for some of its drawing RECTs via screen size, lets change that
-    // extreme address for ONE Rect: 00468089
-    // changing the jump address althougher for a test: 0059E1D0
-    //  -> does not really help? result is that the click positions move to the display edge
-    
-    //ReplaceDWORD(0x0059E1D0, (DWORD)GetSystemMetricsCall);
-
-
-    /* SetRectCall */
-
-    // the main drawing RECT is set using USER.SetRect, lets do it, but remember the pointer, extreme call: 004B2D06
-    // this is done before DirectDraw gets the set display mode order -> sets it to screen size?
-    // some weird stuff happens during the window creation... why is this a different number in other cases...
-    // maybe the combination of window and exlusiv mode already changes the resolution, the SetDisplayMode is just for DirectDraw?
-    // other address, for general jump: 0059E200
-    
-    //ReplaceDWORD(0x0059E200, (DWORD)SetRectCall);
-
-
-    /* SetWindowPosCall */
-
-    // try to get more control over window:
-    
-    //ReplaceDWORD(0x0059E1F8, (DWORD)SetWindowPosCall);
-
-
-    /* GetCursorPosCall */
-
-    // map cursor
-   
-    //ReplaceDWORD(0x0059E1E8, (DWORD)GetCursorPosCall);
-
-
-    /* UpdateWindowCall */
-
-    // window update call
-    
-    //ReplaceDWORD(0x0059E1F4, (DWORD)UpdateWindowCall);
-
-
-    /* AdjustWindowRectCall */
-
-    // adjust client rect
-
-    //ReplaceDWORD(0x0059E1FC, (DWORD)AdjustWindowRectCall);
-
-
-    /* DetouredWindowLongPtrReceive */
-
-    // set windowLong load func
-    
-    //ReplaceDWORD(0x0057CCCA + 1, reinterpret_cast<DWORD>(DetouredWindowLongPtrReceive) - 0x0057CCCA - 5);
-
-
-    /* DetouredWindowLongPtrReceive */
-
-    // game tests if it is in the foreground
-
-    // ReplaceDWORD(0x0059E20C, (DWORD)GetForegroundWindowCall);
-
-    //ToOpenGL.setConf(&conf);
 
     return 1;
   }
@@ -197,20 +81,6 @@ namespace UCPtoOpenGL
     return TRUE;
   }
 }
-
-/* ISSUES:
-    - 1366x768 problem:
-      - at 0x0046905E: 0xC0000005: Access denied while writting to position 0x1709D000
-      - Try to find reason
-
-      - 00468ea0 in normal Crusader:
-        - function seems to move something on one of the surfaces
-        - idea:
-          - might be used to transform (or maybe stretch?) something on the surface
-          - the surface size is fixed, so the issue should be on something else...
-            - maybe the breaking res can actually not be renderend, so Crusader needs to tranform something
-            and since I aggressivly set the drawing rects, it breaks...?
-*/
 
 /* NOTE:
     - There might be a chance that bink video will be of interest in the future.
@@ -304,5 +174,5 @@ namespace UCPtoOpenGL
       - no problems
 
     - Gamebar
-      - Screenshots to not take titlebar into account
+      - Screenshots do not take titlebar into account
 */

@@ -18,7 +18,7 @@ namespace UCPtoOpenGL
       Licensed under the MIT license.
     */
 
-    /*** not used ***/
+    // question now exists -> is even an interface needed anymore?
 
     STDMETHOD(QueryInterface) (THIS_ REFIID, LPVOID FAR*)
     {
@@ -96,18 +96,22 @@ namespace UCPtoOpenGL
     {
       return DD_OK; // called, by now ignored, there is no interface to free
     }
-
-    /*** modified ***/
-
-    // uses windows function to get the display modes
-    STDMETHOD(EnumDisplayModes)(THIS_ DWORD dw, LPDDSURFACEDESC lpsurf, LPVOID lpvoid, LPDDENUMMODESCALLBACK callback) = 0;
-    // return as if no compatibility
-    STDMETHOD(GetCaps)(THIS_ LPDDCAPS cap1, LPDDCAPS cap2) = 0;
-    // needs handling
-    STDMETHOD(CreateSurface)(THIS_  LPDDSURFACEDESC, LPDIRECTDRAWSURFACE FAR*, IUnknown FAR*) = 0;
-    // needs handling -> place to get current resolution
-    STDMETHOD(SetDisplayMode)(THIS_ DWORD, DWORD, DWORD) = 0;
-
+    STDMETHOD(EnumDisplayModes)(THIS_ DWORD dw, LPDDSURFACEDESC lpsurf, LPVOID lpvoid, LPDDENUMMODESCALLBACK callback)
+    {
+      return DD_OK; // called, not needed anymore
+    }
+    STDMETHOD(GetCaps)(THIS_ LPDDCAPS cap1, LPDDCAPS cap2)
+    {
+      return DD_OK; // called, by now ignored, there is no interface to free
+    }
+    STDMETHOD(CreateSurface)(THIS_  LPDDSURFACEDESC, LPDIRECTDRAWSURFACE FAR*, IUnknown FAR*)
+    {
+      return DD_OK; // called, by now ignored, there is no interface to free
+    }
+    STDMETHOD(SetDisplayMode)(THIS_ DWORD, DWORD, DWORD)
+    {
+      return DD_OK; // called, by now ignored, there is no interface to free
+    }
   
   private:
 
@@ -312,7 +316,6 @@ namespace UCPtoOpenGL
       ~FakePrimary() {};
 
       STDMETHOD(Flip)(THIS_ LPDIRECTDRAWSURFACE, DWORD) override;
-      STDMETHOD(GetAttachedSurface)(THIS_ LPDDSCAPS, LPDIRECTDRAWSURFACE FAR*) override;
     };
 
 
@@ -325,7 +328,6 @@ namespace UCPtoOpenGL
 
       STDMETHOD(Blt)(THIS_ LPRECT, LPDIRECTDRAWSURFACE, LPRECT, DWORD, LPDDBLTFX) override;
       STDMETHOD(BltFast)(THIS_ DWORD, DWORD, LPDIRECTDRAWSURFACE, LPRECT, DWORD) override;
-      STDMETHOD(GetSurfaceDesc)(THIS_ LPDDSURFACEDESC) override;
 
       unsigned short* getBitmapPtr();
       void createBitData(int size);

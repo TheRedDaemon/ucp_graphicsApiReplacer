@@ -39,15 +39,9 @@ namespace UCPtoOpenGL
       LPSTR windowName, unsigned int cursorResource);   // naked
     void MainDrawInit(SHCWindowOrMainStructFake* that); // naked
 
-    HRESULT WINAPI DirectDrawCreateCall(GUID* lpGUID, LPDIRECTDRAW* lplpDD, IUnknown* pUnkOuter);
     int WINAPI GetSystemMetricsCall(int nIndex);
-    BOOL WINAPI SetWindowPosCall(HWND hWnd, HWND hWndInsertAfter, int X, int Y, int cx, int cy, UINT uFlag);
     BOOL WINAPI GetCursorPosCall(LPPOINT lpPoint);
     HWND WINAPI GetForegroundWindowCall();
-    BOOL WINAPI UpdateWindowCall(HWND hWnd);
-    BOOL WINAPI AdjustWindowRectCall(LPRECT lpRect, DWORD dwStyle, BOOL bMenu);
-    LONG WINAPI SetWindowLongACall(HWND hWnd, int nIndex, LONG dwNewLong);
-    void WINAPI DetouredWindowLongPtrReceive(char*, char*, DWORD* ptrToWindowLongPtr, DWORD, DWORD);
   }
 
   namespace FillAddress

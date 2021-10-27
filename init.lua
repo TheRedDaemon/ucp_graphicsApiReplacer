@@ -55,18 +55,10 @@ local addresses = {
   binkControlObjAddr                = {"b9 ? ? ? 02 89 3d ? ? f9 00 e8 ? ? f9 ff"}, -- finds two, but both yield the information
   setSomeColorsFuncAddr             = {"81 3d ? ? f9 00 55 05 00 00 66 c7"},
   initDirectDraw                    = {"81 ec e8 01 00 00 53 55 8b d9 83 bb ec"},
-  
-  directDrawCreateAddr              = {"E8 ? ? ? ? BE 01 00 00 00 89 B3 F8 00 00 00"},
   getSystemMetricAddr               = {"8B 1D ? ? ? ? 57 50 57 57 6A 01 FF D3"},
-  setWindowPosAddr                  = {"FF 15 ? ? ? ? 8B 96 ? ? ? ? 52 FF 15 ? ? ? ? 8B 86 ? ? ? ? 50 FF 15 ? ? ? ? 5F 5E 5D"},
   getCursorPosAddr                  = {"FF 15 ? ? ? ? 8B 44 ? ? 3B C7 8B 4C ? ? 89 ? ? 89 ? ? 7F"},
-  updateWindowAddr                  = {"FF 15 ? ? ? ? 8B 86 ? ? ? ? 50 FF 15 ? ? ? ? 5F 5E 5D 5B 83 C4 10 C3"},
-  adjustWindowRectAddr              = {"FF 15 ? ? ? ? 8B 56 ? 8B 46 ? 52 50 6A 00 6A 00 B9"},
   windowProcCallAddr                = {"83 EC 48 A1 ? ? ? ? 33 C4 89 44 ? ? 8B 44 ? ? 8B 4C ? ? 53 55 56 57"},
   getForegroundWindowAddr           = {"FF 15 ? ? ? ? 3b 86 ac 00 00 00 0f 85 d4 00 00 00 39 ae f8 00 00 00"},
-  
-  -- handling different
-  windowLongStrAddr                 = {strToHexStr("SetWindowLongA")}
 }
 
 local addrFail = {}
@@ -79,19 +71,6 @@ exports.enable = function(self, moduleConfig, globalConfig)
       addrFail[#addrFail + 1] = name
     end
     aob[2] = addr
-  end
-
-  -- extra structure for windowLongDetourAddr, since I need the string position before
-  do
-    local windowLongStrAddr = addresses.windowLongStrAddr[2]
-    if windowLongStrAddr ~= nil then
-      addresses.windowLongDetourAddr = {"68" .. intToLEHexStr(windowLongStrAddr)}
-      local addrForWindowLong = scanForAOB(addresses.windowLongDetourAddr[1], 0x400000)
-      if addrForWindowLong == nil then
-        addrFail[#addrFail + 1] = "windowLongDetourAddr"
-      end
-      addresses.windowLongDetourAddr[2] = addrForWindowLong + 10 -- needed to be on call
-    end
   end
 
   if next(addrFail) ~= nil then
@@ -190,49 +169,20 @@ exports.enable = function(self, moduleConfig, globalConfig)
     }
   )
 
-  -- replaces entries in jmp (table?)
-  writeCode(
-    getPtrAddrForCallToJmp(addresses.directDrawCreateAddr[2]),  -- extreme 1.41.1-E address: 0x0059E010
-    {ucpOpenGL.funcAddress_DirectDrawCreate}
-  )
-
   writeCode(
     getPtrAddrFromMov(addresses.getSystemMetricAddr[2]), -- extreme 1.41.1-E address: 0x0059E1D0
     {ucpOpenGL.funcAddress_GetSystemMetrics}
   )
 
   writeCode(
-    getPtrAddrFromCall(addresses.setWindowPosAddr[2]), -- extreme 1.41.1-E address: 0x0059E1F8
-    {ucpOpenGL.funcAddress_SetWindowPos}
-  )
-
-  writeCode(
     getPtrAddrFromCall(addresses.getCursorPosAddr[2]), -- extreme 1.41.1-E address: 0x0059E1E8
     {ucpOpenGL.funcAddress_GetCursorPos}
-  )
-
-  writeCode(
-    getPtrAddrFromCall(addresses.updateWindowAddr[2]), -- extreme 1.41.1-E address: 0x0059E1F4
-    {ucpOpenGL.funcAddress_UpdateWindow}
-  )
-
-  writeCode(
-    getPtrAddrFromCall(addresses.adjustWindowRectAddr[2]), -- extreme 1.41.1-E address: 0x0059E1FC
-    {ucpOpenGL.funcAddress_AdjustWindowRect}
   )
   
   writeCode(
     getPtrAddrFromCall(addresses.getForegroundWindowAddr[2]), -- extreme 1.41.1-E address: 0x0059E20C
     {ucpOpenGL.funcAddress_GetForegroundWindow}
   )
-
-
-  -- already a call, replacing only address
-  writeCode(
-    addresses.windowLongDetourAddr[2] + 1,   -- extreme 1.41.1-E address: 0x0057CCCA
-    {ucpOpenGL.funcAddress_DetouredWindowLongPtrReceive - addresses.windowLongDetourAddr[2] - 5}
-  )
-
 
   -- address of crusaders windowProcCallback needed, fill address of given variable with callback address
   writeCode(

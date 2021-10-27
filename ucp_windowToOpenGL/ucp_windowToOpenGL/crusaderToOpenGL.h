@@ -21,16 +21,6 @@ namespace UCPtoOpenGL
     CrusaderToOpenGL(ToOpenGLConfig& conf);
     virtual ~CrusaderToOpenGL();
 
-    /*** need impl ***/
-
-    STDMETHOD(EnumDisplayModes)(THIS_ DWORD dw, LPDDSURFACEDESC lpsurf, LPVOID lpvoid, LPDDENUMMODESCALLBACK callback);
-    STDMETHOD(GetCaps)(THIS_ LPDDCAPS cap1, LPDDCAPS cap2);
-    STDMETHOD(CreateSurface)(THIS_  LPDDSURFACEDESC, LPDIRECTDRAWSURFACE FAR*, IUnknown FAR*);
-    STDMETHOD(SetDisplayMode)(THIS_ DWORD, DWORD, DWORD);
-
-
-    /* copied structure end */
-
     // that -> the stronghold object(whatever it is)
     void __thiscall createWindow(WNDPROC windowCallbackFunc, SHCWindowOrMainStructFake* that,
     HINSTANCE hInstance, LPSTR windowName, unsigned int cursorResource);
@@ -38,19 +28,9 @@ namespace UCPtoOpenGL
     void __thiscall drawInit(SetSomeColors colorFunc, SHCBinkControlStructFake* binkStruct,
       DWORD winSetRectObjBaseAddr, SHCWindowOrMainStructFake* that);
 
-    HRESULT createDirectDraw(GUID* lpGUID, LPDIRECTDRAW* lplpDD, IUnknown* pUnkOuter);
-
     int getFakeSystemMetrics(int nIndex);
 
     BOOL getWindowCursorPos(LPPOINT lpPoint);
-
-    BOOL setWindowPosFake(HWND, HWND, int, int, int, int, UINT);
-
-    BOOL WINAPI updateWindowFake(HWND hWnd);
-
-    BOOL WINAPI adjustWindowRectFake(LPRECT lpRect, DWORD dwStyle, BOOL bMenu);
-
-    LONG WINAPI setWindowLongAFake(HWND hWnd, int nIndex, LONG dwNewLong);
 
     HWND WINAPI GetForegroundWindowFake();
 

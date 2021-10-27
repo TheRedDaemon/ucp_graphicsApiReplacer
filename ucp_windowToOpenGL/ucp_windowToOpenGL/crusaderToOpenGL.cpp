@@ -40,109 +40,6 @@ namespace UCPtoOpenGL
     return confRef.graphic.pixFormat;
   }
 
-
-  // DirectDraw
-
-  STDMETHODIMP_(HRESULT __stdcall) CrusaderToOpenGL::EnumDisplayModes(DWORD, LPDDSURFACEDESC,
-    LPVOID, LPDDENUMMODESCALLBACK)
-  {
-    // ignore callback, just fill struct:
-    for (size_t i = 1; i < RESOLUTIONS.size() - 1; i++) // 0 and the last are not available
-    {
-      // this res has an issue with rendering the endscreen, the elements are too close, you can not leave the screen
-      // I would assume the menu positions are created for RES_1024_X_768
-      // the lose screen func as two flags set for 800x600, maybe this would need to be set for this also?
-      // anyway, this res is functionally broken and I am not sure if this is an issue of my code
-      // func in crusader: 0x004d55d0, flag based on res in that func: 0x004d5629
-      if (i == RES_1024_X_600)
-      {
-        continue; // -> disabled
-      }
-
-      shcWinStrucPtr->resolutionSupported[i] = 1;
-    }
-
-    return DD_OK;
-  }
-
-  STDMETHODIMP_(HRESULT __stdcall) CrusaderToOpenGL::GetCaps(THIS_ LPDDCAPS cap1, LPDDCAPS)
-  {
-    //return realInterface->GetCaps(cap1, cap2);
-
-    // the original returned only three values: DDCAPS_NOHARDWARE, DDCAPS2_CANRENDERWINDOWED, DDCAPS2_CERTIFIED
-    // the compatibility mode returns a whole set of values, but the system here still works
-    // I assume this is the result of Crusader having a software renderer
-
-    // using the non-compatibility return now, if some effects are missing in this case... well, maybe it will surface some day
-    // ignore cap2, this was NULL in tests
-    cap1->dwCaps = DDCAPS_NOHARDWARE;
-    cap1->dwCaps2 = DDCAPS2_CANRENDERWINDOWED | DDCAPS2_CERTIFIED;
-    return DD_OK;
-  }
-
-  STDMETHODIMP_(HRESULT __stdcall) CrusaderToOpenGL::SetDisplayMode(DWORD width, DWORD height, DWORD)
-  {
-    d.gameTexSize = { (int)width, (int)height };
-    d.scrollRange = { (int)width - 1, (int)height - 1 };
-
-    //create new bit maps
-    int pixNum{ d.gameTexSize.w * d.gameTexSize.h };
-    back.createBitData(pixNum);
-    offMain.createBitData(pixNum);
-
-    // change scale
-    // I choose the easy route, algorithm: https://math.stackexchange.com/a/1620375
-      
-    // compute needed base values
-    Size<double> winToTex{ static_cast<double>(d.gameTexSize.w) / d.windowSize.w, static_cast<double>(d.gameTexSize.h) / d.windowSize.h };
-    double winToTexMult = winToTex.h > winToTex.w ? winToTex.h : winToTex.w;
-    Size<double> winScale{ winToTex.w / winToTexMult, winToTex.h / winToTexMult };
-      
-    // offset in window pixels
-    d.windowOffset = { lround((1.0 - winScale.w) * d.windowSize.w / 2.0), lround((1.0 - winScale.h) * d.windowSize.h / 2.0) };
-
-    // size of the game in the window
-    d.gameWindowRange = { d.windowSize.w - d.windowOffset.w * 2 - 1, d.windowSize.h - d.windowOffset.h * 2 - 1 };
-
-    // for positions, I need to use the relation between the range ( 0 -> width - 1 ) of the window and the game
-    d.winToGamePos = { static_cast<double>(d.scrollRange.w) / d.gameWindowRange.w, static_cast<double>(d.scrollRange.h) / d.gameWindowRange.h };
-
-    window->adjustTexSizeAndViewport(d.gameTexSize, d.windowSize, winScale);
-
-
-    // set clip for cursor
-    if (confRef.control.clipCursor && confRef.window.type != TYPE_WINDOW)
-    {
-      clipCursor();
-    }
-
-    return DD_OK;
-  }
-
-  STDMETHODIMP_(HRESULT __stdcall) CrusaderToOpenGL::CreateSurface(LPDDSURFACEDESC des, LPDIRECTDRAWSURFACE* retSurfPtr, IUnknown*)
-  {
-    if (des->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
-    {
-      *retSurfPtr = &prim;
-      return DD_OK;
-    }
-
-    // offscreen surfaces (backbuffer is gathered different)
-    if (des->dwHeight == 2076 && des->dwWidth == 4056)	// lets hope this resolution will never be supported
-    {
-      *retSurfPtr = &offMap;
-    }
-    else
-    {
-      *retSurfPtr = &offMain;
-    }
-
-    return DD_OK;
-  }
-
-
-
-
   // detoured calls
 
   // complete
@@ -335,31 +232,6 @@ namespace UCPtoOpenGL
     colorFunc();
   }
 
-  HRESULT CrusaderToOpenGL::createDirectDraw(GUID* lpGUID, LPDIRECTDRAW* lplpDD, IUnknown* pUnkOuter)
-  {
-    // get library and func (just once)
-    static decltype(DirectDrawCreate)* create{ nullptr };
-    if (create == nullptr)
-    {
-      HMODULE ddraw{ GetModuleHandleA("ddraw.dll") };
-      if (ddraw == NULL) return DDERR_GENERIC;	// lets hope the game just crashes normally... need better handling... but what?
-      create = (decltype(DirectDrawCreate)*)GetProcAddress(ddraw, "DirectDrawCreate");
-    }
-
-    HRESULT res;
-    if (d.windowDone)
-    {
-      *lplpDD = this; // in this case, no interface is created at all
-      res = DD_OK;
-    }
-    else
-    {
-      res = create(lpGUID, lplpDD, pUnkOuter);
-    }
-
-    return res;
-  }
-
   int CrusaderToOpenGL::getFakeSystemMetrics(int nIndex)
   {
     // if no infomration was received, the return will be the RES_1280_X_720
@@ -443,26 +315,6 @@ namespace UCPtoOpenGL
     }
 
     return success;
-  }
-
-  BOOL CrusaderToOpenGL::setWindowPosFake(HWND hWnd, HWND hWndInsertAfter, int X, int Y, int cx, int cy, UINT uFlag)
-  {
-    return d.windowDone ? true : SetWindowPos(hWnd, hWndInsertAfter, X, Y, cx, cy, uFlag);
-  }
-
-  BOOL WINAPI CrusaderToOpenGL::updateWindowFake(HWND hWnd)
-  {
-    return d.windowDone ? true : UpdateWindow(hWnd);
-  }
-
-  BOOL WINAPI CrusaderToOpenGL::adjustWindowRectFake(LPRECT lpRect, DWORD dwStyle, BOOL bMenu)
-  {
-    return d.windowDone ? true : AdjustWindowRect(lpRect, dwStyle, bMenu);
-  };
-
-  LONG WINAPI CrusaderToOpenGL::setWindowLongAFake(HWND hWnd, int nIndex, LONG dwNewLong)
-  {
-    return d.windowDone ? true : SetWindowLongA(hWnd, nIndex, dwNewLong); // 0 could mean error
   }
 
   HWND WINAPI CrusaderToOpenGL::GetForegroundWindowFake()
