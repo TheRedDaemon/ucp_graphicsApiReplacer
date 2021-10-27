@@ -213,9 +213,6 @@ namespace UCPtoOpenGL
     }
     // until here -> but maybe need to validate that windows choose a fitting thing?
 
-    // TODO:
-    // after a certain point, the context creation is not cleaned up properly if it fails! (although, it might be to late anyway)
-
     // create attribute list
     const int attribList[] =
     {
@@ -407,7 +404,6 @@ namespace UCPtoOpenGL
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
 
     // currently only GL_LINEAR for a little bit filtering, only other without mipmaps would be raw GL_NEAREST
-    // TODO?: make filtermode changeable
     GLint filterMode{confPtr->graphic.filterLinear ? GL_LINEAR : GL_NEAREST};
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filterMode);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filterMode);

@@ -72,7 +72,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>..\..\..\..\..\SteamStuff\steamapps\common\Stronghold Crusader Extreme\ucp\modules\windowToOpenGL-0.0.1\</OutDir>
+    <OutDir>..\..\..\..\..\SteamStuff\steamapps\common\Stronghold Crusader Extreme\ucp\modules\windowToOpenGL-0.0.2\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>

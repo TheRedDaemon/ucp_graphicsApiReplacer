@@ -96,11 +96,11 @@ namespace UCPtoOpenGL
     {
       return DD_OK; // called, by now ignored, there is no interface to free
     }
-    STDMETHOD(EnumDisplayModes)(THIS_ DWORD dw, LPDDSURFACEDESC lpsurf, LPVOID lpvoid, LPDDENUMMODESCALLBACK callback)
+    STDMETHOD(EnumDisplayModes)(THIS_ DWORD, LPDDSURFACEDESC, LPVOID, LPDDENUMMODESCALLBACK)
     {
       return DD_OK; // called, not needed anymore
     }
-    STDMETHOD(GetCaps)(THIS_ LPDDCAPS cap1, LPDDCAPS cap2)
+    STDMETHOD(GetCaps)(THIS_ LPDDCAPS, LPDDCAPS)
     {
       return DD_OK; // called, by now ignored, there is no interface to free
     }
