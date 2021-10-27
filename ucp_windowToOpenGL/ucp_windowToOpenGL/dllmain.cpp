@@ -73,6 +73,14 @@ namespace UCPtoOpenGL
     lua_pushinteger(L, (DWORD)&FillAddress::WinSetRectObjBaseAddr);
     lua_setfield(L, -2, "address_FillWithWinSetRectObjBaseAddr");
 
+    // address
+    lua_pushinteger(L, (DWORD)&FillAddress::BinkControlObjAddr);
+    lua_setfield(L, -2, "address_FillWithBinkControlObjAddr");
+
+    // address
+    lua_pushinteger(L, (DWORD)&FillAddress::SetSomeColorsAddr);
+    lua_setfield(L, -2, "address_FillWithSetSomeColorsAddr");
+
 
     /** The following structures where created at the start. Maybe some of the comments might prove useful one day. **/
 

@@ -13,6 +13,8 @@ namespace UCPtoOpenGL
   {
     WNDPROC WindowProcCallbackFunc{ 0x0 };
     DWORD WinSetRectObjBaseAddr{ 0x0 };
+    DWORD BinkControlObjAddr{ 0x0 };
+    DWORD SetSomeColorsAddr{ 0x0 };
   }
 
   namespace Control

@@ -52,6 +52,9 @@ local addresses = {
   conditionForResHandlingAddr       = {"05 89 41 24 8d 04 3f 89 79 38 89 71 3c 89 41 40"},
   setWindowRectAddr                 = {"83 ec 10 53 55 56 57 8b f1 8b 7e 58 8b 86"},
   winSetRectObjBaseAddr             = {"b9 ? ? ? ? e8 ? ? ff ff 83 7e 58 00 74 11"},
+  binkControlObjAddr                = {"b9 ? ? ? 02 89 3d ? ? f9 00 e8 ? ? f9 ff"}, -- finds two, but both yield the information
+  setSomeColorsFuncAddr             = {"81 3d ? ? f9 00 55 05 00 00 66 c7"},
+  initDirectDraw                    = {"81 ec e8 01 00 00 53 55 8b d9 83 bb ec"},
   
   directDrawCreateAddr              = {"E8 ? ? ? ? BE 01 00 00 00 89 B3 F8 00 00 00"},
   getSystemMetricAddr               = {"8B 1D ? ? ? ? 57 50 57 57 6A 01 FF D3"},
@@ -164,6 +167,27 @@ exports.enable = function(self, moduleConfig, globalConfig)
   writeCode(
     ucpOpenGL.address_FillWithWinSetRectObjBaseAddr, -- extreme 1.41.1-E address: 0x0046F9D6
     {readInteger(addresses.winSetRectObjBaseAddr[2] + 1)}
+  )
+  
+  -- need set some values, need ptr to bink control obj
+  writeCode(
+    ucpOpenGL.address_FillWithBinkControlObjAddr, -- extreme 1.41.1-E address: 0x0047023D
+    {readInteger(addresses.binkControlObjAddr[2] + 1)}
+  )
+  
+  -- need to call this
+  writeCode(
+    ucpOpenGL.address_FillWithSetSomeColorsAddr, -- extreme 1.41.1-E address: 0x00467AC0
+    {addresses.setSomeColorsFuncAddr[2]}
+  )
+  
+  -- original init DD only needs to return 1
+  writeCode(
+    addresses.initDirectDraw[2],  -- extreme 1.41.1-E address: 0x0046FC90
+    {
+      0xb8, 0x01, 0x00, 0x00, 0x00,       -- mov eax, 0x00000001
+      0xc3                                -- ret
+    }
   )
 
   -- replaces entries in jmp (table?)

@@ -8,10 +8,15 @@ namespace UCPtoOpenGL
 {
   // forward declared
   struct SHCWindowOrMainStructFake;
+  struct SHCBinkControlStructFake;
   class WindowCore;
 
   class CrusaderToOpenGL : public FakeDirectDraw
   {
+    // using func defines
+    using BinkDDSurfaceType = unsigned int(__stdcall *)(IDirectDrawSurface* surfacePtr);
+    using SetSomeColors = void(__stdcall *)();
+
   public:
     CrusaderToOpenGL(ToOpenGLConfig& conf);
     virtual ~CrusaderToOpenGL();
@@ -30,7 +35,8 @@ namespace UCPtoOpenGL
     void __thiscall createWindow(WNDPROC windowCallbackFunc, SHCWindowOrMainStructFake* that,
     HINSTANCE hInstance, LPSTR windowName, unsigned int cursorResource);
 
-    void __thiscall drawInit(DWORD winSetRectObjBaseAddr, SHCWindowOrMainStructFake* that);
+    void __thiscall drawInit(SetSomeColors colorFunc, SHCBinkControlStructFake* binkStruct,
+      DWORD winSetRectObjBaseAddr, SHCWindowOrMainStructFake* that);
 
     HRESULT createDirectDraw(GUID* lpGUID, LPDIRECTDRAW* lplpDD, IUnknown* pUnkOuter);
 

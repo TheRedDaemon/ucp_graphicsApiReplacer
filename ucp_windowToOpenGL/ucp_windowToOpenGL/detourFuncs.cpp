@@ -39,6 +39,8 @@ namespace UCPtoOpenGL
         // push
         push    ecx   // shc struct
         push    dword ptr[FillAddress::WinSetRectObjBaseAddr]
+        push    dword ptr[FillAddress::BinkControlObjAddr]
+        push    dword ptr[FillAddress::SetSomeColorsAddr]
         push    eax   // set ret address again
 
         mov     ecx, offset Control::ToOpenGL // mov toOpenGL this pointer

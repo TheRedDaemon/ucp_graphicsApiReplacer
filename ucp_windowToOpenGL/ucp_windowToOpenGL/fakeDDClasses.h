@@ -367,6 +367,7 @@ namespace UCPtoOpenGL
       ~FakeOffscreenMap() {};
 
       STDMETHOD(Lock)(THIS_ LPRECT, LPDDSURFACEDESC, DWORD, HANDLE) override;
+      STDMETHOD(GetPixelFormat)(THIS_ LPDDPIXELFORMAT) override;
 
       unsigned short* getBitmapPtr();
 

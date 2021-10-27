@@ -79,22 +79,40 @@ namespace UCPtoOpenGL
     HWND                  gameWindowHandle;
     RECT                  clientOnScreenCoords;
     DWORD                 unknown_4;
-    DWORD                 isNotProcessingInputEvents;  // did not found this, do not knwo what it means
+    DWORD                 isNotProcessingInputEvents;  // did not found this, do not know what it means
     BOOL                  gameFocused;
     DWORD                 unknown_5[2];
-    unsigned short* surfacePtr_Game;
-    unsigned short* surfacePtr_Map;
+    unsigned short*       surfacePtr_Game;
+    unsigned short*       surfacePtr_Map;
     DWORD                 unknown_6[4];
     IDirectDraw*          ddInterfacePtr;
     IDirectDrawSurface*   ddBackbufferSurfacePtr;
     IDirectDrawSurface*   ddPrimarySurfacePtr;
     BOOL                  NOT_selfBufferOrWindowMode;
     IDirectDrawSurface*   ddOffscreenSurfacePtr_Game;
-    IDirectDrawSurface*   ddPrimarySurfacePtr_Map;
+    IDirectDrawSurface*   ddOffscreenSurfacePtr_Map;
     DDSURFACEDESC         ddSurfDescForBink_Game;
     DDSURFACEDESC         ddSurfDescForBink_Map;
     DWORD                 unknown_7;
     DWORD                 windowCreationTime;
     DWORD                 unknown_8;  // maybe more?
+  };
+
+  // based on Crusader 1.41 -> hopefully works at least for extreme 1.41.1-E
+  struct SHCBinkControlStructFake
+  {
+    DWORD unknown_1[2];
+    int xPos[2];
+    int yPos[2];
+    BOOL frameReadyToDisplay[2];
+    DWORD unknown_2[2];
+    DWORD unknown_3[2];
+    DWORD unknown_4[2];
+    DWORD unknown_5[2];
+    int soundStreamIndex[2];
+    DWORD startTime[2];
+    DWORD binkObjPtr[2];
+    unsigned int mapSurfaceType;
+    unsigned int gameSurfaceType;
   };
 }

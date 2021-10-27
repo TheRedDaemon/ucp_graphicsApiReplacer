@@ -219,4 +219,10 @@ namespace UCPtoOpenGL
 
     return DD_OK;
   }
+
+  STDMETHODIMP_(HRESULT __stdcall) FakeDirectDraw::FakeOffscreenMap::GetPixelFormat(LPDDPIXELFORMAT format)
+  {
+    fillPixelFormat(format, parentPtr->getPixelFormat());
+    return DD_OK;
+  }
 }

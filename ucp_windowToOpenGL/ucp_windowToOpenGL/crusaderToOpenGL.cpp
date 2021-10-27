@@ -212,11 +212,16 @@ namespace UCPtoOpenGL
     HRESULT res{ CoInitialize(NULL) };  // ignoring res, like SHC
     shcWinStrucPtr->windowCreationTime = timeGetTime();
 
-    // no other action should be needed -> missing actions from orig are repeated during DirectDraw Setup anyway
+    // set default res here if not given
+    if (shcWinStrucPtr->currentGameResolution == GameResolution::RES_NONE)
+    {
+      shcWinStrucPtr->currentGameResolution = GameResolution::RES_1280_X_720;
+    }
   }
 
 
-  void CrusaderToOpenGL::drawInit(DWORD winSetRectObjBaseAddr, SHCWindowOrMainStructFake* that)
+  void CrusaderToOpenGL::drawInit(SetSomeColors colorFunc, SHCBinkControlStructFake* binkStruct,
+    DWORD winSetRectObjBaseAddr, SHCWindowOrMainStructFake* that)
   {
     // at this point, create window should be there, but still
     if (shcWinStrucPtr != that)
@@ -224,30 +229,110 @@ namespace UCPtoOpenGL
       shcWinStrucPtr = that;
     }
     SHCWindowOrMainStructFake& mainStruct{ *shcWinStrucPtr };
-    Size<int>& texS{ d.gameTexSize };
-    texS = { getFakeSystemMetrics(SM_CXSCREEN), getFakeSystemMetrics(SM_CYSCREEN) };
+    //Size<int>& texS{ d.gameTexSize };
+    d.gameTexSize = { getFakeSystemMetrics(SM_CXSCREEN), getFakeSystemMetrics(SM_CYSCREEN) };
 
-    // set getDeviceCaps values
+    /* set getDeviceCaps values: */
     mainStruct.colorDepth = 0x10;  // simply to 16
-    mainStruct.screenWidthInPixels = texS.w; // to current res -> defaults to 1280x720
-    mainStruct.screenHeightInPixels = texS.h;
+    mainStruct.screenWidthInPixels = d.gameTexSize.w; // to current res -> defaults to 1280x720
+    mainStruct.screenHeightInPixels = d.gameTexSize.h;
     mainStruct.runGameAsExclusiveFullscreen = 1;
 
-    // set setWindowStyleAndRect values:
-    mainStruct.clientOnScreenCoords = { 0, 0, texS.w, texS.h };
+    /*  set setWindowStyleAndRect values: */
+    mainStruct.clientOnScreenCoords = { 0, 0, d.gameTexSize.w, d.gameTexSize.h };
 
     // these values might not be used, set them anyway for now
     int* resRect{ (int*)(winSetRectObjBaseAddr + 0x30) };
     *resRect = 0;
-    *(resRect + 1) = texS.w;
+    *(resRect + 1) = d.gameTexSize.w;
     *(resRect + 2) = 0;
-    *(resRect + 3) = texS.h;
+    *(resRect + 3) = d.gameTexSize.h;
     mainStruct.gameInWindowPosX = 0;
     mainStruct.gameInWindowPosY = 0;
     mainStruct.gameOnScreenPosX = 0;
     mainStruct.gameOnScreenPosX = 0;
 
-    // DirectDrawCreate
+    /* DirectDrawCreate */
+
+    mainStruct.ddInterfacePtr = this;
+    mainStruct.NOT_selfBufferOrWindowMode = 1;
+    mainStruct.unknown_6[1] = 1;  // function unknown, something with the cursor
+
+    // set supported res
+    for (size_t i = 1; i < RESOLUTIONS.size() - 1; i++) // 0 and the last are not available
+    {
+      // this res has an issue with rendering the endscreen, the elements are too close, you can not leave the screen
+      // menues seem to not work for this res; one func in crusader: 0x004d55d0, flag based on res in that func: 0x004d5629
+      if (i == RES_1024_X_600)
+      {
+        continue; // -> disabled, because broken
+      }
+
+      shcWinStrucPtr->resolutionSupported[i] = 1;
+    }
+
+    // set values:
+
+    d.scrollRange = { d.gameTexSize.w - 1, d.gameTexSize.h - 1 };
+
+    //create new bit maps
+    int pixNum{ d.gameTexSize.w * d.gameTexSize.h };
+    back.createBitData(pixNum);
+    offMain.createBitData(pixNum);
+
+    // change scale, I choose the easy route, algorithm: https://math.stackexchange.com/a/1620375
+    // compute needed base values
+    Size<double> winToTex{ static_cast<double>(d.gameTexSize.w) / d.windowSize.w, static_cast<double>(d.gameTexSize.h) / d.windowSize.h };
+    double winToTexMult = winToTex.h > winToTex.w ? winToTex.h : winToTex.w;
+    Size<double> winScale{ winToTex.w / winToTexMult, winToTex.h / winToTexMult };
+
+    // offset in window pixels
+    d.windowOffset = { lround((1.0 - winScale.w) * d.windowSize.w / 2.0), lround((1.0 - winScale.h) * d.windowSize.h / 2.0) };
+
+    // size of the game in the window
+    d.gameWindowRange = { d.windowSize.w - d.windowOffset.w * 2 - 1, d.windowSize.h - d.windowOffset.h * 2 - 1 };
+
+    // for positions, I need to use the relation between the range ( 0 -> width - 1 ) of the window and the game
+    d.winToGamePos = { static_cast<double>(d.scrollRange.w) / d.gameWindowRange.w, static_cast<double>(d.scrollRange.h) / d.gameWindowRange.h };
+
+    window->adjustTexSizeAndViewport(d.gameTexSize, d.windowSize, winScale);
+
+    // set clip for cursor
+    if (confRef.control.clipCursor && confRef.window.type != TYPE_WINDOW)
+    {
+      clipCursor();
+    }
+
+    // surfaces:
+    mainStruct.ddPrimarySurfacePtr = &prim;
+    mainStruct.ddBackbufferSurfacePtr = &back;
+    mainStruct.ddOffscreenSurfacePtr_Game = &offMain;
+    mainStruct.ddOffscreenSurfacePtr_Map = &offMap;
+
+    // offscreen desc, lock should fill them
+    ZeroMemory(&mainStruct.ddSurfDescForBink_Game, sizeof(DDSURFACEDESC));
+    offMain.Lock(NULL, &mainStruct.ddSurfDescForBink_Game, NULL, NULL);
+    ZeroMemory(&mainStruct.ddSurfDescForBink_Map, sizeof(DDSURFACEDESC));
+    offMap.Lock(NULL, &mainStruct.ddSurfDescForBink_Map, NULL, NULL);
+
+    // set surface ptr
+    mainStruct.surfacePtr_Game = offMain.getBitmapPtr();
+    mainStruct.surfacePtr_Map = offMap.getBitmapPtr();
+
+    // get and set bink flag
+    static BinkDDSurfaceType binkSurfType{ nullptr };
+    if (binkSurfType == nullptr)
+    {
+      HMODULE bink{ GetModuleHandleA("binkw32.dll") };  // no check, needs to be there
+      binkSurfType = (BinkDDSurfaceType)GetProcAddress(bink, "_BinkDDSurfaceType@4");
+    }
+    // 0x8 in case of ARGB1555
+    binkStruct->gameSurfaceType = binkSurfType(&offMain);//0xc;
+    binkStruct->mapSurfaceType = binkSurfType(&offMap);
+
+    // set some colors
+    mainStruct.colorBitMode = confRef.graphic.pixFormat;
+    colorFunc();
   }
 
   HRESULT CrusaderToOpenGL::createDirectDraw(GUID* lpGUID, LPDIRECTDRAW* lplpDD, IUnknown* pUnkOuter)

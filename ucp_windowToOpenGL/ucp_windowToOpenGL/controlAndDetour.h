@@ -54,5 +54,7 @@ namespace UCPtoOpenGL
   {
     extern WNDPROC WindowProcCallbackFunc; // will be filled by memory write
     extern DWORD WinSetRectObjBaseAddr;
+    extern DWORD BinkControlObjAddr;
+    extern DWORD SetSomeColorsAddr;
   }
 }
