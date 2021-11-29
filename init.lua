@@ -19,12 +19,12 @@ end
 
 
 local function getRelativeCallDest(callAddr) -- created for E8 calls
-  local relAddr = readInteger(callAddr + 1)
+  local relAddr = core.readInteger(callAddr + 1)
   return callAddr + relAddr + 5
 end
 
 local function getPtrToJumpAddr(jmpAddr) -- created for FF "num?" addr calls
-  return readInteger(jmpAddr + 2)
+  return core.readInteger(jmpAddr + 2)
 end
 
 local function getPtrAddrForCallToJmp(callAddr) -- helper for both funcs
@@ -32,11 +32,11 @@ local function getPtrAddrForCallToJmp(callAddr) -- helper for both funcs
 end
 
 local function getPtrAddrFromMov(movAddr) -- if the address of the address to call is moved in register 
-  return readInteger(movAddr + 2)
+  return core.readInteger(movAddr + 2)
 end
 
 local function getPtrAddrFromCall(callAddr) -- if the call is made using the address from a ptr address 
-  return readInteger(callAddr + 2)
+  return core.readInteger(callAddr + 2)
 end
 
 
@@ -66,7 +66,7 @@ local addrFail = {}
 exports.enable = function(self, moduleConfig, globalConfig)
 
   for name, aob in pairs(addresses) do -- add found address to table
-    local addr = scanForAOB(aob[1], 0x400000)
+    local addr = core.AOBScan(aob[1], 0x400000)
     if addr == nil then
       addrFail[#addrFail + 1] = name
     end
@@ -85,22 +85,22 @@ exports.enable = function(self, moduleConfig, globalConfig)
 
   --[[ load module ]]--
 
-  local ucpOpenGL = require("ucp_windowToOpenGL.dll") -- loads the dll in memory and runs luaopen_ucp_windowToOpenGL
-  self.ucpOpenGL = ucpOpenGL
+  local graphicsApiReplacer = require("graphicsApiReplacer.dll") -- loads the dll in memory and runs luaopen_ucp_windowToOpenGL
+  self.graphicsApiReplacer = graphicsApiReplacer
 
 
   --[[ binding ]]--
   -- kinda unsafe -> call addresses in ret object
 
   -- actually a _thiscall, but changed to call own function
-  writeCode(
+  core.writeCode(
     addresses.windowCreateCallAddr[2], -- extreme 1.41.1-E address: 0x0057C390 
-    {0xe8, ucpOpenGL.funcAddress_CreateWindow - addresses.windowCreateCallAddr[2] - 5}
+    {0xe8, graphicsApiReplacer.funcAddress_CreateWindow - addresses.windowCreateCallAddr[2] - 5}
   )
 
   -- __thiscall function that would release the DirectDraw objects,
   -- however, only ret -> always able to draw (do not know if this breaks something
-  writeCode(
+  core.writeCode(
     addresses.releaseDirectDrawAddr[2],  -- extreme 1.41.1-E address: 0x00467FB0
     {
       -- 0x31, 0xc0,       -- xor    eax,eax               (zero)
@@ -111,7 +111,7 @@ exports.enable = function(self, moduleConfig, globalConfig)
   
   -- __thiscall function that would restore the DirectDraw objects,
   -- however, ret 0, too not trigger window init again
-  writeCode(
+  core.writeCode(
     addresses.restoreDirectDrawAddr[2],  -- extreme 1.41.1-E address: 0x004680F0
     {
       0x31, 0xc0,       -- xor    eax,eax               (zero)
@@ -121,47 +121,47 @@ exports.enable = function(self, moduleConfig, globalConfig)
   
   -- __thiscall function that sets some initial values,
   -- however, it will become the main init function
-  writeCode(
+  core.writeCode(
     addresses.getDeviceCapsAddr[2],  -- extreme 1.41.1-E address: 0x00467D70
     {
-      0xb8, ucpOpenGL.funcAddress_MainDrawInit,       -- mov eax, absolute address  -- call pos extreme: 0x00472C3D
+      0xb8, graphicsApiReplacer.funcAddress_MainDrawInit,       -- mov eax, absolute address  -- call pos extreme: 0x00472C3D
       0xff, 0xe0                                      -- jmp eax
     }
   )
   
   -- 1366x768 seems to have a special handling that seems no obsolete
   -- replace enum with unused byte, to prevent different handling
-  writeCode(
+  core.writeCode(
     addresses.conditionForResHandlingAddr[2],  -- extreme 1.41.1-E address: 0x0046FC2D
     {0x1F}
   )
   
     -- simply ret, we do not need this func anymore
-  writeCode(
+  core.writeCode(
     addresses.setWindowRectAddr[2], -- extreme 1.41.1-E address: 0x0046F970
     {0xc3}
   )
   
   -- there is a "not really" rect structure that needs to be set
-  writeCode(
-    ucpOpenGL.address_FillWithWinSetRectObjBaseAddr, -- extreme 1.41.1-E address: 0x0046F9D6
-    {readInteger(addresses.winSetRectObjBaseAddr[2] + 1)}
+  core.writeCode(
+    graphicsApiReplacer.address_FillWithWinSetRectObjBaseAddr, -- extreme 1.41.1-E address: 0x0046F9D6
+    {core.readInteger(addresses.winSetRectObjBaseAddr[2] + 1)}
   )
   
   -- need set some values, need ptr to bink control obj
-  writeCode(
-    ucpOpenGL.address_FillWithBinkControlObjAddr, -- extreme 1.41.1-E address: 0x0047023D
-    {readInteger(addresses.binkControlObjAddr[2] + 1)}
+  core.writeCode(
+    graphicsApiReplacer.address_FillWithBinkControlObjAddr, -- extreme 1.41.1-E address: 0x0047023D
+    {core.readInteger(addresses.binkControlObjAddr[2] + 1)}
   )
   
   -- need to call this
-  writeCode(
-    ucpOpenGL.address_FillWithSetSomeColorsAddr, -- extreme 1.41.1-E address: 0x00467AC0
+  core.writeCode(
+    graphicsApiReplacer.address_FillWithSetSomeColorsAddr, -- extreme 1.41.1-E address: 0x00467AC0
     {addresses.setSomeColorsFuncAddr[2]}
   )
   
   -- original init DD only needs to return 1
-  writeCode(
+  core.writeCode(
     addresses.initDirectDraw[2],  -- extreme 1.41.1-E address: 0x0046FC90
     {
       0xb8, 0x01, 0x00, 0x00, 0x00,       -- mov eax, 0x00000001
@@ -169,24 +169,24 @@ exports.enable = function(self, moduleConfig, globalConfig)
     }
   )
 
-  writeCode(
+  core.writeCode(
     getPtrAddrFromMov(addresses.getSystemMetricAddr[2]), -- extreme 1.41.1-E address: 0x0059E1D0
-    {ucpOpenGL.funcAddress_GetSystemMetrics}
+    {graphicsApiReplacer.funcAddress_GetSystemMetrics}
   )
 
-  writeCode(
+  core.writeCode(
     getPtrAddrFromCall(addresses.getCursorPosAddr[2]), -- extreme 1.41.1-E address: 0x0059E1E8
-    {ucpOpenGL.funcAddress_GetCursorPos}
+    {graphicsApiReplacer.funcAddress_GetCursorPos}
   )
   
-  writeCode(
+  core.writeCode(
     getPtrAddrFromCall(addresses.getForegroundWindowAddr[2]), -- extreme 1.41.1-E address: 0x0059E20C
-    {ucpOpenGL.funcAddress_GetForegroundWindow}
+    {graphicsApiReplacer.funcAddress_GetForegroundWindow}
   )
 
   -- address of crusaders windowProcCallback needed, fill address of given variable with callback address
-  writeCode(
-    ucpOpenGL.address_FillWithWindowProcCallback,
+  core.writeCode(
+    graphicsApiReplacer.address_FillWithWindowProcCallback,
     {addresses.windowProcCallAddr[2]}  -- extreme 1.41.1-E address: 0x004B2C50
   )
 
@@ -200,11 +200,11 @@ exports.enable = function(self, moduleConfig, globalConfig)
       {
         window
         {
-          type                -- default: window      -- see ucpOpenGL.windowType table
+          type                -- default: window      -- see graphicsApiReplacer.windowType table
           width               -- default: 1280;       -- num >= 0 (and <= 20000)
           height              -- default: 720;        -- num >= 0 (and <= 20000)
-          pos                 -- default: middle      -- see ucpOpenGL.windowPos table
-          continueOutOfFocus  -- default: pause       -- see ucpOpenGL.windowContinue table
+          pos                 -- default: middle      -- see graphicsApiReplacer.windowPos table
+          continueOutOfFocus  -- default: pause       -- see graphicsApiReplacer.windowContinue table
         }
         
         graphic
@@ -212,8 +212,8 @@ exports.enable = function(self, moduleConfig, globalConfig)
           filterLinear        -- default: true        -- bool     -- if the texture filter should be linear, otherwise nearest
           vsync               -- default: true        -- bool     -- most likely only relevant for fullscreen modes
           waitWithGLFinish    -- default: false       -- bool     -- calls glFinish after swap -> also seems to prevent tearing, do not know what is better...
-          pixFormat           -- default: argb1555                -- see ucpOpenGL.pixelFormat table
-          debug               -- default: none                    -- (no use at the moment) see ucpOpenGL.debugOpenGL table
+          pixFormat           -- default: argb1555                -- see graphicsApiReplacer.pixelFormat table
+          debug               -- default: none                    -- (no use at the moment) see graphicsApiReplacer.debugOpenGL table
         }
         
         control
@@ -225,8 +225,8 @@ exports.enable = function(self, moduleConfig, globalConfig)
         }
       }
       
-      "ucpOpenGL.setConfigField" sets the values. Example:
-          ucpOpenGL.setConfigField("window", "width", 600)
+      "graphicsApiReplacer.setConfigField" sets the values. Example:
+          graphicsApiReplacer.setConfigField("window", "width", 600)
           
       Currently, the config should be modified before the game starts.
       Modifications after will cause undefined behavior.
@@ -245,18 +245,18 @@ exports.enable = function(self, moduleConfig, globalConfig)
 
   -- enum helper tables:
   -- name is equal to option
-  ucpOpenGL.window = {}
-  ucpOpenGL.graphic = {}
-  ucpOpenGL.control = {}
+  graphicsApiReplacer.window = {}
+  graphicsApiReplacer.graphic = {}
+  graphicsApiReplacer.control = {}
 
-  ucpOpenGL.window.type = {
+  graphicsApiReplacer.window.type = {
     window                =   0,
     borderlessWindow      =   1,
     borderlessFullscreen  =   2,
   }
 
   -- only relevant for windowed modes
-  ucpOpenGL.window.pos = {
+  graphicsApiReplacer.window.pos = {
     middle                =   0,
     topLeft               =   1,
     bottomLeft            =   2,
@@ -264,19 +264,19 @@ exports.enable = function(self, moduleConfig, globalConfig)
     bottomRight           =   4,
   }
   
-  ucpOpenGL.window.continueOutOfFocus = {
+  graphicsApiReplacer.window.continueOutOfFocus = {
     pause                 =   0,
     continue              =   1,
     render                =   2,
   }
 
-  ucpOpenGL.graphic.pixFormat = {
+  graphicsApiReplacer.graphic.pixFormat = {
     argb1555              =   0x555,
     rgb565                =   0x565,
   }
   
   -- no effect at the moment
-  ucpOpenGL.graphic.debug = {
+  graphicsApiReplacer.graphic.debug = {
     none                  =   0,
     enabled               =   1,  -- just enabled debug messages, might have no effect        
     debugContextEnabled   =   2,  -- tries to create a debug context, this should produce messages
@@ -286,7 +286,7 @@ exports.enable = function(self, moduleConfig, globalConfig)
   
   for option, fields in pairs(moduleConfig) do
     for field, value in pairs(fields) do
-      local enum = ucpOpenGL[option]
+      local enum = graphicsApiReplacer[option]
       if enum ~= nil then
         enum = enum[field]
         if enum ~= nil then
@@ -294,7 +294,7 @@ exports.enable = function(self, moduleConfig, globalConfig)
         end
       end
 
-      local status, err = pcall(ucpOpenGL.setConfigField, option, field, value)
+      local status, err = pcall(graphicsApiReplacer.setConfigField, option, field, value)
       if not status then
         print(err);
       end

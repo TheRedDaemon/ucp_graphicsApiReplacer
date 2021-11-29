@@ -56,9 +56,6 @@
     <ClCompile Include="windowCore.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
-    <ClCompile Include="fakeDDSurfaces.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
     <ClCompile Include="configUtil.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
@@ -68,5 +65,11 @@
     <ClCompile Include="control.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
+    <ClCompile Include="fakeDDSurfaces.cpp">
+      <Filter>Headerdateien</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

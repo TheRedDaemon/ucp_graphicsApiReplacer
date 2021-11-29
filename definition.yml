@@ -1,9 +1,9 @@
 # The name of your module
-name: windowToOpenGL
+name: graphicsApiReplacer
 # The version of your module
-version: 0.0.2   
+version: 0.0.2
 # The date of this version
-date: 2021      
+date: 2021
 # The author
 author: TheRedDaemon
 # Tags to categorize a module in a list
@@ -17,16 +17,14 @@ module-format: 1.0.0
 # Maybe the provided dlls do not work on something else than windows
 platform: [windows]
 # Maybe the functions don't work on another version of SHC
-game: [SHC@1.41, SHCE@1.41]
+game: [SHC==1.41, SHCE==1.41]
 # A description of what the module does
 description: Provides a openGL implementation that replaces ddraw
 # What module this module provides (usually the same as name I guess, but maybe one module contains multiple features)
-provides: [windowToOpenGL]
+provides: [graphicsApiReplacer]
 # What modules this module is incompatible with
 conflicts: []
 # What configurations from other modules this is incompatible with
 conflicts-config: []
-# What other modules this module depends on: ucp is a special module
-depends: [lua_api>=1.0.0]
 # A module (for example a map pack (Christmas calendar)) could require certain AIC or features from other modules to be configured in a certain way
 depends-config: []

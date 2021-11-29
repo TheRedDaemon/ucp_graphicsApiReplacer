@@ -53,17 +53,12 @@ namespace UCPtoOpenGL
     bltTo += toY * toWidth + toX;
 
     // loop
+    int cpyLen{ lenX * 2 };
     for (int yRun{ 0 }; yRun < lenY; yRun++)
     {
-      for (int xRun{ 0 }; xRun < lenX; xRun++)
-      {
-        *bltTo = *bltFrom;  // all transparency seems to be handled by stronghold
-        ++bltFrom;
-        ++bltTo;
-      }
-
-      bltFrom += fromWidth - lenX;
-      bltTo += toWidth - lenX;
+      std::memcpy(bltTo, bltFrom, cpyLen); // all transparency seems to be handled by stronghold
+      bltFrom += fromWidth;
+      bltTo += toWidth;
     }
   }
 

@@ -1,3 +1,3 @@
-# ucp_windowToOpenGL
+# UCP Graphics API Replacer
 
 ### WIP

@@ -14,7 +14,7 @@
 namespace UCPtoOpenGL
 {
   // lua module load
-  extern "C" __declspec(dllexport) int __cdecl luaopen_ucp_windowToOpenGL(lua_State * L)
+  extern "C" __declspec(dllexport) int __cdecl luaopen_graphicsApiReplacer(lua_State * L)
   {
 
     //std::this_thread::sleep_for(std::chrono::seconds(20)); // 20 seconds to attach

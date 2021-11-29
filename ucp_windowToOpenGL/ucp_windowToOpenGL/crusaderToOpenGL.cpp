@@ -117,9 +117,12 @@ namespace UCPtoOpenGL
     // set supported res
     for (size_t i = 1; i < RESOLUTIONS.size() - 1; i++) // 0 and the last are not available
     {
-      // this res has an issue with rendering the endscreen, the elements are too close, you can not leave the screen
+      // RES_1024_X_600 has an issue with rendering the endscreen, the elements are too close, you can not leave the screen
       // menues seem to not work for this res; one func in crusader: 0x004d55d0, flag based on res in that func: 0x004d5629
-      if (i == RES_1024_X_600)
+
+      // RES_2560_X_1600 has an issue with activating HUD-less mode on 2560x1600 while zoomed out, it crashes the game
+      // the address points in the map rendering, although it seems it crashed first for the hight map (extreme: 0x004E9B78, normal: 0x004e97e8 (maybe))
+      if (i == RES_1024_X_600 || i == RES_2560_X_1600)
       {
         continue; // -> disabled, because broken
       }
