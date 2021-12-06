@@ -1,71 +1,69 @@
--   name: window
-    type: category
-    description: Window options
-    children:
-    -   name: type
-        type: choice
-        choices: [window, borderlessWindow, borderlessFullscreen]
-        default: window
-    -   name: width
-        type: integer
-        range:
-            min: 0
-            max: 20000
-        default: 1280
-    -   name: height
-        type: integer
-        range:
-            min: 0
-            max: 20000
-        default: 720
-    -   name: pos
-        type: choice
-        choices: [middle, topLeft, bottomLeft, topRight, bottomRight]
-        default: middle
-    -   name: continueOutOfFocus
-        type: choice
-        choices: [pause, continue, render]
-        default: pause
--   name: graphic
-    type: category
-    description: Options for the display system
-    children:
-    -   name: filterLinear
-        type: boolean
-        default: true
-    -   name: vsync
-        type: boolean
-        default: true
-    -   name: waitWithGLFinish
-        type: boolean
-        default: false
-    -   name: pixFormat
-        type: choice
-        choices: [argb1555, rgb565]
-        default: argb1555
-    -   name: debug
-        type: choice
-        choices: [none, enabled, debugContextEnabled]
-        default: none
--   name: control
-    type: category
-    description: Options for mouse controls
-    children:
-    -   name: clipCursor
-        type: boolean
-        default: true
-    -   name: scrollActive
-        type: boolean
-        default: true
-    -   name: margin
-        type: integer
-        range:
-            min: 0
-            max: 1000
-        default: 0
-    -   name: padding
-        type: integer
-        range:
-            min: 0
-            max: 1000
-        default: 0
+window:
+  # type: category
+  description: Window options
+  type:
+    type: choice
+    choices: [window, borderlessWindow, borderlessFullscreen]
+    default: window
+  width:
+    type: integer
+    range:
+      min: 0
+      max: 20000
+    default: 1280
+  height:
+    type: integer
+    range:
+      min: 0
+      max: 20000
+    default: 720
+  pos:
+    type: choice
+    choices: [middle, topLeft, bottomLeft, topRight, bottomRight]
+    default: middle
+  continueOutOfFocus:
+    type: choice
+    choices: [pause, continue, render]
+    default: pause
+graphic:
+  type: category
+  description: Options for the display system
+  children:
+  filterLinear:
+    type: boolean
+    default: true
+  vsync:
+    type: boolean
+    default: true
+  waitWithGLFinish:
+    type: boolean
+    default: false
+  pixFormat:
+    type: choice
+    choices: [argb1555, rgb565]
+    default: argb1555
+  debug:
+    type: choice
+    choices: [none, enabled, debugContextEnabled]
+    default: none
+control:
+  type: category
+  description: Options for mouse controls
+  clipCursor:
+    type: boolean
+    default: true
+  scrollActive:
+    type: boolean
+    default: true
+  margin:
+    type: integer
+    range:
+      min: 0
+      max: 1000
+    default: 0
+  padding:
+    type: integer
+    range:
+      min: 0
+      max: 1000
+    default: 0
