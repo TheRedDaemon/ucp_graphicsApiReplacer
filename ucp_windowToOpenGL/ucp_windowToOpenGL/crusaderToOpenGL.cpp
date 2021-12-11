@@ -55,6 +55,7 @@ namespace UCPtoOpenGL
     // trying to get WGL functions, if this fails, return false, Crusader crashes
     if (!window->loadWGLFunctions(hInstance))
     {
+      Log(LOG_ERROR, "[graphicsApiReplacer]: Preinitialization of GraphicAPI failed. The game will crash.");
       return;
     }
 
@@ -75,6 +76,7 @@ namespace UCPtoOpenGL
     ATOM classAtom{ RegisterClassA(&wndClass) };
     if (classAtom == NULL)
     {
+      Log(LOG_ERROR, "[graphicsApiReplacer]: Failed to register window class. The game will crash.");
       return;
     }
 
@@ -99,6 +101,7 @@ namespace UCPtoOpenGL
     HWND handle{ shcWinStrucPtr->gameWindowHandle };
     if (handle == NULL)
     {
+      Log(LOG_ERROR, "[graphicsApiReplacer]: Failed to create window. The game will crash.");
       return;
     }
 
@@ -129,7 +132,7 @@ namespace UCPtoOpenGL
       shcWinStrucPtr->resolutionSupported[i] = 1;
     }
 
-    Log(LOG_INFO, "[graphicsApiReplacer] Window created.");
+    Log(LOG_INFO, "[graphicsApiReplacer]: Window created.");
   }
 
 
@@ -223,7 +226,14 @@ namespace UCPtoOpenGL
     if (binkSurfType == nullptr)
     {
       HMODULE bink{ GetModuleHandleA("binkw32.dll") };  // no check, needs to be there
-      binkSurfType = (BinkDDSurfaceType)GetProcAddress(bink, "_BinkDDSurfaceType@4");
+      if (bink)
+      {
+        binkSurfType = (BinkDDSurfaceType)GetProcAddress(bink, "_BinkDDSurfaceType@4");
+      }
+      if (!binkSurfType)
+      {
+        Log(LOG_ERROR, "[graphicsApiReplacer]: Failed to receive Bink Surface Type function. The game will crash.");
+      }
     }
     // 0x8 in case of ARGB1555, 0xa for RGB565 (0x1 would be RGB 24bit, 0xc would be RGB664)
     binkStruct->gameSurfaceType = binkSurfType(&offMain);
@@ -233,7 +243,7 @@ namespace UCPtoOpenGL
     mainStruct.colorBitMode = confRef.graphic.pixFormat;
     colorFunc();
 
-    Log(LOG_INFO, "[graphicsApiReplacer] Drawing initialized.");
+    Log(LOG_INFO, "[graphicsApiReplacer]: Drawing initialized.");
   }
 
   int CrusaderToOpenGL::getFakeSystemMetrics(int nIndex)

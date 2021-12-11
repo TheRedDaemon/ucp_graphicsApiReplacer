@@ -43,6 +43,7 @@ namespace UCPtoOpenGL
 
     if (!RegisterClassA(&windowClass))
     {
+      Log(LOG_ERROR, "[graphicsApiReplacer]: [OpenGL]: Failed to create dummy window class.");
       return false;
     }
 
@@ -63,6 +64,7 @@ namespace UCPtoOpenGL
 
     if (!dummyWindow)
     {
+      Log(LOG_ERROR, "[graphicsApiReplacer]: [OpenGL]: Failed to create dummy window.");
       return false;
     }
 
@@ -80,21 +82,25 @@ namespace UCPtoOpenGL
     int pixelFormat = ChoosePixelFormat(dummyDC, &pfd);
     if (!pixelFormat)
     {
+      Log(LOG_ERROR, "[graphicsApiReplacer]: [OpenGL]: Failed to get dummy pixel format.");
       return false;
     }
     if (!SetPixelFormat(dummyDC, pixelFormat, &pfd))
     {
+      Log(LOG_ERROR, "[graphicsApiReplacer]: [OpenGL]: Failed to set dummy pixel format.");
       return false;
     }
 
     HGLRC dummyContext = wglCreateContext(dummyDC);
     if (!dummyContext)
     {
+      Log(LOG_ERROR, "[graphicsApiReplacer]: [OpenGL]: Failed to create dummy context.");
       return false;
     }
 
     if (!wglMakeCurrent(dummyDC, dummyContext))
     {
+      Log(LOG_ERROR, "[graphicsApiReplacer]: [OpenGL]: Failed to make dummy context current.");
       return false;
     }
 
@@ -107,6 +113,11 @@ namespace UCPtoOpenGL
     wglDeleteContext(dummyContext);
     ReleaseDC(dummyWindow, dummyDC);
     DestroyWindow(dummyWindow);
+
+    if (!gotFuncs)
+    {
+      Log(LOG_ERROR, "[graphicsApiReplacer]: [OpenGL]: Failed to receive context creation functions.");
+    }
 
     return gotFuncs;
   }
@@ -169,6 +180,7 @@ namespace UCPtoOpenGL
   {
     if (!confPtr)
     {
+      Log(LOG_ERROR, "[graphicsApiReplacer]: [OpenGL]: Did not receive configuration.");
       return false;
     }
 
@@ -186,11 +198,13 @@ namespace UCPtoOpenGL
     int format_index{ ChoosePixelFormat(deviceContext, &pfd) };
     if (!format_index)
     {
+      Log(LOG_ERROR, "[graphicsApiReplacer]: [OpenGL]: Failed to get pixel format.");
       return false;
     }
 
     if (!SetPixelFormat(deviceContext, format_index, &pfd))
     {
+      Log(LOG_ERROR, "[graphicsApiReplacer]: [OpenGL]: Failed to set pixel format.");
       return false;
     }
 
@@ -199,16 +213,19 @@ namespace UCPtoOpenGL
     auto active_format_index{ GetPixelFormat(deviceContext) };
     if (!active_format_index)
     {
+      Log(LOG_ERROR, "[graphicsApiReplacer]: [OpenGL]: Failed to get chosen pixel format.");
       return false;
     }
 
     if (!DescribePixelFormat(deviceContext, active_format_index, sizeof(pfd), &pfd))
     {
+      Log(LOG_ERROR, "[graphicsApiReplacer]: [OpenGL]: Failed to describe pixel format.");
       return false;
     }
 
     if ((pfd.dwFlags & PFD_SUPPORT_OPENGL) != PFD_SUPPORT_OPENGL)
     {
+      Log(LOG_ERROR, "[graphicsApiReplacer]: [OpenGL]: Pixel buffer does not support OpenGL.");
       return false;
     }
     // until here -> but maybe need to validate that windows choose a fitting thing?
@@ -228,6 +245,7 @@ namespace UCPtoOpenGL
 
     if (!renderingContext || !wglMakeCurrent(deviceContext, renderingContext))
     {
+      Log(LOG_ERROR, "[graphicsApiReplacer]: [OpenGL]: Failed to create and set main rendering context.");
       return false;
     }
 
@@ -253,6 +271,7 @@ namespace UCPtoOpenGL
     // if the functions are not found in the context, the game window will simply close
     if (!loadGLFunctions())
     {
+      Log(LOG_ERROR, "[graphicsApiReplacer]: [OpenGL]: Failed to obtain needed functions.");
       return false;
     }
 
