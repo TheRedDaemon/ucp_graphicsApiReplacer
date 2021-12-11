@@ -213,7 +213,7 @@ exports.enable = function(self, moduleConfig, globalConfig)
           vsync               -- default: true        -- bool     -- most likely only relevant for fullscreen modes
           waitWithGLFinish    -- default: false       -- bool     -- calls glFinish after swap -> also seems to prevent tearing, do not know what is better...
           pixFormat           -- default: argb1555                -- see graphicsApiReplacer.pixelFormat table
-          debug               -- default: none                    -- (no use at the moment) see graphicsApiReplacer.debugOpenGL table
+          debug               -- default: none                    -- see graphicsApiReplacer.debugOpenGL table
         }
         
         control
@@ -274,8 +274,7 @@ exports.enable = function(self, moduleConfig, globalConfig)
     argb1555              =   0x555,
     rgb565                =   0x565,
   }
-  
-  -- no effect at the moment
+
   graphicsApiReplacer.graphic.debug = {
     none                  =   0,
     enabled               =   1,  -- just enabled debug messages, might have no effect        

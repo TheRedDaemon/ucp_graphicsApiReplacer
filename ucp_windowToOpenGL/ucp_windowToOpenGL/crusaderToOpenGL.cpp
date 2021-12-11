@@ -55,7 +55,7 @@ namespace UCPtoOpenGL
     // trying to get WGL functions, if this fails, return false, Crusader crashes
     if (!window->loadWGLFunctions(hInstance))
     {
-      Log(LOG_ERROR, "[graphicsApiReplacer]: Preinitialization of GraphicAPI failed. The game will crash.");
+      Log(LOG_FATAL, "[graphicsApiReplacer]: Preinitialization of graphics API failed. Aborting game.");
       return;
     }
 
@@ -76,7 +76,7 @@ namespace UCPtoOpenGL
     ATOM classAtom{ RegisterClassA(&wndClass) };
     if (classAtom == NULL)
     {
-      Log(LOG_ERROR, "[graphicsApiReplacer]: Failed to register window class. The game will crash.");
+      Log(LOG_FATAL, "[graphicsApiReplacer]: Failed to register window class. Aborting game.");
       return;
     }
 
@@ -101,12 +101,17 @@ namespace UCPtoOpenGL
     HWND handle{ shcWinStrucPtr->gameWindowHandle };
     if (handle == NULL)
     {
-      Log(LOG_ERROR, "[graphicsApiReplacer]: Failed to create window. The game will crash.");
+      Log(LOG_FATAL, "[graphicsApiReplacer]: Failed to create window. Aborting game.");
       return;
     }
 
     window->setConf(&confRef);
-    d.windowDone = handle && window->createWindow(handle);
+    if (!window->createWindow(handle))
+    {
+      Log(LOG_FATAL, "[graphicsApiReplacer]: Failed to initialize graphics API. Aborting game.");
+      return;
+    }
+    d.windowDone = true;
 
     HRESULT res{ CoInitialize(NULL) };  // ignoring res, like SHC
     shcWinStrucPtr->windowCreationTime = timeGetTime();
@@ -232,7 +237,7 @@ namespace UCPtoOpenGL
       }
       if (!binkSurfType)
       {
-        Log(LOG_ERROR, "[graphicsApiReplacer]: Failed to receive Bink Surface Type function. The game will crash.");
+        Log(LOG_FATAL, "[graphicsApiReplacer]: Failed to receive Bink Surface Type function. Aborting game.");
       }
     }
     // 0x8 in case of ARGB1555, 0xa for RGB565 (0x1 would be RGB 24bit, 0xc would be RGB664)

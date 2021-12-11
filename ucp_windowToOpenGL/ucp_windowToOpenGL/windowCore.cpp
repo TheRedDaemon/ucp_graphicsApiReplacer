@@ -167,9 +167,56 @@ namespace UCPtoOpenGL
   void WindowCore::debugMsg(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
     const GLchar* message, const void* userParam)
   {
-    if (type == GL_DEBUG_TYPE_ERROR)
+    // currently uses level set by logger, split throw the severities
+    // downside is: every message currently roundtrips through Lua and is only discarded based on the logger level
+    // since this logging is optional, and almost nothing is done in OpenGL (at the moment), I think this ok for now
+    // better handling tutorial if required: https://learnopengl.com/In-Practice/Debugging
+
+    // using severity
+    LogLevel levelToUse{ LOG_NONE };
+    switch (severity)
     {
-      std::string errorMsg{ message };
+      case GL_DEBUG_SEVERITY_NOTIFICATION:
+        levelToUse = LOG_DEBUG;
+        break;
+      case GL_DEBUG_SEVERITY_LOW:
+        levelToUse = LOG_INFO;
+        break;
+      case GL_DEBUG_SEVERITY_MEDIUM:
+        levelToUse = LOG_WARNING;
+        break;
+      case GL_DEBUG_SEVERITY_HIGH:
+        levelToUse = LOG_ERROR;
+        break;
+      default:
+        Log(LOG_ERROR, "[graphicsApiReplacer]: [OpenGL]: Received OpenGL Debug Message without valid severity.");
+        break;
+    }
+
+    if (levelToUse != LOG_NONE)
+    {
+      std::string strMessage = std::string(message);
+
+      // remove whitespace
+      // source: https://stackoverflow.com/a/217605
+      
+      // trim from start
+      strMessage.erase(strMessage.begin(), std::find_if(strMessage.begin(), strMessage.end(),
+          [](unsigned char ch)
+          {
+            return !std::isspace(ch);
+          }
+        ));
+
+      // trim from end
+      strMessage.erase(std::find_if(strMessage.rbegin(), strMessage.rend(),
+          [](unsigned char ch)
+          {
+            return !std::isspace(ch);
+          }
+        ).base(), strMessage.end());
+
+      Log(LOG_ERROR, "[graphicsApiReplacer]: [OpenGL]: " + strMessage);
     }
   }
 
@@ -254,10 +301,21 @@ namespace UCPtoOpenGL
     // enable debug (should already be if create with debug bit) and set return message
     if (confPtr->graphic.debug != DEBUG_OFF)
     {
+      // check if context is debug context
+      if (confPtr->graphic.debug == DEBUG_DEBUG_CONTEXT_ENABLED)
+      {
+        int flags;
+        glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
+        if (!(flags & GL_CONTEXT_FLAG_DEBUG_BIT))
+        {
+          Log(LOG_WARNING, "[graphicsApiReplacer]: [OpenGL]: Despite requested, no debug context was created.");
+        }
+      }
+
       if (getAnyGLFuncAddress("glDebugMessageCallback", (void**)&ownPtr_glDebugMessageCallback))
       {
         glEnable(GL_DEBUG_OUTPUT);
-        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS); // slower, but you in theory able to do more stuff
+        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS); // slower, but in theory able to do more stuff
         ownPtr_glDebugMessageCallback(debugMsgProxy, this);
       }
       else
