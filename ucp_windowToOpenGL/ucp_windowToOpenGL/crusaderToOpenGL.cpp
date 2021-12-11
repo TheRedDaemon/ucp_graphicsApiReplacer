@@ -128,6 +128,8 @@ namespace UCPtoOpenGL
       }
       shcWinStrucPtr->resolutionSupported[i] = 1;
     }
+
+    Log(LOG_INFO, "[graphicsApiReplacer] Window created.");
   }
 
 
@@ -193,7 +195,7 @@ namespace UCPtoOpenGL
     mainStruct.gameInWindowPosX = 0;
     mainStruct.gameInWindowPosY = 0;
     mainStruct.gameOnScreenPosX = 0;
-    mainStruct.gameOnScreenPosX = 0;
+    mainStruct.gameOnScreenPosY = 0;
 
     // interface
     mainStruct.ddInterfacePtr = this;
@@ -223,13 +225,15 @@ namespace UCPtoOpenGL
       HMODULE bink{ GetModuleHandleA("binkw32.dll") };  // no check, needs to be there
       binkSurfType = (BinkDDSurfaceType)GetProcAddress(bink, "_BinkDDSurfaceType@4");
     }
-    // 0x8 in case of ARGB1555
-    binkStruct->gameSurfaceType = binkSurfType(&offMain);//0xc;
+    // 0x8 in case of ARGB1555, 0xa for RGB565 (0x1 would be RGB 24bit, 0xc would be RGB664)
+    binkStruct->gameSurfaceType = binkSurfType(&offMain);
     binkStruct->mapSurfaceType = binkSurfType(&offMap);
 
     // set some colors
     mainStruct.colorBitMode = confRef.graphic.pixFormat;
     colorFunc();
+
+    Log(LOG_INFO, "[graphicsApiReplacer] Drawing initialized.");
   }
 
   int CrusaderToOpenGL::getFakeSystemMetrics(int nIndex)

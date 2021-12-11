@@ -114,7 +114,24 @@ namespace UCPtoOpenGL
   // also using for lua config
   namespace LuaFunc
   {
+    lua_State* luaState{ nullptr };
+    int luaLogFuncIndex{ 0 };
+
+
     // helper
+    void getLoggingFunction(lua_State* L)
+    {
+      luaState = L; // keep state
+      lua_getglobal(L, "log");  // get log
+      if (!lua_isfunction(L, -1))
+      {
+        lua_pop(L, 1);
+        return;
+      }
+      // stores index to function, also pops value, currently not removed for lifetime of program
+      luaLogFuncIndex = luaL_ref(L, LUA_REGISTRYINDEX);
+    }
+
     bool isInRange(int num, int min, int max)
     {
       return num >= min && num <= max;
@@ -266,6 +283,19 @@ namespace UCPtoOpenGL
       }
 
       return 0;  /* number of results */
+    }
+  }
+
+  // define log function in right scope (did not figure out other way)
+  void Log(LogLevel level, std::string message)
+  {
+    if (LuaFunc::luaLogFuncIndex) // only if there, otherwise silent
+    {
+      lua_State* L{ LuaFunc::luaState };
+      lua_rawgeti(L, LUA_REGISTRYINDEX, LuaFunc::luaLogFuncIndex);
+      lua_pushinteger(L, level);
+      lua_pushstring(L, message.c_str());
+      lua_call(L, 2, 0);
     }
   }
 }

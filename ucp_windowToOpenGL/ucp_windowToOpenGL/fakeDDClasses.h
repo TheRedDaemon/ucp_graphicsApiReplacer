@@ -1,5 +1,8 @@
 #pragma once
 
+// always required
+#include "ddraw.h"
+
 namespace UCPtoOpenGL
 {
   class FakeDirectDraw : public IDirectDraw

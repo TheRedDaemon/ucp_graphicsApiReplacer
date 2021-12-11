@@ -1,5 +1,10 @@
 #pragma once
 
+// openGL
+#include "gl/gl.h"
+#include "gl/glext.h"
+#include "gl/wglext.h" // needed for windows OpenGL
+
 namespace UCPtoOpenGL
 {
   class WindowCore

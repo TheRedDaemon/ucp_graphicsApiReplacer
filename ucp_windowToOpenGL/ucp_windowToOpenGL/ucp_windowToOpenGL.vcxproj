@@ -244,6 +244,7 @@
     <ClInclude Include="configUtil.h" />
     <ClInclude Include="controlAndDetour.h" />
     <ClInclude Include="fakeDDClasses.h" />
+    <ClInclude Include="logHelper.h" />
     <ClInclude Include="shcRelatedStructures.h" />
     <ClInclude Include="toOpenGLconfig.h" />
     <ClInclude Include="crusaderToOpenGL.h" />

@@ -19,6 +19,9 @@ namespace UCPtoOpenGL
 
     //std::this_thread::sleep_for(std::chrono::seconds(20)); // 20 seconds to attach
 
+    // prepare Lua Logging Roundtrip
+    LuaFunc::getLoggingFunction(L);
+
     lua_newtable(L); // push a new table on the stack
 
     // config function

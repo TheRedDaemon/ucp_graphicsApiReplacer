@@ -25,11 +25,13 @@ namespace UCPtoOpenGL
   namespace LuaFunc
   {
     // helper
+    void getLoggingFunction(lua_State* L);
+
     bool isInRange(int num, int min, int max);
     bool setIntField(lua_State* L, int luaStackNum, int* ptrToSet, int min, int max);
     bool setBoolField(lua_State* L, int luaStackNum, bool* ptrToSet);
 
-    // to external
+    // from external
     int setConfigField(lua_State* L);
   }
 

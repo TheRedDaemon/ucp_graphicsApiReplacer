@@ -10,15 +10,8 @@
 // Fügen Sie hier Header hinzu, die vorkompiliert werden sollen.
 #include "framework.h"
 
-// openGL
-#include "gl/gl.h"
-#include "gl/glext.h"
-#include "gl/wglext.h" // needed for windows OpenGL
-
 // for ptr
 #include <memory>
-
-#include "ddraw.h"
 
 // config is needed everywhere
 #include "toOpenGLconfig.h"
@@ -28,6 +21,9 @@
 
 // one can always use a string
 #include <string>
+
+// logging
+#include "logHelper.h"
 
 // adding simple Size template
 

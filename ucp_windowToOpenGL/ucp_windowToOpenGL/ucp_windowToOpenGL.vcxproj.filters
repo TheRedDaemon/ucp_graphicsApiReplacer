@@ -42,6 +42,9 @@
     <ClInclude Include="controlAndDetour.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="logHelper.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">

@@ -332,7 +332,7 @@ namespace UCPtoOpenGL
       glFinish();
     }
 
-    return DD_OK;
+    return S_OK;
   }
 
   void WindowCore::releaseContext(HWND hwnd)
