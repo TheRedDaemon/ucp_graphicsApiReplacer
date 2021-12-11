@@ -25,75 +25,75 @@ namespace UCPtoOpenGL
 
     STDMETHOD(QueryInterface) (THIS_ REFIID, LPVOID FAR*)
     {
-      return DD_OK;	// not called by Crusader
+      return DD_OK; // not called by Crusader
     }
     STDMETHOD_(ULONG, AddRef) (THIS)
     {
-      return DD_OK;	// not called by Crusader
+      return DD_OK; // not called by Crusader
     }
     STDMETHOD(Compact)(THIS)
     {
-      return DD_OK;	// not called by Crusader
+      return DD_OK; // not called by Crusader
     }
     STDMETHOD(CreateClipper)(THIS_ DWORD, LPDIRECTDRAWCLIPPER FAR*, IUnknown FAR*)
     {
-      return DD_OK;	// not called by Crusader
+      return DD_OK; // not called by Crusader
     }
     STDMETHOD(CreatePalette)(THIS_ DWORD, LPPALETTEENTRY, LPDIRECTDRAWPALETTE FAR*, IUnknown FAR*)
     {
-      return DD_OK;	// not called by Crusader
+      return DD_OK; // not called by Crusader
     }
     STDMETHOD(DuplicateSurface)(THIS_ LPDIRECTDRAWSURFACE, LPDIRECTDRAWSURFACE FAR*)
     {
-      return DD_OK;	// not called by Crusader
+      return DD_OK; // not called by Crusader
     }
     STDMETHOD(EnumSurfaces)(THIS_ DWORD, LPDDSURFACEDESC, LPVOID, LPDDENUMSURFACESCALLBACK)
     {
-      return DD_OK;	// not called by Crusader
+      return DD_OK; // not called by Crusader
     }
     STDMETHOD(FlipToGDISurface)(THIS)
     {
-      return DD_OK;	// not called by Crusader
+      return DD_OK; // not called by Crusader
     }
     STDMETHOD(GetDisplayMode)(THIS_ LPDDSURFACEDESC)
     {
-      return DD_OK;	// not called by Crusader
+      return DD_OK; // not called by Crusader
     }
     STDMETHOD(GetFourCCCodes)(THIS_  LPDWORD, LPDWORD)
     {
-      return DD_OK;	// not called by Crusader
+      return DD_OK; // not called by Crusader
     }
     STDMETHOD(GetGDISurface)(THIS_ LPDIRECTDRAWSURFACE FAR*)
     {
-      return DD_OK;	// not called by Crusader
+      return DD_OK; // not called by Crusader
     }
     STDMETHOD(GetMonitorFrequency)(THIS_ LPDWORD)
     {
-      return DD_OK;	// not called by Crusader
+      return DD_OK; // not called by Crusader
     }
     STDMETHOD(GetScanLine)(THIS_ LPDWORD)
     {
-      return DD_OK;	// not called by Crusader
+      return DD_OK; // not called by Crusader
     }
     STDMETHOD(GetVerticalBlankStatus)(THIS_ LPBOOL)
     {
-      return DD_OK;	// not called by Crusader
+      return DD_OK; // not called by Crusader
     }
     STDMETHOD(Initialize)(THIS_ GUID FAR*)
     {
-      return DD_OK;	// not called by Crusader
+      return DD_OK; // not called by Crusader
     }
     STDMETHOD(RestoreDisplayMode)(THIS)
     {
-      return DD_OK;	// not called by Crusader
+      return DD_OK; // not called by Crusader
     }
     STDMETHOD(SetCooperativeLevel)(THIS_ HWND, DWORD)
     {
-      return DD_OK;	// called, but ignored
+      return DD_OK; // called, but ignored
     }
     STDMETHOD(WaitForVerticalBlank)(THIS_ DWORD, HANDLE)
     {
-      return DD_OK;	// not called by Crusader
+      return DD_OK; // not called by Crusader
     }
     STDMETHOD_(ULONG, Release) (THIS)
     {

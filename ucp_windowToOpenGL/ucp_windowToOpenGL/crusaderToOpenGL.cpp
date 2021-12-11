@@ -64,10 +64,10 @@ namespace UCPtoOpenGL
     WNDCLASSA wndClass;
     wndClass.hInstance = hInstance;
     wndClass.lpfnWndProc = windowCallbackFunc;
-    wndClass.style = CS_OWNDC | CS_HREDRAW | CS_VREDRAW;	// CS_OWNDC apperantly needed to allow a constant device context CS_HREDRAW | CS_VREDRAW
+    wndClass.style = CS_OWNDC | CS_HREDRAW | CS_VREDRAW;  // CS_OWNDC apperantly needed to allow a constant device context CS_HREDRAW | CS_VREDRAW
     wndClass.cbClsExtra = NULL;
     wndClass.cbWndExtra = NULL;
-    wndClass.hIcon = LoadIconA(hInstance, (LPCSTR)(cursorResource & 0xFFFF));	// this is apparently the cursor resource?
+    wndClass.hIcon = LoadIconA(hInstance, (LPCSTR)(cursorResource & 0xFFFF)); // this is apparently the cursor resource?
     wndClass.hCursor = NULL;
     wndClass.hbrBackground = NULL;
     wndClass.lpszMenuName = NULL;
