@@ -167,7 +167,7 @@ namespace UCPtoOpenGL
   void WindowCore::debugMsg(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
     const GLchar* message, const void* userParam)
   {
-    // currently uses level set by logger, split throw the severities
+    // currently uses level set by logger, split through the severities
     // downside is: every message currently roundtrips through Lua and is only discarded based on the logger level
     // since this logging is optional, and almost nothing is done in OpenGL (at the moment), I think this ok for now
     // better handling tutorial if required: https://learnopengl.com/In-Practice/Debugging
@@ -216,7 +216,7 @@ namespace UCPtoOpenGL
           }
         ).base(), strMessage.end());
 
-      Log(LOG_ERROR, "[graphicsApiReplacer]: [OpenGL]: " + strMessage);
+      Log(LOG_ERROR, + strMessage.insert(0, "[graphicsApiReplacer]: [OpenGL]: ").c_str());
     }
   }
 
@@ -284,7 +284,7 @@ namespace UCPtoOpenGL
       WGL_CONTEXT_MINOR_VERSION_ARB, 0,
       WGL_CONTEXT_PROFILE_MASK_ARB,  WGL_CONTEXT_CORE_PROFILE_BIT_ARB,  // core profile
 
-      WGL_CONTEXT_FLAGS_ARB, confPtr->graphic.debug == DEBUG_DEBUG_CONTEXT_ENABLED ? WGL_CONTEXT_DEBUG_BIT_ARB : NULL ,
+      WGL_CONTEXT_FLAGS_ARB, confPtr->graphic.debug == DEBUG_DEBUG_CONTEXT_ENABLED ? WGL_CONTEXT_DEBUG_BIT_ARB : NULL , // debug context is core since OpenGL 4.3+
       0, // End (needed to indicate end of list)
     };
 

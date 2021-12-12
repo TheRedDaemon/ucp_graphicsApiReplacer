@@ -114,8 +114,8 @@ namespace UCPtoOpenGL
   // also using for lua config
   namespace LuaFunc
   {
-    lua_State* luaState{ nullptr };
-    int luaLogFuncIndex{ 0 };
+    static lua_State* luaState{ nullptr };
+    static int luaLogFuncIndex{ 0 };
 
 
     // helper
@@ -287,14 +287,14 @@ namespace UCPtoOpenGL
   }
 
   // define log function in right scope (did not figure out other way)
-  void Log(LogLevel level, std::string message)
+  void Log(LogLevel level, const char* message)
   {
     if (LuaFunc::luaLogFuncIndex) // only if there, otherwise silent
     {
       lua_State* L{ LuaFunc::luaState };
       lua_rawgeti(L, LUA_REGISTRYINDEX, LuaFunc::luaLogFuncIndex);
       lua_pushinteger(L, level);
-      lua_pushstring(L, message.c_str());
+      lua_pushstring(L, message);
       lua_call(L, 2, 0);
     }
   }

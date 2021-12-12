@@ -1,4 +1,3 @@
-
 #pragma once
 
 // includes that are always used with this
