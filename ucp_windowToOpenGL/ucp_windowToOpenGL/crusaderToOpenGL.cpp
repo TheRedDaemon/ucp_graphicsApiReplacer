@@ -386,10 +386,13 @@ namespace UCPtoOpenGL
       ShowWindow(shcWinStrucPtr->gameWindowHandle, SW_MINIMIZE);
     }
 
-    if (confRef.control.clipCursor)
+    if (d.cursorClipped)
     {
       ClipCursor(NULL); // free cursor
       d.cursorClipped = false;
+      d.mouseDown[0] = false;
+      d.mouseDown[1] = false;
+      d.mouseDown[2] = false;
     }
 
     return !(confRef.window.continueOutOfFocus); // if zero (NOFOCUS_PAUSE), continue
@@ -460,8 +463,6 @@ namespace UCPtoOpenGL
 
   bool CrusaderToOpenGL::mouseDown()
   {
-    bool ret{ true };
-
     if (confRef.window.type == TYPE_WINDOW && confRef.control.clipCursor)
     {
       if (!d.cursorClipped && d.hasFocus)
@@ -470,6 +471,7 @@ namespace UCPtoOpenGL
       }
     }
 
+    bool ret{ true };
     if (confRef.window.continueOutOfFocus == NOFOCUS_CONTINUE && d.devourAfterFocus)
     {
       d.devourAfterFocus = false;
@@ -477,6 +479,50 @@ namespace UCPtoOpenGL
     }
 
     return ret;
+  }
+
+  void  CrusaderToOpenGL::mouseClipOnHold(UINT wmMsg)
+  {
+    // if not using clipper:
+    // set clipper anyway on relevant press
+    // release clipper on valid mouse button release
+    if (!confRef.control.clipCursor)
+    {
+      switch (wmMsg)
+      {
+        case WM_LBUTTONDOWN:
+          d.mouseDown[0] = true;
+          break;
+        case WM_MBUTTONDOWN:
+          d.mouseDown[1] = true;
+          break;
+        case WM_RBUTTONDOWN:
+          d.mouseDown[2] = true;
+          break;
+        case WM_LBUTTONUP:
+          d.mouseDown[0] = false;
+          break;
+        case WM_MBUTTONUP:
+          d.mouseDown[1] = false;
+          break;
+        case WM_RBUTTONUP:
+          d.mouseDown[2] = false;
+          break;
+        default:
+          break;
+      }
+
+      bool hold{ d.mouseDown[0] || d.mouseDown[1] || d.mouseDown[2] };
+      if (!d.cursorClipped && hold)
+      {
+        clipCursor();
+      }
+      else if (d.cursorClipped && !hold)
+      {
+        ClipCursor(NULL);
+        d.cursorClipped = false;
+      }
+    }
   }
 
 

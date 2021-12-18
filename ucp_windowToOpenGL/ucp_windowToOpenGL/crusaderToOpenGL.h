@@ -52,6 +52,9 @@ namespace UCPtoOpenGL
     // send if down in the client
     bool mouseDown();
 
+    // clip it to prevent "hold -> leave window -> release" issues
+    void mouseClipOnHold(UINT wmMsg);
+
   private:  // functions
 
      /*** need impl ***/
@@ -81,6 +84,8 @@ namespace UCPtoOpenGL
       bool            hasFocus          { true };       // should have focus at start
       bool            devourAfterFocus  { false };      // only window continue without render, after the foucs is regained, it requires a first click to get the input again
       bool            cursorClipped     { false };      // only for window mode
+
+      bool            mouseDown[3]      { false, false, false };  // Left, middle, right
 
       // sizes
       Size<int>       windowSize        { 1280, 720 };  // ignores border etc.

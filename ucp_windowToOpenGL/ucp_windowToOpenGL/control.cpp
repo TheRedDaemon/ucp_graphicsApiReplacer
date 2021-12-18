@@ -35,17 +35,26 @@ namespace UCPtoOpenGL
           {
             return 0; // devours message, since mouse in invalid area, or click should be discarded
           }
+          ToOpenGL.mouseClipOnHold(uMsg);
+          break;
+        }
+        case WM_RBUTTONUP:
+        case WM_LBUTTONUP:
+        case WM_MBUTTONUP:
+        {
+          if (!ToOpenGL.transformMouseMovePos(&lParam))
+          {
+            return 0; // devours message, since mouse in invalid area
+          }
+          ToOpenGL.mouseClipOnHold(uMsg);
           break;
         }
         case WM_MOUSEMOVE:
         case WM_LBUTTONDBLCLK:
-        case WM_LBUTTONUP:
+        case WM_RBUTTONDBLCLK:
         case WM_MBUTTONDBLCLK:
-        case WM_MBUTTONUP:
         case WM_MOUSEHWHEEL:
         case WM_MOUSEHOVER:
-        case WM_RBUTTONDBLCLK:
-        case WM_RBUTTONUP:
         {
           if (!ToOpenGL.transformMouseMovePos(&lParam))
           {
