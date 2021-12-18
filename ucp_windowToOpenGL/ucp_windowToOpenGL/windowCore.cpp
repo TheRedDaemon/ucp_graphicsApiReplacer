@@ -104,6 +104,10 @@ namespace UCPtoOpenGL
       return false;
     }
 
+    std::string dummyVersion{ "[graphicsApiReplacer]: [OpenGL]: OpenGL dummy context version: " };
+    dummyVersion.append( (const char*)glGetString(GL_VERSION) );
+    Log(LogLevel::LOG_INFO, dummyVersion.c_str());
+
     // get actual functions
     bool gotFuncs{ true };
     gotFuncs = gotFuncs && getAnyGLFuncAddress("wglCreateContextAttribsARB", (void**)&ownPtr_wglCreateContextAttribsARB);
@@ -164,8 +168,8 @@ namespace UCPtoOpenGL
     ((WindowCore*)userParam)->debugMsg(source, type, id, severity, length, message, userParam);
   }
 
-  void WindowCore::debugMsg(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
-    const GLchar* message, const void* userParam)
+  void WindowCore::debugMsg(GLenum, GLenum, GLuint, GLenum severity, GLsizei,
+    const GLchar* message, const void*)
   {
     // currently uses level set by logger, split through the severities
     // downside is: every message currently roundtrips through Lua and is only discarded based on the logger level
@@ -275,34 +279,50 @@ namespace UCPtoOpenGL
       Log(LOG_ERROR, "[graphicsApiReplacer]: [OpenGL]: Pixel buffer does not support OpenGL.");
       return false;
     }
-    // until here -> but maybe need to validate that windows choose a fitting thing?
+
+    DebugOption debugOption{ confPtr->graphic.debug };
 
     // create attribute list
     const int attribList[] =
     {
-      WGL_CONTEXT_MAJOR_VERSION_ARB, 4, // asking for OpenGL 4.0+ (can be changed based on requirements)
-      WGL_CONTEXT_MINOR_VERSION_ARB, 0,
-      WGL_CONTEXT_PROFILE_MASK_ARB,  WGL_CONTEXT_CORE_PROFILE_BIT_ARB,  // core profile
+      // WGL_CONTEXT_MAJOR_VERSION_ARB, 4, // asking for OpenGL 4.0+ (can be changed based on requirements)
+      // WGL_CONTEXT_MINOR_VERSION_ARB, 0,
+      // WGL_CONTEXT_PROFILE_MASK_ARB,  WGL_CONTEXT_CORE_PROFILE_BIT_ARB,  // core profile
 
-      WGL_CONTEXT_FLAGS_ARB, confPtr->graphic.debug == DEBUG_DEBUG_CONTEXT_ENABLED ? WGL_CONTEXT_DEBUG_BIT_ARB : NULL , // debug context is core since OpenGL 4.3+
+      WGL_CONTEXT_FLAGS_ARB, debugOption == DEBUG_DEBUG_CONTEXT_ENABLED ? WGL_CONTEXT_DEBUG_BIT_ARB : NULL ,
       0, // End (needed to indicate end of list)
     };
 
-    renderingContext = ownPtr_wglCreateContextAttribsARB(deviceContext, NULL, attribList);//wglCreateContext(deviceContext);
+    renderingContext = ownPtr_wglCreateContextAttribsARB(deviceContext, NULL, attribList);
 
-    if (!renderingContext || !wglMakeCurrent(deviceContext, renderingContext))
+    if (!renderingContext)
     {
-      Log(LOG_ERROR, "[graphicsApiReplacer]: [OpenGL]: Failed to create and set main rendering context.");
+      Log(LOG_WARNING, "[graphicsApiReplacer]: [OpenGL]: Failed to create main rendering context with attributes. Debugging not possible. Trying default.");
+      debugOption = DebugOption::DEBUG_OFF;
+
+      renderingContext = wglCreateContext(deviceContext);
+      if (!renderingContext)
+      {
+        Log(LOG_ERROR, "[graphicsApiReplacer]: [OpenGL]: Failed to create main context.");
+        return false;
+      }
+    }
+
+    if (!wglMakeCurrent(deviceContext, renderingContext))
+    {
+      Log(LOG_ERROR, "[graphicsApiReplacer]: [OpenGL]: Failed to make main context current.");
       return false;
     }
 
-    //std::string test{ reinterpret_cast<const char*>(glGetString(GL_VERSION)) };
+    std::string mainVersion{ "[graphicsApiReplacer]: [OpenGL]: OpenGL main context version: " };
+    mainVersion.append((const char*)glGetString(GL_VERSION));
+    Log(LogLevel::LOG_INFO, mainVersion.c_str());
 
     // enable debug (should already be if create with debug bit) and set return message
-    if (confPtr->graphic.debug != DEBUG_OFF)
+    if (debugOption != DEBUG_OFF)
     {
       // check if context is debug context
-      if (confPtr->graphic.debug == DEBUG_DEBUG_CONTEXT_ENABLED)
+      if (debugOption == DEBUG_DEBUG_CONTEXT_ENABLED)
       {
         int flags;
         glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
