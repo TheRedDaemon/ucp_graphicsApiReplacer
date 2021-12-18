@@ -26,7 +26,14 @@ namespace UCPtoOpenGL
       }
     }
 
-    return p != nullptr;
+    if (p == nullptr)
+    {
+      std::string failMsg{ "[graphicsApiReplacer]: [OpenGL]: Failed to obtain function: " };
+      failMsg.append(name);
+      Log(LogLevel::LOG_WARNING, failMsg.c_str());
+      return false;
+    }
+    return true;
   }
 
   // code largely unchanged
@@ -129,33 +136,37 @@ namespace UCPtoOpenGL
 
   bool WindowCore::loadGLFunctions()
   {
-    return
-      getAnyGLFuncAddress("glGenVertexArrays", (void**)&ownPtr_glGenVertexArrays) &&
-      getAnyGLFuncAddress("glBindVertexArray", (void**)&ownPtr_glBindVertexArray) &&
+    bool success{ true };
 
-      getAnyGLFuncAddress("glGenBuffers", (void**)&ownPtr_glGenBuffers) &&
-      getAnyGLFuncAddress("glBindBuffer", (void**)&ownPtr_glBindBuffer) &&
-      getAnyGLFuncAddress("glBufferData", (void**)&ownPtr_glBufferData) &&
-      getAnyGLFuncAddress("glBufferSubData", (void**)&ownPtr_glBufferSubData) &&
+    // functions checked first to prevent short circuit, since I want to see which functions are missing
+    success = getAnyGLFuncAddress("glGenVertexArrays", (void**)&ownPtr_glGenVertexArrays) && success;
+    success = getAnyGLFuncAddress("glBindVertexArray", (void**)&ownPtr_glBindVertexArray) && success;
 
-      getAnyGLFuncAddress("glVertexAttribPointer", (void**)&ownPtr_glVertexAttribPointer) &&
-      getAnyGLFuncAddress("glEnableVertexAttribArray", (void**)&ownPtr_glEnableVertexAttribArray) &&
+    success = getAnyGLFuncAddress("glGenBuffers", (void**)&ownPtr_glGenBuffers) && success;
+    success = getAnyGLFuncAddress("glBindBuffer", (void**)&ownPtr_glBindBuffer) && success;
+    success = getAnyGLFuncAddress("glBufferData", (void**)&ownPtr_glBufferData) && success;
+    success = getAnyGLFuncAddress("glBufferSubData", (void**)&ownPtr_glBufferSubData) && success;
 
-      getAnyGLFuncAddress("glCreateShader", (void**)&ownPtr_glCreateShader) &&
-      getAnyGLFuncAddress("glShaderSource", (void**)&ownPtr_glShaderSource) &&
-      getAnyGLFuncAddress("glCompileShader", (void**)&ownPtr_glCompileShader) &&
-      getAnyGLFuncAddress("glAttachShader", (void**)&ownPtr_glAttachShader) &&
-      getAnyGLFuncAddress("glDetachShader", (void**)&ownPtr_glDetachShader) &&
-      getAnyGLFuncAddress("glDeleteShader", (void**)&ownPtr_glDeleteShader) &&
+    success = getAnyGLFuncAddress("glVertexAttribPointer", (void**)&ownPtr_glVertexAttribPointer) && success;
+    success = getAnyGLFuncAddress("glEnableVertexAttribArray", (void**)&ownPtr_glEnableVertexAttribArray) && success;
 
-      getAnyGLFuncAddress("glBindAttribLocation", (void**)&ownPtr_glBindAttribLocation) &&
-      getAnyGLFuncAddress("glBindFragDataLocation", (void**)&ownPtr_glBindFragDataLocation) &&
+    success = getAnyGLFuncAddress("glCreateShader", (void**)&ownPtr_glCreateShader) && success;
+    success = getAnyGLFuncAddress("glShaderSource", (void**)&ownPtr_glShaderSource) && success;
+    success = getAnyGLFuncAddress("glCompileShader", (void**)&ownPtr_glCompileShader) && success;
+    success = getAnyGLFuncAddress("glAttachShader", (void**)&ownPtr_glAttachShader) && success;
+    success = getAnyGLFuncAddress("glDetachShader", (void**)&ownPtr_glDetachShader) && success;
+    success = getAnyGLFuncAddress("glDeleteShader", (void**)&ownPtr_glDeleteShader) && success;
 
-      getAnyGLFuncAddress("glCreateProgram", (void**)&ownPtr_glCreateProgram) &&
-      getAnyGLFuncAddress("glLinkProgram", (void**)&ownPtr_glLinkProgram) &&
-      getAnyGLFuncAddress("glUseProgram", (void**)&ownPtr_glUseProgram) &&
+    success = getAnyGLFuncAddress("glBindAttribLocation", (void**)&ownPtr_glBindAttribLocation) && success;
+    success = getAnyGLFuncAddress("glBindFragDataLocation", (void**)&ownPtr_glBindFragDataLocation) && success;
 
-      getAnyGLFuncAddress("wglSwapIntervalEXT", (void**)&ownPtr_wglSwapIntervalEXT);
+    success = getAnyGLFuncAddress("glCreateProgram", (void**)&ownPtr_glCreateProgram) && success;
+    success = getAnyGLFuncAddress("glLinkProgram", (void**)&ownPtr_glLinkProgram) && success;
+    success = getAnyGLFuncAddress("glUseProgram", (void**)&ownPtr_glUseProgram) && success;
+
+    success = getAnyGLFuncAddress("wglSwapIntervalEXT", (void**)&ownPtr_wglSwapIntervalEXT) && success;
+
+    return success;
   }
 
 
@@ -285,11 +296,12 @@ namespace UCPtoOpenGL
     // create attribute list
     const int attribList[] =
     {
-      // WGL_CONTEXT_MAJOR_VERSION_ARB, 4, // asking for OpenGL 4.0+ (can be changed based on requirements)
-      // WGL_CONTEXT_MINOR_VERSION_ARB, 0,
-      // WGL_CONTEXT_PROFILE_MASK_ARB,  WGL_CONTEXT_CORE_PROFILE_BIT_ARB,  // core profile
+      WGL_CONTEXT_MAJOR_VERSION_ARB, 4, // requesting 4.1, since it is the most modern available on Mac Systems
+      WGL_CONTEXT_MINOR_VERSION_ARB, 1,
+      WGL_CONTEXT_PROFILE_MASK_ARB,  WGL_CONTEXT_CORE_PROFILE_BIT_ARB,  // core profile needed
 
-      WGL_CONTEXT_FLAGS_ARB, debugOption == DEBUG_DEBUG_CONTEXT_ENABLED ? WGL_CONTEXT_DEBUG_BIT_ARB : NULL ,
+      // requesting forward compatibility (despite not recommended) for mac compatibility and debug context if requested
+      WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB | (debugOption == DEBUG_DEBUG_CONTEXT_ENABLED ? WGL_CONTEXT_DEBUG_BIT_ARB : NULL),
       0, // End (needed to indicate end of list)
     };
 
