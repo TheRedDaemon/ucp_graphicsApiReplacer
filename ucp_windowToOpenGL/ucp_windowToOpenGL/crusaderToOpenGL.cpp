@@ -405,6 +405,7 @@ namespace UCPtoOpenGL
       return true;
     }
     d.hasFocus = true;
+    shcWinStrucPtr->isNotProcessingInputEvents = 0; // enable input here on focus set
 
     if (confRef.window.continueOutOfFocus == NOFOCUS_CONTINUE)
     {
@@ -422,24 +423,23 @@ namespace UCPtoOpenGL
 
   bool CrusaderToOpenGL::windowActivated(bool active) // nothing currently
   {
-    if (active && shcWinStrucPtr) // setting to process input, to ignore window again request
-    {
-      shcWinStrucPtr->isNotProcessingInputEvents = 0;
-      SetFocus(shcWinStrucPtr->gameWindowHandle);
-    }
-
     if (!confRef.window.continueOutOfFocus)
     {
       return true;
     }
 
     // for continue running config
-    static bool onceActivated{ false };
-    if (onceActivated)
+    static bool firstActivated{ false };
+    if (firstActivated)
     {
+      if (active)
+      {
+        shcWinStrucPtr->isNotProcessingInputEvents = 1; // disable to force input reset
+        return true;
+      }
       return false;
     }
-    onceActivated = true;
+    firstActivated = true;
     return true;
   }
 
