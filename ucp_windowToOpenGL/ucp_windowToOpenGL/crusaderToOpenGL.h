@@ -43,7 +43,7 @@ namespace UCPtoOpenGL
     bool windowSetFocus();
 
     // false, if the message should be devoured
-    bool windowActivated(bool active);
+    bool windowActivated(bool* active);
 
     void windowDestroyed();
 

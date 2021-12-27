@@ -80,7 +80,7 @@ namespace UCPtoOpenGL
         }
         case WM_ACTIVATEAPP:
         {
-          if (!ToOpenGL.windowActivated(wParam))
+          if (!ToOpenGL.windowActivated((bool*)&wParam))
           {
             return 0;
           }

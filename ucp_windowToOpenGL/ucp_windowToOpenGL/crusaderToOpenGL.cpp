@@ -395,6 +395,11 @@ namespace UCPtoOpenGL
       d.mouseDown[2] = false;
     }
 
+    if (confRef.window.continueOutOfFocus)
+    {
+      shcWinStrucPtr->isNotProcessingInputEvents = 0; // set zero to render after input reset (should not be important for "continue")
+    }
+
     return !(confRef.window.continueOutOfFocus); // if zero (NOFOCUS_PAUSE), continue
   }
 
@@ -421,7 +426,7 @@ namespace UCPtoOpenGL
     return !(confRef.window.continueOutOfFocus); // if zero (NOFOCUS_PAUSE), continue
   }
 
-  bool CrusaderToOpenGL::windowActivated(bool active) // nothing currently
+  bool CrusaderToOpenGL::windowActivated(bool* active)
   {
     if (!confRef.window.continueOutOfFocus)
     {
@@ -432,8 +437,10 @@ namespace UCPtoOpenGL
     static bool firstActivated{ false };
     if (firstActivated)
     {
-      if (active)
+      // force input reset, but on leave, since the game continues anyway
+      if (!(*active))
       {
+        *active = true; // change so that game thinks it is activated
         shcWinStrucPtr->isNotProcessingInputEvents = 1; // disable to force input reset
         return true;
       }
