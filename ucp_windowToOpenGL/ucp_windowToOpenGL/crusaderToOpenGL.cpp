@@ -26,18 +26,22 @@ namespace UCPtoOpenGL
   {
     return window->renderNextScreen(sourcePtr);
   }
+
   int CrusaderToOpenGL::getRenderTexWidth()
   {
     return d.gameTexSize.w;
   }
+
   int CrusaderToOpenGL::getRenderTexHeight()
   {
     return d.gameTexSize.h;
   }
+
   PixelFormat CrusaderToOpenGL::getPixelFormat()
   {
     return confRef.graphic.pixFormat;
   }
+
 
   // detoured calls
 
@@ -111,7 +115,6 @@ namespace UCPtoOpenGL
       Log(LOG_FATAL, "[graphicsApiReplacer]: Failed to initialize graphics API. Aborting game.");
       return;
     }
-    d.windowDone = true;
 
     HRESULT res{ CoInitialize(NULL) };  // ignoring res, like SHC
     shcWinStrucPtr->windowCreationTime = timeGetTime();
@@ -251,9 +254,10 @@ namespace UCPtoOpenGL
     Log(LOG_INFO, "[graphicsApiReplacer]: Drawing initialized.");
   }
 
+
   int CrusaderToOpenGL::getFakeSystemMetrics(int nIndex)
   {
-    // if no infomration was received, the return will be the RES_1280_X_720
+    // if no information was received, the return will be the RES_1280_X_720
     if (nIndex == SM_CXSCREEN || nIndex == SM_CYSCREEN)
     {
       GameResolution currRes{ GameResolution::RES_1280_X_720 };
@@ -272,13 +276,6 @@ namespace UCPtoOpenGL
   // this adjusts scrolling only -> maybe use custom code later, this stuff here is kinda horrible
   BOOL CrusaderToOpenGL::getWindowCursorPos(LPPOINT lpPoint)
   {
-    if (!d.windowDone)
-    {
-      return GetCursorPos(lpPoint);
-    }
-
-
-
     // deactivate by setting return pos to scroll middle
     // also if no focus and window stops
     if (!confRef.control.scrollActive || (confRef.window.continueOutOfFocus == NOFOCUS_CONTINUE && !d.hasFocus))
@@ -336,18 +333,15 @@ namespace UCPtoOpenGL
     return success;
   }
 
+
   HWND WINAPI CrusaderToOpenGL::GetForegroundWindowFake()
   {
     return (confRef.window.continueOutOfFocus == NOFOCUS_RENDER) ? shcWinStrucPtr->gameWindowHandle : GetForegroundWindow();
   }
 
+
   bool CrusaderToOpenGL::transformMouseMovePos(LPARAM* ptrlParam)
   {
-    if (!d.windowDone)
-    {
-      return true;
-    }
-
     // discard if game has no focus and continues without it being rendered
     if (confRef.window.continueOutOfFocus == NOFOCUS_CONTINUE && !d.hasFocus)
     {
@@ -372,12 +366,9 @@ namespace UCPtoOpenGL
     return true;
   }
 
+
   bool CrusaderToOpenGL::windowLostFocus()
   {
-    if (!d.windowDone)
-    {
-      return true;
-    }
     d.hasFocus = false;
 
     // found no other way to proper minimize
@@ -403,12 +394,9 @@ namespace UCPtoOpenGL
     return !(confRef.window.continueOutOfFocus); // if zero (NOFOCUS_PAUSE), continue
   }
 
+
   bool CrusaderToOpenGL::windowSetFocus()
   {
-    if (!d.windowDone)
-    {
-      return true;
-    }
     d.hasFocus = true;
     shcWinStrucPtr->isNotProcessingInputEvents = 0; // enable input here on focus set
 
@@ -425,6 +413,7 @@ namespace UCPtoOpenGL
 
     return !(confRef.window.continueOutOfFocus); // if zero (NOFOCUS_PAUSE), continue
   }
+
 
   bool CrusaderToOpenGL::windowActivated(bool* active)
   {
@@ -450,6 +439,7 @@ namespace UCPtoOpenGL
     return true;
   }
 
+
   void CrusaderToOpenGL::windowDestroyed()
   {
     // a final free action
@@ -462,6 +452,7 @@ namespace UCPtoOpenGL
     // windows spoke: https://docs.microsoft.com/en-us/windows/win32/opengl/deleting-a-rendering-context
     window->releaseContext(shcWinStrucPtr->gameWindowHandle);
   }
+
 
   void CrusaderToOpenGL::windowEditEnded()  // currently unused
   {
@@ -487,6 +478,7 @@ namespace UCPtoOpenGL
 
     return ret;
   }
+
 
   void  CrusaderToOpenGL::mouseClipOnHold(UINT wmMsg)
   {

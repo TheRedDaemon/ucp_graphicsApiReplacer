@@ -8,8 +8,10 @@
 
 namespace UCPtoOpenGL
 {
+
   WindowCore::WindowCore() {};
   WindowCore::~WindowCore() {};
+
 
   // used to get function pointers, mostly based on:
   // source: https://www.khronos.org/opengl/wiki/Load_OpenGL_Functions
@@ -35,6 +37,7 @@ namespace UCPtoOpenGL
     }
     return true;
   }
+
 
   // code largely unchanged
   // returns false if something goes wrong along the way
@@ -179,6 +182,7 @@ namespace UCPtoOpenGL
     ((WindowCore*)userParam)->debugMsg(source, type, id, severity, length, message, userParam);
   }
 
+
   void WindowCore::debugMsg(GLenum, GLenum, GLuint, GLenum severity, GLsizei,
     const GLchar* message, const void*)
   {
@@ -207,6 +211,7 @@ namespace UCPtoOpenGL
         Log(LOG_ERROR, "[graphicsApiReplacer]: [OpenGL]: Received OpenGL Debug Message without valid severity.");
         break;
     }
+
 
     if (levelToUse != LOG_NONE)
     {
@@ -379,10 +384,12 @@ namespace UCPtoOpenGL
     return true;
   }
 
+
   void WindowCore::setOnlyTexSize(Size<int> texSize)
   {
     strongTexSize = texSize;
   }
+
 
   void WindowCore::adjustTexSizeAndViewport(Size<int> texSize, Size<int> viewSize, Size<double> scale)
   {
@@ -436,6 +443,7 @@ namespace UCPtoOpenGL
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
     SwapBuffers(deviceContext);
+
     if (confPtr->graphic.waitWithGLFinish)
     {
       glFinish();
@@ -443,6 +451,7 @@ namespace UCPtoOpenGL
 
     return S_OK;
   }
+
 
   void WindowCore::releaseContext(HWND hwnd)
   {

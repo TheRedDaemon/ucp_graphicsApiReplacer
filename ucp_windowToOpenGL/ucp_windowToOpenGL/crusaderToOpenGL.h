@@ -10,11 +10,13 @@ namespace UCPtoOpenGL
   struct SHCBinkControlStructFake;
   class WindowCore;
 
+
   class CrusaderToOpenGL : public FakeDirectDraw
   {
     // using func defines
     using BinkDDSurfaceType = unsigned int(__stdcall *)(IDirectDrawSurface* surfacePtr);
     using SetSomeColors = void(__stdcall *)();
+
 
   public:
     CrusaderToOpenGL(ToOpenGLConfig& conf);
@@ -55,6 +57,7 @@ namespace UCPtoOpenGL
     // clip it to prevent "hold -> leave window -> release" issues
     void mouseClipOnHold(UINT wmMsg);
 
+
   private:  // functions
 
      /*** need impl ***/
@@ -80,12 +83,11 @@ namespace UCPtoOpenGL
     struct
     {
       // flags
-      bool            windowDone        { false };      // this might get removed, instead becoming a working or breaking situation
       bool            hasFocus          { true };       // should have focus at start
-      bool            devourAfterFocus  { false };      // only window continue without render, after the foucs is regained, it requires a first click to get the input again
+      bool            devourAfterFocus  { false };      // only window continue without render, after the focus is regained, it requires a first click to get the input again
       bool            cursorClipped     { false };      // only for window mode
 
-      bool            mouseDown[3]      { false, false, false };  // Left, middle, right
+      bool            mouseDown[3]      { false, false, false };  // left, middle, right
 
       // sizes
       Size<int>       windowSize        { 1280, 720 };  // ignores border etc.

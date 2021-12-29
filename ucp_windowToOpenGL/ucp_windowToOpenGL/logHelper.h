@@ -13,5 +13,6 @@ namespace UCPtoOpenGL
     LOG_DEBUG   =   1,
   };
 
+
   void Log(LogLevel level, const char* message);
 }

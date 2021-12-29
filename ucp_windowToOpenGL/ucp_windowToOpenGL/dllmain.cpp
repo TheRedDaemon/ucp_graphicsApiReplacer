@@ -6,18 +6,14 @@
 
 #include "controlAndDetour.h"
 
-// for test
-//#include <chrono>
-//#include <thread>
 
 
 namespace UCPtoOpenGL
 {
+
   // lua module load
   extern "C" __declspec(dllexport) int __cdecl luaopen_graphicsApiReplacer(lua_State * L)
   {
-
-    //std::this_thread::sleep_for(std::chrono::seconds(20)); // 20 seconds to attach
 
     // prepare Lua Logging Roundtrip
     LuaFunc::getLoggingFunction(L);
@@ -66,6 +62,7 @@ namespace UCPtoOpenGL
 
     return 1;
   }
+
 
   // entry point
   BOOL APIENTRY DllMain(HMODULE,
@@ -137,9 +134,6 @@ namespace UCPtoOpenGL
         -> I will detour the window proc message for now:
           -> this might get handy for later, but I assume a more general interface for this would be needed
           -> other might want to do stuff with it
-
-    - it might also be possible to remove the create window hook and use the received window
-      - changing class values is possible after all: SetClassLongPtrA
 
     - Borderless fullscreen vs fullscreen:
       - I am now confused if the difference is basically: fullscreen set screen resolution to own res, borderless fullscreen not

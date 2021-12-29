@@ -7,8 +7,10 @@
 #include "controlAndDetour.h"
 #include "crusaderToOpenGL.h"
 
+
 namespace UCPtoOpenGL
 {
+
   namespace FillAddress
   {
     WNDPROC WindowProcCallbackFunc{ 0x0 };
@@ -17,10 +19,12 @@ namespace UCPtoOpenGL
     DWORD SetSomeColorsAddr{ 0x0 };
   }
 
+
   namespace Control
   {
     ToOpenGLConfig Conf;
     CrusaderToOpenGL ToOpenGL{ Conf };
+
 
     LRESULT CALLBACK WindowProcCallbackFake(_In_ HWND hwnd, _In_ UINT uMsg, _In_ WPARAM wParam, _In_ LPARAM lParam)
     {
@@ -107,6 +111,7 @@ namespace UCPtoOpenGL
       return FillAddress::WindowProcCallbackFunc(hwnd, uMsg, wParam, lParam);
     }
 
+
     // debug helper
     void ReplaceDWORD(DWORD destination, DWORD newDWORD)
     {
@@ -118,6 +123,7 @@ namespace UCPtoOpenGL
       VirtualProtect(des, 4, oldAddressProtection, &oldAddressProtection);
     }
   }
+
 
 
   // also using for lua config
@@ -140,6 +146,7 @@ namespace UCPtoOpenGL
       // stores index to function, also pops value, currently not removed for lifetime of program
       luaLogFuncIndex = luaL_ref(L, LUA_REGISTRYINDEX);
     }
+
 
     bool isInRange(int num, int min, int max)
     {
@@ -294,6 +301,7 @@ namespace UCPtoOpenGL
       return 0;  /* number of results */
     }
   }
+
 
   // define log function in right scope (did not figure out other way)
   void Log(LogLevel level, const char* message)
