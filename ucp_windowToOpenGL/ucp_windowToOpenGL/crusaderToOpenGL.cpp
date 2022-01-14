@@ -11,6 +11,9 @@
 // needed to additionally link with Winmm.lib
 #include <timeapi.h>
 
+// winProcHandler (here needed for window func)
+#include <winProcHandler.h>
+
 
 namespace UCPtoOpenGL
 {
@@ -46,7 +49,7 @@ namespace UCPtoOpenGL
   // detoured calls
 
   // complete
-  void __thiscall CrusaderToOpenGL::createWindow(WNDPROC windowCallbackFunc, SHCWindowOrMainStructFake* that,
+  void __thiscall CrusaderToOpenGL::createWindow(SHCWindowOrMainStructFake* that,
     HINSTANCE hInstance, LPSTR windowName, unsigned int cursorResource)
   {
     // removed original shc window init, if interested, check older git versions
@@ -67,7 +70,7 @@ namespace UCPtoOpenGL
 
     WNDCLASSA wndClass;
     wndClass.hInstance = hInstance;
-    wndClass.lpfnWndProc = windowCallbackFunc;
+    wndClass.lpfnWndProc = WinProcHeader::GetMainProc();
     wndClass.style = CS_OWNDC | CS_HREDRAW | CS_VREDRAW;  // CS_OWNDC apperantly needed to allow a constant device context CS_HREDRAW | CS_VREDRAW
     wndClass.cbClsExtra = NULL;
     wndClass.cbWndExtra = NULL;

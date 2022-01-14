@@ -57,7 +57,6 @@ local addresses = {
   initDirectDraw                    = {"81 ec e8 01 00 00 53 55 8b d9 83 bb ec"},
   getSystemMetricAddr               = {"8B 1D ? ? ? ? 57 50 57 57 6A 01 FF D3"},
   getCursorPosAddr                  = {"FF 15 ? ? ? ? 8B 44 ? ? 3B C7 8B 4C ? ? 89 ? ? 89 ? ? 7F"},
-  windowProcCallAddr                = {"83 EC 48 A1 ? ? ? ? 33 C4 89 44 ? ? 8B 44 ? ? 8B 4C ? ? 53 55 56 57"},
   getForegroundWindowAddr           = {"FF 15 ? ? ? ? 3b 86 ac 00 00 00 0f 85 d4 00 00 00 39 ae f8 00 00 00"},
 }
 
@@ -74,18 +73,18 @@ exports.enable = function(self, moduleConfig, globalConfig)
   end
 
   if next(addrFail) ~= nil then
-    print("'ucp_windowToOpenGL' was unable to find the following AOBs:")
+    print("'graphicsApiReplacer' was unable to find the following AOBs:")
     for _, name in pairs(addrFail) do
       print("", name, ":", addresses[name][1])
     end
-    error("'ucp_windowToOpenGL' can not be initialized.")
+    error("'graphicsApiReplacer' can not be initialized.")
     return
   end
 
 
   --[[ load module ]]--
 
-  local graphicsApiReplacer = require("graphicsApiReplacer.dll") -- loads the dll in memory and runs luaopen_ucp_windowToOpenGL
+  local graphicsApiReplacer = require("graphicsApiReplacer.dll") -- loads the dll in memory and runs luaopen_graphicsApiReplacer
   self.graphicsApiReplacer = graphicsApiReplacer
 
 
@@ -182,12 +181,6 @@ exports.enable = function(self, moduleConfig, globalConfig)
   core.writeCode(
     getPtrAddrFromCall(addresses.getForegroundWindowAddr[2]), -- extreme 1.41.1-E address: 0x0059E20C
     {graphicsApiReplacer.funcAddress_GetForegroundWindow}
-  )
-
-  -- address of crusaders windowProcCallback needed, fill address of given variable with callback address
-  core.writeCode(
-    graphicsApiReplacer.address_FillWithWindowProcCallback,
-    {addresses.windowProcCallAddr[2]}  -- extreme 1.41.1-E address: 0x004B2C50
   )
 
 

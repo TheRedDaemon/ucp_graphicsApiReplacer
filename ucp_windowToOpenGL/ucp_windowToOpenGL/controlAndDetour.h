@@ -16,7 +16,7 @@ namespace UCPtoOpenGL
     extern ToOpenGLConfig Conf;
     extern CrusaderToOpenGL ToOpenGL;
 
-    LRESULT CALLBACK WindowProcCallbackFake(_In_ HWND hwnd, _In_ UINT uMsg, _In_ WPARAM wParam, _In_ LPARAM lParam);
+    LRESULT CALLBACK WindowProcHandlerFunc(int reservedCurrPrio, HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
     // debug helper
     void ReplaceDWORD(DWORD destination, DWORD newDWORD);
@@ -48,7 +48,6 @@ namespace UCPtoOpenGL
 
   namespace FillAddress
   {
-    extern WNDPROC WindowProcCallbackFunc; // will be filled by memory write
     extern DWORD WinSetRectObjBaseAddr;
     extern DWORD BinkControlObjAddr;
     extern DWORD SetSomeColorsAddr;

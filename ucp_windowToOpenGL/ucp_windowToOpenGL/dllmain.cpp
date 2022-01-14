@@ -6,7 +6,8 @@
 
 #include "controlAndDetour.h"
 
-
+// winProcHandler
+#include <winProcHandler.h>
 
 namespace UCPtoOpenGL
 {
@@ -14,9 +15,15 @@ namespace UCPtoOpenGL
   // lua module load
   extern "C" __declspec(dllexport) int __cdecl luaopen_graphicsApiReplacer(lua_State * L)
   {
-
     // prepare Lua Logging Roundtrip
     LuaFunc::getLoggingFunction(L);
+
+    // import the lua functions from winProcHandler
+    if (!WinProcHeader::initModuleFunctions(L))
+    {
+      Log(LOG_FATAL, "[graphicsApiReplacer]: Unable to receive functions from 'winProcHandler'.");
+    }
+    WinProcHeader::RegisterProc(Control::WindowProcHandlerFunc, -100000);
 
     lua_newtable(L); // push a new table on the stack
 
@@ -43,10 +50,6 @@ namespace UCPtoOpenGL
     // simple replace
     lua_pushinteger(L, (DWORD)DetourFunc::GetForegroundWindowCall);
     lua_setfield(L, -2, "funcAddress_GetForegroundWindow");
-
-    // need to write window callback func to the returned address
-    lua_pushinteger(L, (DWORD)&FillAddress::WindowProcCallbackFunc);
-    lua_setfield(L, -2, "address_FillWithWindowProcCallback");
 
     // need an address for a window rect set
     lua_pushinteger(L, (DWORD)&FillAddress::WinSetRectObjBaseAddr);

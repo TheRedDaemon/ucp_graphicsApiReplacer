@@ -23,7 +23,7 @@ namespace UCPtoOpenGL
     virtual ~CrusaderToOpenGL();
 
     // that -> the stronghold object(whatever it is)
-    void __thiscall createWindow(WNDPROC windowCallbackFunc, SHCWindowOrMainStructFake* that,
+    void __thiscall createWindow(SHCWindowOrMainStructFake* that,
     HINSTANCE hInstance, LPSTR windowName, unsigned int cursorResource);
 
     void __thiscall drawInit(SetSomeColors colorFunc, SHCBinkControlStructFake* binkStruct,

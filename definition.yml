@@ -1,7 +1,7 @@
 # The name of your module
 name: graphicsApiReplacer
 # The version of your module
-version: 0.1.0
+version: 1.0.0
 # The date of this version
 date: 2021
 # The author
@@ -28,3 +28,5 @@ conflicts: []
 conflicts-config: []
 # A module (for example a map pack (Christmas calendar)) could require certain AIC or features from other modules to be configured in a certain way
 depends-config: []
+# State actual dependencies: (I need to clean this file someday.)
+depends: [winProcHandler>=0.1.0]

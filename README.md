@@ -26,6 +26,8 @@ However, should issues or suggestions arise that are related to this module, fee
 Support is currently only guaranteed for the western versions of Crusader 1.41 and Crusader Extreme 1.41.1-E.
 Other, eastern versions of 1.41 might work. Versions prior to the HD versions (1.3?) will definitely NOT work.
 
+The module has the [winProcHandler](https://github.com/TheRedDaemon/ucp_winProcHandler) as dependency and it registers its winProc function with an early **-100000** priority (smaller mean earlier).
+
 ### Options
 
 The module provides multiple options. Some things are general:

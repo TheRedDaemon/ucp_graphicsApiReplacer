@@ -12,13 +12,9 @@ namespace UCPtoOpenGL
     {
       __asm
       {
-        // remove return address (eax should be free to modify)
-        mov     eax, dword ptr [esp]
-        add     esp, 4
+        pop     eax // remove return address (eax should be free to modify)
         
-        // push
-        push    ecx   // shc struct
-        push    dword ptr[Control::WindowProcCallbackFake]
+        push    ecx   // push shc struct
         push    eax   // set ret address again
 
         mov     ecx, offset Control::ToOpenGL // mov toOpenGL this pointer

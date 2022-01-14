@@ -7,13 +7,14 @@
 #include "controlAndDetour.h"
 #include "crusaderToOpenGL.h"
 
+// winProcHandler
+#include <winProcHandler.h>
 
 namespace UCPtoOpenGL
 {
 
   namespace FillAddress
   {
-    WNDPROC WindowProcCallbackFunc{ 0x0 };
     DWORD WinSetRectObjBaseAddr{ 0x0 };
     DWORD BinkControlObjAddr{ 0x0 };
     DWORD SetSomeColorsAddr{ 0x0 };
@@ -26,7 +27,7 @@ namespace UCPtoOpenGL
     CrusaderToOpenGL ToOpenGL{ Conf };
 
 
-    LRESULT CALLBACK WindowProcCallbackFake(_In_ HWND hwnd, _In_ UINT uMsg, _In_ WPARAM wParam, _In_ LPARAM lParam)
+    LRESULT CALLBACK WindowProcHandlerFunc(int reservedCurrPrio, HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
       // transform all mouse coords
       switch (uMsg)
@@ -108,7 +109,7 @@ namespace UCPtoOpenGL
           break;
       }
 
-      return FillAddress::WindowProcCallbackFunc(hwnd, uMsg, wParam, lParam);
+      return WinProcHeader::CallNextProc(reservedCurrPrio, hwnd, uMsg, wParam, lParam);
     }
 
 
