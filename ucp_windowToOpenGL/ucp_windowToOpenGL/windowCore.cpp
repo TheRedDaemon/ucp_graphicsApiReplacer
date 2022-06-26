@@ -236,7 +236,7 @@ namespace UCPtoOpenGL
           }
         ).base(), strMessage.end());
 
-      Log(LOG_ERROR, strMessage.insert(0, "[graphicsApiReplacer]: [OpenGL]: ").c_str());
+      Log(levelToUse, strMessage.insert(0, "[graphicsApiReplacer]: [OpenGL]: ").c_str());
     }
   }
 
