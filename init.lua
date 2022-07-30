@@ -73,9 +73,9 @@ exports.enable = function(self, moduleConfig, globalConfig)
   end
 
   if next(addrFail) ~= nil then
-    print("'graphicsApiReplacer' was unable to find the following AOBs:")
+    log(ERROR, "'graphicsApiReplacer' was unable to find the following AOBs:")
     for _, name in pairs(addrFail) do
-      print("", name, ":", addresses[name][1])
+      log(ERROR, string.format("%s:%s", name, addresses[name][1]))
     end
     error("'graphicsApiReplacer' can not be initialized.")
     return
@@ -288,7 +288,7 @@ exports.enable = function(self, moduleConfig, globalConfig)
 
       local status, err = pcall(graphicsApiReplacer.setConfigField, option, field, value)
       if not status then
-        print(err);
+        log(ERROR, err);
       end
     end
   end
