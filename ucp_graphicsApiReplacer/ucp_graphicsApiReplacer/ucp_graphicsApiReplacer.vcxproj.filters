@@ -51,6 +51,9 @@
     <ClInclude Include="directX11Core.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="IUnknownWrapper.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">

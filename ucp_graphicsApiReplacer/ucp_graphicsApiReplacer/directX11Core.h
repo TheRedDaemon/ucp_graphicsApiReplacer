@@ -34,7 +34,10 @@ namespace UCPGraphicsApiReplacer
 
     void adjustTexSizeAndViewport(Size<int> texSize, Size<int> viewSize, Size<double> scale) override;
 
-    Size<int> getTexStrongSize() override;
+    Size<int> getTexStrongSize() override
+    {
+      return strongTexSize;
+    }
 
     HRESULT renderNextScreen(unsigned short* backData) override;
 
@@ -52,6 +55,9 @@ namespace UCPGraphicsApiReplacer
 
     DXGI_FORMAT colorFormat{};
     bool debug{};
+    bool vSync{};
+
+    Size<int> strongTexSize{ 0, 0 };
 
     IUnknownWrapper<ID3D11Device> devicePtr{};
     IUnknownWrapper<ID3D11DeviceContext> deviceContextPtr{};
@@ -60,11 +66,18 @@ namespace UCPGraphicsApiReplacer
 
     IUnknownWrapper<ID3D11InfoQueue> infoQueue{};
 
+    IUnknownWrapper<ID3D11VertexShader> vertexShaderPtr{};
+    IUnknownWrapper<ID3D11PixelShader> pixelShaderPtr{};
+    IUnknownWrapper<ID3D11InputLayout> inputLayoutPtr{};
+
+    IUnknownWrapper<ID3D11Buffer> vertexBufferPtr{};
+
     // helper functions
     void writeOutFeatureLevelString(D3D_FEATURE_LEVEL level);
 
     // unlike OpenGL, DirectX11 has no callback feature for this messages, so they need to be polled
     std::unique_ptr<CustomDebugMessage> getDebugMessage(int index);
     void receiveDirectXDebugMessages();
+    bool initSystem();
   };
 }

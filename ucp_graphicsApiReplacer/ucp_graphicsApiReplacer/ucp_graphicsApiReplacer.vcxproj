@@ -249,6 +249,7 @@
     <ClInclude Include="directX11Core.h" />
     <ClInclude Include="fakeDDClasses.h" />
     <ClInclude Include="graphicsCore.h" />
+    <ClInclude Include="IUnknownWrapper.h" />
     <ClInclude Include="logHelper.h" />
     <ClInclude Include="shcRelatedStructures.h" />
     <ClInclude Include="graphicsApiReplacerConfig.h" />
