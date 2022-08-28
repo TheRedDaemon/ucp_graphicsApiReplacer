@@ -135,7 +135,7 @@ namespace UCPGraphicsApiReplacer
 
       vertexShaderOut vertexShaderMain(vertexShaderIn input) {
         vertexShaderOut output = (vertexShaderOut)0; // zero the memory first
-        output.position_clip = float4(input.position_local, 1.0);
+        output.positionClip = float4(input.positionLocal, 1.0);
         return output;
       }
 
@@ -196,6 +196,7 @@ namespace UCPGraphicsApiReplacer
       vertexShaderPtr.expose()
     )))
     {
+      receiveDirectXDebugMessages();
       Log(LOG_ERROR, "[graphicsApiReplacer] : [DirectX] : Failed to create vertex shader. ");
       return false;
     }
@@ -207,13 +208,14 @@ namespace UCPGraphicsApiReplacer
       pixelShaderPtr.expose()
     )))
     {
+      receiveDirectXDebugMessages();
       Log(LOG_ERROR, "[graphicsApiReplacer] : [DirectX] : Failed to create pixel shader. ");
       return false;
     }
 
     // INPUT LAYOUT
     D3D11_INPUT_ELEMENT_DESC inputElementDesc[] = {
-      { "POS", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+      { "POS", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
       /*
       { "COL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
       { "NOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
@@ -228,39 +230,62 @@ namespace UCPGraphicsApiReplacer
       inputLayoutPtr.expose()
     )))
     {
+      receiveDirectXDebugMessages();
       Log(LOG_ERROR, "[graphicsApiReplacer] : [DirectX] : Failed to create input layout. ");
       return false;
     }
 
-    // create Vertex buffer
-    float vertexDataArray[] = {
-      -1.0f, -1.0f, 0.0f,
-      1.0f, -1.0f, 0.0f,
-      -1.0f, 1.0f, 0.0f,
-      1.0f, 1.0f, 0.0f,
+    // vertex data
+    float vertexDataArray[]{
+      -1.0f, -1.0f,
+      1.0f, -1.0f,
+      -1.0f, 1.0f,
+      1.0f, 1.0f,
     };
-    UINT vertexStride{ 3 * sizeof(float) };
+    UINT vertexStride{ 2 * sizeof(float) };
     UINT vertexOffset{ 0 };
     UINT vertexCount{ 4 };
 
+    int indexDataArray[]{ 0, 2, 1, 2, 3, 1 };
+
+    // create Vertex buffer
     D3D11_BUFFER_DESC vertexBuffDescr{};
     vertexBuffDescr.ByteWidth = sizeof(vertexDataArray);
     vertexBuffDescr.Usage = D3D11_USAGE_DEFAULT;
     vertexBuffDescr.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-    D3D11_SUBRESOURCE_DATA srData{ 0 };
-    srData.pSysMem = vertexDataArray;
+    D3D11_SUBRESOURCE_DATA vertexSrData{ 0 };
+    vertexSrData.pSysMem = vertexDataArray;
     if (FAILED(devicePtr->CreateBuffer(
       &vertexBuffDescr,
-      &srData,
+      &vertexSrData,
       vertexBufferPtr.expose()
     )))
     {
+      receiveDirectXDebugMessages();
       Log(LOG_ERROR, "[graphicsApiReplacer] : [DirectX] : Unable to create vertex buffer. ");
       return false;
     }
 
+    // create index buffer
+    D3D11_BUFFER_DESC indexBuffDescr = {};
+    indexBuffDescr.ByteWidth = sizeof(indexDataArray);
+    indexBuffDescr.Usage = D3D11_USAGE_IMMUTABLE;
+    indexBuffDescr.BindFlags = D3D11_BIND_INDEX_BUFFER;
+    D3D11_SUBRESOURCE_DATA indexSrData{ 0 };
+    indexSrData.pSysMem = indexDataArray;
+    if (FAILED(devicePtr->CreateBuffer(
+      &indexBuffDescr,
+      &indexSrData,
+      indexBufferPtr.expose()
+    )))
+    {
+      receiveDirectXDebugMessages();
+      Log(LOG_ERROR, "[graphicsApiReplacer] : [DirectX] : Unable to create index buffer. ");
+      return false;
+    }
+
     // set input assembler
-    deviceContextPtr->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST_ADJ);
+    deviceContextPtr->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     deviceContextPtr->IASetInputLayout(inputLayoutPtr.get());
     deviceContextPtr->IASetVertexBuffers(
       0,
@@ -268,6 +293,7 @@ namespace UCPGraphicsApiReplacer
       vertexBufferPtr.expose(),
       &vertexStride,
       &vertexOffset);
+    deviceContextPtr->IASetIndexBuffer(indexBufferPtr.get(), DXGI_FORMAT_R32_UINT, 0);
 
     // set shader
     deviceContextPtr->VSSetShader(vertexShaderPtr.get(), NULL, 0);
@@ -308,8 +334,8 @@ namespace UCPGraphicsApiReplacer
     swapChainDescr.BufferDesc.RefreshRate.Numerator = 0;  
     swapChainDescr.BufferDesc.RefreshRate.Denominator = 1;
 
-    // min OS is with the format settings Win8
-    swapChainDescr.BufferDesc.Format = colorFormat;
+    // using a normal format and setting it in render target
+    swapChainDescr.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
 
     // no multi-sampling
     swapChainDescr.SampleDesc.Count = 1;
@@ -394,12 +420,17 @@ namespace UCPGraphicsApiReplacer
     IUnknownWrapper<ID3D11Texture2D> framebuffer{};
     if (FAILED(swapChainPtr->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)framebuffer.expose())))
     {
+      receiveDirectXDebugMessages();
       Log(LOG_ERROR, "[graphicsApiReplacer]: [DirectX]: Unable to obtain frame buffer.");
       return false;
     }
 
-    if (FAILED(devicePtr->CreateRenderTargetView(framebuffer.get(), 0, renderTargetViewPtr.expose())))
+    D3D11_RENDER_TARGET_VIEW_DESC targetViewDesc{
+      CD3D11_RENDER_TARGET_VIEW_DESC(framebuffer.get(), D3D11_RTV_DIMENSION_TEXTURE2D, DXGI_FORMAT_B8G8R8A8_UNORM)
+    };
+    if (FAILED(devicePtr->CreateRenderTargetView(framebuffer.get(), &targetViewDesc, renderTargetViewPtr.expose())))
     {
+      receiveDirectXDebugMessages();
       Log(LOG_ERROR, "[graphicsApiReplacer]: [DirectX]: Unable to create render target.");
       return false;
     }
@@ -409,7 +440,7 @@ namespace UCPGraphicsApiReplacer
       return false;
     }
 
-    return false;
+    return true;
   }
 
   // source: https://stackoverflow.com/a/64808444
@@ -424,7 +455,7 @@ namespace UCPGraphicsApiReplacer
     //deviceContextPtr->ClearDepthStencilView(spZView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0); // no stencil
     
     // drawing...
-    deviceContextPtr->Draw(4, 0);
+    deviceContextPtr->DrawIndexed(6, 0, 0);
 
     // swap
     HRESULT swapRes{ (vSync) ? swapChainPtr->Present(1, 0) : swapChainPtr->Present(0, DXGI_PRESENT_ALLOW_TEARING) };
@@ -458,6 +489,7 @@ namespace UCPGraphicsApiReplacer
     };
 
     deviceContextPtr->UpdateSubresource(vertexBufferPtr.get(), 0, nullptr, newPos, 0, 0);
+    receiveDirectXDebugMessages();
   }
 
   void DirectX11Core::releaseContext(HWND hwnd)

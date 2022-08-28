@@ -18,7 +18,7 @@
 
 namespace UCPGraphicsApiReplacer
 {
-  CrusaderGraphicsApiReplacer::CrusaderGraphicsApiReplacer(GraphicsAPIReplacerConfig& conf) : confRef{ conf }, graphicsCore{ std::make_unique<OpenGLCore>() } {};
+  CrusaderGraphicsApiReplacer::CrusaderGraphicsApiReplacer(GraphicsAPIReplacerConfig& conf) : confRef{ conf }, graphicsCore{ std::make_unique<DirectX11Core>() } {};
   CrusaderGraphicsApiReplacer::~CrusaderGraphicsApiReplacer() {};
 
 

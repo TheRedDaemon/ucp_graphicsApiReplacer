@@ -71,6 +71,7 @@ namespace UCPGraphicsApiReplacer
     IUnknownWrapper<ID3D11InputLayout> inputLayoutPtr{};
 
     IUnknownWrapper<ID3D11Buffer> vertexBufferPtr{};
+    IUnknownWrapper<ID3D11Buffer> indexBufferPtr{};
 
     // helper functions
     void writeOutFeatureLevelString(D3D_FEATURE_LEVEL level);
