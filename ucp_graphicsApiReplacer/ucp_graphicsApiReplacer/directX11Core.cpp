@@ -123,6 +123,11 @@ namespace UCPGraphicsApiReplacer
   bool DirectX11Core::initSystem()
   {
     const char shaderCode[]{ R"(
+      cbuffer DRAWING_HELPER : register(b0) {
+          float reverseTransform;
+          int3  vSomeVectorThatMayBeNeededByASpecificShader;
+      };
+
       /* vertex attributes go here to input to the vertex shader */
       struct vertexShaderIn {
           float3 positionLocal : POS;
@@ -235,7 +240,7 @@ namespace UCPGraphicsApiReplacer
       return false;
     }
 
-    // vertex data
+    // data
     float vertexDataArray[]{
       -1.0f, -1.0f,
       1.0f, -1.0f,
@@ -247,6 +252,20 @@ namespace UCPGraphicsApiReplacer
     UINT vertexCount{ 4 };
 
     int indexDataArray[]{ 0, 2, 1, 2, 3, 1 };
+
+    struct
+    {
+      float reverseTransform{ 1.0 / 0xFF };
+      int colorTransformConstant[3]{ 0, 0, 0b0000000000011111 };
+    } constantValueStruct;
+    if (colorFormat == RGB_565) {
+      constantValueStruct.colorTransformConstant[0] = 0b1111100000000000;
+      constantValueStruct.colorTransformConstant[1] = 0b0000011111100000;
+    }
+    else {
+      constantValueStruct.colorTransformConstant[0] = 0b0111110000000000;
+      constantValueStruct.colorTransformConstant[1] = 0b0000001111100000;
+    }
 
     // create Vertex buffer
     D3D11_BUFFER_DESC vertexBuffDescr{};
@@ -267,7 +286,7 @@ namespace UCPGraphicsApiReplacer
     }
 
     // create index buffer
-    D3D11_BUFFER_DESC indexBuffDescr = {};
+    D3D11_BUFFER_DESC indexBuffDescr{};
     indexBuffDescr.ByteWidth = sizeof(indexDataArray);
     indexBuffDescr.Usage = D3D11_USAGE_IMMUTABLE;
     indexBuffDescr.BindFlags = D3D11_BIND_INDEX_BUFFER;
@@ -284,6 +303,29 @@ namespace UCPGraphicsApiReplacer
       return false;
     }
 
+    // create constant pixel transform buffer
+    D3D11_BUFFER_DESC cbDesc{};
+    cbDesc.ByteWidth = sizeof(constantValueStruct);
+    cbDesc.Usage = D3D11_USAGE_IMMUTABLE;
+    cbDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+
+    // Fill in the subresource data.
+    D3D11_SUBRESOURCE_DATA constData{};
+    constData.pSysMem = &constantValueStruct;
+
+    // Create the buffer.
+    if (FAILED(devicePtr->CreateBuffer(
+      &cbDesc,
+      &constData,
+      constantPixelTransformBufferPtr.expose()
+    )))
+    {
+      receiveDirectXDebugMessages();
+      Log(LOG_ERROR, "[graphicsApiReplacer] : [DirectX] : Unable to create constant color transform buffer. ");
+      return false;
+    }
+    
+
     // set input assembler
     deviceContextPtr->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     deviceContextPtr->IASetInputLayout(inputLayoutPtr.get());
@@ -298,6 +340,8 @@ namespace UCPGraphicsApiReplacer
     // set shader
     deviceContextPtr->VSSetShader(vertexShaderPtr.get(), NULL, 0);
     deviceContextPtr->PSSetShader(pixelShaderPtr.get(), NULL, 0);
+
+    deviceContextPtr->PSSetConstantBuffers(0, 1, constantPixelTransformBufferPtr.expose());
 
     receiveDirectXDebugMessages();
     return true;
@@ -450,7 +494,7 @@ namespace UCPGraphicsApiReplacer
     deviceContextPtr->OMSetRenderTargets(1, renderTargetViewPtr.expose(), 0 /*spZView.Get()*/); // no stencil, and actually no array, I just get the ptr to the ptr
 
     // clear
-    FLOAT blankColor[] { 0.5, 0.5, 0.5, 1.0 };
+    FLOAT blankColor[] { 0.0, 0.0, 0.0, 1.0 };
     deviceContextPtr->ClearRenderTargetView(renderTargetViewPtr.get(), blankColor);
     //deviceContextPtr->ClearDepthStencilView(spZView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0); // no stencil
     
