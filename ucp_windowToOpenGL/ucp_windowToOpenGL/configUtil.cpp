@@ -3,7 +3,7 @@
 
 #include "configUtil.h"
 
-namespace UCPtoOpenGL
+namespace UCPGraphicsApiReplacer
 {
   // lot of config stuff from here: https://stackoverflow.com/a/1410917
 

@@ -3,7 +3,7 @@
 // always required
 #include "ddraw.h"
 
-namespace UCPtoOpenGL
+namespace UCPGraphicsApiReplacer
 {
   // holds possible render resolutions
   enum GameResolution

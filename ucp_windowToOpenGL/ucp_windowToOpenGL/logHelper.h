@@ -1,6 +1,6 @@
 #pragma once
 
-namespace UCPtoOpenGL
+namespace UCPGraphicsApiReplacer
 {
   // normal enum, to allow easier transform to int 
   enum LogLevel

@@ -4,7 +4,7 @@
 #include "fakeDDClasses.h"
 
 
-namespace UCPtoOpenGL
+namespace UCPGraphicsApiReplacer
 {
   /** FakeSurface **/
 

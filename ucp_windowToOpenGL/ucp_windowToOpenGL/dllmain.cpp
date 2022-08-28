@@ -9,7 +9,7 @@
 // winProcHandler
 #include <winProcHandler.h>
 
-namespace UCPtoOpenGL
+namespace UCPGraphicsApiReplacer
 {
 
   // lua module load

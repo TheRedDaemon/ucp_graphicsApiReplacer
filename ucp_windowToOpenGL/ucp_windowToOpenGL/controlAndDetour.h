@@ -3,18 +3,18 @@
 
 struct lua_State; // forward dec
 
-namespace UCPtoOpenGL
+namespace UCPGraphicsApiReplacer
 {
   // forward dec
-  class CrusaderToOpenGL;
-  struct ToOpenGLConfig;
+  class CrusaderGraphicsApiReplacer;
+  struct GraphicsAPIReplacerConfig;
   struct SHCWindowOrMainStructFake;
 
   namespace Control
   {
     // not sure if smart idea...
-    extern ToOpenGLConfig Conf;
-    extern CrusaderToOpenGL ToOpenGL;
+    extern GraphicsAPIReplacerConfig Conf;
+    extern CrusaderGraphicsApiReplacer ToOpenGL;
 
     LRESULT CALLBACK WindowProcHandlerFunc(int reservedCurrPrio, HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 

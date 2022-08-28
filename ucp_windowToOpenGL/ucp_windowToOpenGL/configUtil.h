@@ -1,6 +1,6 @@
 #pragma once
 
-namespace UCPtoOpenGL
+namespace UCPGraphicsApiReplacer
 {
   DWORD GetWindowStyle(WindowType type);
 

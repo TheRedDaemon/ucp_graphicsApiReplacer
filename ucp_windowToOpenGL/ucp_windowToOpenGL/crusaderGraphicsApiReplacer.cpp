@@ -2,9 +2,9 @@
 #include "pch.h"
 
 
-#include "windowCore.h"
+#include "openGLCore.h"
 #include "shcRelatedStructures.h"
-#include "crusaderToOpenGL.h"
+#include "crusaderGraphicsApiReplacer.h"
 #include "configUtil.h"
 
 // included explicitly, since it is one of the by WIN32_LEAN_AND_MEAN removed headers
@@ -15,32 +15,32 @@
 #include <winProcHandler.h>
 
 
-namespace UCPtoOpenGL
+namespace UCPGraphicsApiReplacer
 {
-  CrusaderToOpenGL::CrusaderToOpenGL(ToOpenGLConfig& conf) : confRef{ conf }, window{ std::make_unique<WindowCore>() } {};
-  CrusaderToOpenGL::~CrusaderToOpenGL() {};
+  CrusaderGraphicsApiReplacer::CrusaderGraphicsApiReplacer(GraphicsAPIReplacerConfig& conf) : confRef{ conf }, graphicsCore{ std::make_unique<OpenGLCore>() } {};
+  CrusaderGraphicsApiReplacer::~CrusaderGraphicsApiReplacer() {};
 
 
   /** Override **/
 
   // impl virtual
 
-  HRESULT CrusaderToOpenGL::renderNextFrame(unsigned short* sourcePtr)
+  HRESULT CrusaderGraphicsApiReplacer::renderNextFrame(unsigned short* sourcePtr)
   {
-    return window->renderNextScreen(sourcePtr);
+    return graphicsCore->renderNextScreen(sourcePtr);
   }
 
-  int CrusaderToOpenGL::getRenderTexWidth()
+  int CrusaderGraphicsApiReplacer::getRenderTexWidth()
   {
     return d.gameTexSize.w;
   }
 
-  int CrusaderToOpenGL::getRenderTexHeight()
+  int CrusaderGraphicsApiReplacer::getRenderTexHeight()
   {
     return d.gameTexSize.h;
   }
 
-  PixelFormat CrusaderToOpenGL::getPixelFormat()
+  PixelFormat CrusaderGraphicsApiReplacer::getPixelFormat()
   {
     return confRef.graphic.pixFormat;
   }
@@ -49,7 +49,7 @@ namespace UCPtoOpenGL
   // detoured calls
 
   // complete
-  void __thiscall CrusaderToOpenGL::createWindow(SHCWindowOrMainStructFake* that,
+  void __thiscall CrusaderGraphicsApiReplacer::createWindow(SHCWindowOrMainStructFake* that,
     HINSTANCE hInstance, LPSTR windowName, unsigned int cursorResource)
   {
     // removed original shc window init, if interested, check older git versions
@@ -60,7 +60,7 @@ namespace UCPtoOpenGL
     shcWinStrucPtr->gameWindowHandle = NULL;
 
     // trying to get WGL functions, if this fails, return false, Crusader crashes
-    if (!window->loadWGLFunctions(hInstance))
+    if (!graphicsCore->preWindowCreationCall(hInstance))
     {
       Log(LOG_FATAL, "[graphicsApiReplacer]: Preinitialization of graphics API failed. Aborting game.");
       return;
@@ -83,18 +83,18 @@ namespace UCPtoOpenGL
     ATOM classAtom{ RegisterClassA(&wndClass) };
     if (classAtom == NULL)
     {
-      Log(LOG_FATAL, "[graphicsApiReplacer]: Failed to register window class. Aborting game.");
+      Log(LOG_FATAL, "[graphicsApiReplacer]: Failed to register graphicsCore class. Aborting game.");
       return;
     }
 
-    RECT winRect{ GetWindowRect(confRef.window) };
-    d.windowSize = { GetGameWidth(confRef.window), GetGameHeight(confRef.window) };
+    RECT winRect{ GetWindowRect(confRef.graphicsCore) };
+    d.windowSize = { GetGameWidth(confRef.graphicsCore), GetGameHeight(confRef.graphicsCore) };
 
     shcWinStrucPtr->gameWindowHandle = CreateWindowExA(
-      GetExtendedWindowStyle(confRef.window.type),
+      GetExtendedWindowStyle(confRef.graphicsCore.type),
       className,
       windowName,
-      GetWindowStyle(confRef.window.type),
+      GetWindowStyle(confRef.graphicsCore.type),
       winRect.left,
       winRect.top,
       winRect.right - winRect.left,
@@ -108,12 +108,12 @@ namespace UCPtoOpenGL
     HWND handle{ shcWinStrucPtr->gameWindowHandle };
     if (handle == NULL)
     {
-      Log(LOG_FATAL, "[graphicsApiReplacer]: Failed to create window. Aborting game.");
+      Log(LOG_FATAL, "[graphicsApiReplacer]: Failed to create graphicsCore. Aborting game.");
       return;
     }
 
-    window->setConf(&confRef);
-    if (!window->createWindow(handle))
+    graphicsCore->setConf(&confRef);
+    if (!graphicsCore->createWindow(handle))
     {
       Log(LOG_FATAL, "[graphicsApiReplacer]: Failed to initialize graphics API. Aborting game.");
       return;
@@ -147,7 +147,7 @@ namespace UCPtoOpenGL
   }
 
 
-  void CrusaderToOpenGL::drawInit(SetSomeColors colorFunc, SHCBinkControlStructFake* binkStruct,
+  void CrusaderGraphicsApiReplacer::drawInit(SetSomeColors colorFunc, SHCBinkControlStructFake* binkStruct,
     DWORD winSetRectObjBaseAddr, SHCWindowOrMainStructFake* that)
   {
     // at this point, create window should be there, but still
@@ -181,7 +181,7 @@ namespace UCPtoOpenGL
     int pixNum{ d.gameTexSize.w * d.gameTexSize.h };
     back.createBitData(pixNum);
     offMain.createBitData(pixNum);
-    window->adjustTexSizeAndViewport(d.gameTexSize, d.windowSize, winScale);
+    graphicsCore->adjustTexSizeAndViewport(d.gameTexSize, d.windowSize, winScale);
 
     // set clip for cursor
     if (confRef.control.clipCursor)
@@ -258,7 +258,7 @@ namespace UCPtoOpenGL
   }
 
 
-  int CrusaderToOpenGL::getFakeSystemMetrics(int nIndex)
+  int CrusaderGraphicsApiReplacer::getFakeSystemMetrics(int nIndex)
   {
     // if no information was received, the return will be the RES_1280_X_720
     if (nIndex == SM_CXSCREEN || nIndex == SM_CYSCREEN)
@@ -277,11 +277,11 @@ namespace UCPtoOpenGL
 
 
   // this adjusts scrolling only -> maybe use custom code later, this stuff here is kinda horrible
-  BOOL CrusaderToOpenGL::getWindowCursorPos(LPPOINT lpPoint)
+  BOOL CrusaderGraphicsApiReplacer::getWindowCursorPos(LPPOINT lpPoint)
   {
     // deactivate by setting return pos to scroll middle
     // also if no focus and window stops
-    if (!confRef.control.scrollActive || (confRef.window.continueOutOfFocus == NOFOCUS_CONTINUE && !d.hasFocus))
+    if (!confRef.control.scrollActive || (confRef.graphicsCore.continueOutOfFocus == NOFOCUS_CONTINUE && !d.hasFocus))
     {
       *lpPoint = { d.scrollRange.w / 2, d.scrollRange.h / 2 };
       return true;
@@ -297,8 +297,8 @@ namespace UCPtoOpenGL
 
       // using screen pixels to define ranges
       // margin disabled if the cursor is clipped or no window mode
-      int margin{ confRef.control.clipCursor || confRef.window.type == TYPE_BORDERLESS_FULLSCREEN ||
-        confRef.window.type == TYPE_FULLSCREEN ? 0 : confRef.control.margin };
+      int margin{ confRef.control.clipCursor || confRef.graphicsCore.type == TYPE_BORDERLESS_FULLSCREEN ||
+        confRef.graphicsCore.type == TYPE_FULLSCREEN ? 0 : confRef.control.margin };
       
       if (intCursor.x < -margin || intCursor.x > d.gameWindowRange.w + margin ||
         intCursor.y < -margin || intCursor.y > d.gameWindowRange.h + margin)
@@ -337,16 +337,16 @@ namespace UCPtoOpenGL
   }
 
 
-  HWND WINAPI CrusaderToOpenGL::GetForegroundWindowFake()
+  HWND WINAPI CrusaderGraphicsApiReplacer::GetForegroundWindowFake()
   {
-    return (confRef.window.continueOutOfFocus == NOFOCUS_RENDER) ? shcWinStrucPtr->gameWindowHandle : GetForegroundWindow();
+    return (confRef.graphicsCore.continueOutOfFocus == NOFOCUS_RENDER) ? shcWinStrucPtr->gameWindowHandle : GetForegroundWindow();
   }
 
 
-  bool CrusaderToOpenGL::transformMouseMovePos(LPARAM* ptrlParam)
+  bool CrusaderGraphicsApiReplacer::transformMouseMovePos(LPARAM* ptrlParam)
   {
     // discard if game has no focus and continues without it being rendered
-    if (confRef.window.continueOutOfFocus == NOFOCUS_CONTINUE && !d.hasFocus)
+    if (confRef.graphicsCore.continueOutOfFocus == NOFOCUS_CONTINUE && !d.hasFocus)
     {
       return false;
     }
@@ -370,12 +370,12 @@ namespace UCPtoOpenGL
   }
 
 
-  bool CrusaderToOpenGL::windowLostFocus()
+  bool CrusaderGraphicsApiReplacer::windowLostFocus()
   {
     d.hasFocus = false;
 
     // found no other way to proper minimize
-    if (confRef.window.type == TYPE_BORDERLESS_FULLSCREEN || confRef.window.type == TYPE_FULLSCREEN)
+    if (confRef.graphicsCore.type == TYPE_BORDERLESS_FULLSCREEN || confRef.graphicsCore.type == TYPE_FULLSCREEN)
     {
       ShowWindow(shcWinStrucPtr->gameWindowHandle, SW_MINIMIZE);
     }
@@ -389,38 +389,38 @@ namespace UCPtoOpenGL
       d.mouseDown[2] = false;
     }
 
-    if (confRef.window.continueOutOfFocus)
+    if (confRef.graphicsCore.continueOutOfFocus)
     {
       shcWinStrucPtr->isNotProcessingInputEvents = 0; // set zero to render after input reset (should not be important for "continue")
     }
 
-    return !(confRef.window.continueOutOfFocus); // if zero (NOFOCUS_PAUSE), continue
+    return !(confRef.graphicsCore.continueOutOfFocus); // if zero (NOFOCUS_PAUSE), continue
   }
 
 
-  bool CrusaderToOpenGL::windowSetFocus()
+  bool CrusaderGraphicsApiReplacer::windowSetFocus()
   {
     d.hasFocus = true;
     shcWinStrucPtr->isNotProcessingInputEvents = 0; // enable input here on focus set
 
-    if (confRef.window.continueOutOfFocus == NOFOCUS_CONTINUE)
+    if (confRef.graphicsCore.continueOutOfFocus == NOFOCUS_CONTINUE)
     {
       d.devourAfterFocus = true;
     }
 
     // because of interaction with window border needs other handling
-    if (confRef.window.type != TYPE_WINDOW && confRef.control.clipCursor)
+    if (confRef.graphicsCore.type != TYPE_WINDOW && confRef.control.clipCursor)
     {
       clipCursor();
     }
 
-    return !(confRef.window.continueOutOfFocus); // if zero (NOFOCUS_PAUSE), continue
+    return !(confRef.graphicsCore.continueOutOfFocus); // if zero (NOFOCUS_PAUSE), continue
   }
 
 
-  bool CrusaderToOpenGL::windowActivated(bool* active)
+  bool CrusaderGraphicsApiReplacer::windowActivated(bool* active)
   {
-    if (!confRef.window.continueOutOfFocus)
+    if (!confRef.graphicsCore.continueOutOfFocus)
     {
       return true;
     }
@@ -443,7 +443,7 @@ namespace UCPtoOpenGL
   }
 
 
-  void CrusaderToOpenGL::windowDestroyed()
+  void CrusaderGraphicsApiReplacer::windowDestroyed()
   {
     // a final free action
     if (confRef.control.clipCursor)
@@ -453,18 +453,18 @@ namespace UCPtoOpenGL
     }
 
     // windows spoke: https://docs.microsoft.com/en-us/windows/win32/opengl/deleting-a-rendering-context
-    window->releaseContext(shcWinStrucPtr->gameWindowHandle);
+    graphicsCore->releaseContext(shcWinStrucPtr->gameWindowHandle);
   }
 
 
-  void CrusaderToOpenGL::windowEditEnded()  // currently unused
+  void CrusaderGraphicsApiReplacer::windowEditEnded()  // currently unused
   {
   }
 
 
-  bool CrusaderToOpenGL::mouseDown()
+  bool CrusaderGraphicsApiReplacer::mouseDown()
   {
-    if (confRef.window.type == TYPE_WINDOW && confRef.control.clipCursor)
+    if (confRef.graphicsCore.type == TYPE_WINDOW && confRef.control.clipCursor)
     {
       if (!d.cursorClipped && d.hasFocus)
       {
@@ -473,7 +473,7 @@ namespace UCPtoOpenGL
     }
 
     bool ret{ true };
-    if (confRef.window.continueOutOfFocus == NOFOCUS_CONTINUE && d.devourAfterFocus)
+    if (confRef.graphicsCore.continueOutOfFocus == NOFOCUS_CONTINUE && d.devourAfterFocus)
     {
       d.devourAfterFocus = false;
       ret = ret && false;
@@ -483,7 +483,7 @@ namespace UCPtoOpenGL
   }
 
 
-  void  CrusaderToOpenGL::mouseClipOnHold(UINT wmMsg)
+  void  CrusaderGraphicsApiReplacer::mouseClipOnHold(UINT wmMsg)
   {
     // if not using clipper:
     // set clipper anyway on relevant press
@@ -531,15 +531,15 @@ namespace UCPtoOpenGL
   /** internal helper functions **/
   
   // NOTE: currently unused
-  void CrusaderToOpenGL::setWindowStyleAndSize()
+  void CrusaderGraphicsApiReplacer::setWindowStyleAndSize()
   {
-    RECT newWinRect{ GetWindowRect(confRef.window) };
-    d.windowSize = { GetGameWidth(confRef.window), GetGameHeight(confRef.window) };
+    RECT newWinRect{ GetWindowRect(confRef.graphicsCore) };
+    d.windowSize = { GetGameWidth(confRef.graphicsCore), GetGameHeight(confRef.graphicsCore) };
 
     // this would set a new style and adjust the window
     // however, screenshots still do not work
-    DWORD newStyle{ GetWindowStyle(confRef.window.type) };
-    DWORD newExStyle{ GetExtendedWindowStyle(confRef.window.type) };
+    DWORD newStyle{ GetWindowStyle(confRef.graphicsCore.type) };
+    DWORD newExStyle{ GetExtendedWindowStyle(confRef.graphicsCore.type) };
 
     HWND handle{ shcWinStrucPtr->gameWindowHandle };
     SetWindowLongPtr(handle, GWL_STYLE, newStyle);
@@ -553,7 +553,7 @@ namespace UCPtoOpenGL
   }
 
 
-  void CrusaderToOpenGL::clipCursor()
+  void CrusaderGraphicsApiReplacer::clipCursor()
   {
     HWND handle{ shcWinStrucPtr->gameWindowHandle };
     RECT winPos{};

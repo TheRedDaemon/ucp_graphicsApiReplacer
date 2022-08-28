@@ -10,7 +10,7 @@
 #include <memory>
 
 // config is needed everywhere
-#include "toOpenGLconfig.h"
+#include "graphicsApiReplacerConfig.h"
 
 // for structures
 #include <array>

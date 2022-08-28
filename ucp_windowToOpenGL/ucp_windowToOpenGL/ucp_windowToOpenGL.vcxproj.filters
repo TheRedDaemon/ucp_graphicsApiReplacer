@@ -21,13 +21,13 @@
     <ClInclude Include="pch.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="crusaderToOpenGL.h">
+    <ClInclude Include="crusaderGraphicsApiReplacer.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="windowCore.h">
+    <ClInclude Include="openGLCore.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="toOpenGLconfig.h">
+    <ClInclude Include="graphicsApiReplacerConfig.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
     <ClInclude Include="configUtil.h">
@@ -45,6 +45,9 @@
     <ClInclude Include="logHelper.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="graphicsCore.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -53,10 +56,10 @@
     <ClCompile Include="pch.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
-    <ClCompile Include="crusaderToOpenGL.cpp">
+    <ClCompile Include="crusaderGraphicsApiReplacer.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
-    <ClCompile Include="windowCore.cpp">
+    <ClCompile Include="openGLCore.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="configUtil.cpp">

@@ -4,18 +4,18 @@
 
 #include "pch.h"
 
-#include "windowCore.h"
+#include "openGLCore.h"
 
-namespace UCPtoOpenGL
+namespace UCPGraphicsApiReplacer
 {
 
-  WindowCore::WindowCore() {};
-  WindowCore::~WindowCore() {};
+  OpenGLCore::OpenGLCore() {};
+  OpenGLCore::~OpenGLCore() {};
 
 
   // used to get function pointers, mostly based on:
   // source: https://www.khronos.org/opengl/wiki/Load_OpenGL_Functions
-  bool WindowCore::getAnyGLFuncAddress(const char* name, void** ptrToFuncPtr)
+  bool OpenGLCore::getAnyGLFuncAddress(const char* name, void** ptrToFuncPtr)
   {
     void*& p{ *ptrToFuncPtr };
     p = (void*)wglGetProcAddress(name);
@@ -42,7 +42,7 @@ namespace UCPtoOpenGL
   // code largely unchanged
   // returns false if something goes wrong along the way
   // source: https://gist.github.com/nickrolfe/1127313ed1dbf80254b614a721b3ee9c
-  bool WindowCore::loadWGLFunctions(HINSTANCE hInstance)
+  bool OpenGLCore::preWindowCreationCall(HINSTANCE hInstance)
   {
     // Before we can load extensions, we need a dummy OpenGL context, created using a dummy window
     WNDCLASSA windowClass{};
@@ -53,7 +53,7 @@ namespace UCPtoOpenGL
 
     if (!RegisterClassA(&windowClass))
     {
-      Log(LOG_ERROR, "[graphicsApiReplacer]: [OpenGL]: Failed to create dummy window class.");
+      Log(LOG_ERROR, "[graphicsApiReplacer]: [OpenGL]: Failed to create dummy graphicsCore class.");
       return false;
     }
 
@@ -74,7 +74,7 @@ namespace UCPtoOpenGL
 
     if (!dummyWindow)
     {
-      Log(LOG_ERROR, "[graphicsApiReplacer]: [OpenGL]: Failed to create dummy window.");
+      Log(LOG_ERROR, "[graphicsApiReplacer]: [OpenGL]: Failed to create dummy graphicsCore.");
       return false;
     }
 
@@ -137,7 +137,7 @@ namespace UCPtoOpenGL
   }
 
 
-  bool WindowCore::loadGLFunctions()
+  bool OpenGLCore::loadGLFunctions()
   {
     bool success{ true };
 
@@ -175,15 +175,15 @@ namespace UCPtoOpenGL
 
   // debugging information
 
-  void APIENTRY WindowCore::debugMsgProxy(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
+  void APIENTRY OpenGLCore::debugMsgProxy(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
     const GLchar* message, const void* userParam)
   {
     // TODO: c-style cast breaks const contract -> this is awful... and it stays for the moment
-    ((WindowCore*)userParam)->debugMsg(source, type, id, severity, length, message, userParam);
+    ((OpenGLCore*)userParam)->debugMsg(source, type, id, severity, length, message, userParam);
   }
 
 
-  void WindowCore::debugMsg(GLenum, GLenum, GLuint, GLenum severity, GLsizei,
+  void OpenGLCore::debugMsg(GLenum, GLenum, GLuint, GLenum severity, GLsizei,
     const GLchar* message, const void*)
   {
     // currently uses level set by logger, split through the severities
@@ -243,7 +243,7 @@ namespace UCPtoOpenGL
 
   // window creation
 
-  bool WindowCore::createWindow(HWND win)
+  bool OpenGLCore::createWindow(HWND win)
   {
     if (!confPtr)
     {
@@ -385,13 +385,13 @@ namespace UCPtoOpenGL
   }
 
 
-  void WindowCore::setOnlyTexSize(Size<int> texSize)
+  void OpenGLCore::setOnlyTexSize(Size<int> texSize)
   {
     strongTexSize = texSize;
   }
 
 
-  void WindowCore::adjustTexSizeAndViewport(Size<int> texSize, Size<int> viewSize, Size<double> scale)
+  void OpenGLCore::adjustTexSizeAndViewport(Size<int> texSize, Size<int> viewSize, Size<double> scale)
   {
     glViewport(0, 0, viewSize.w, viewSize.h);
     strongTexSize = texSize;
@@ -422,7 +422,7 @@ namespace UCPtoOpenGL
   }
 
 
-  HRESULT WindowCore::renderNextScreen(unsigned short* backData)
+  HRESULT OpenGLCore::renderNextScreen(unsigned short* backData)
   {
     // update texture
     switch (pixFormat)
@@ -453,7 +453,7 @@ namespace UCPtoOpenGL
   }
 
 
-  void WindowCore::releaseContext(HWND hwnd)
+  void OpenGLCore::releaseContext(HWND hwnd)
   {
     wglMakeCurrent(NULL, NULL); // no context
     ReleaseDC(hwnd, deviceContext);
@@ -462,7 +462,7 @@ namespace UCPtoOpenGL
   }
 
 
-  void WindowCore::initSystems()
+  void OpenGLCore::initSystems()
   {
 
     // the clear color

@@ -1,6 +1,6 @@
 #pragma once
 
-namespace UCPtoOpenGL
+namespace UCPGraphicsApiReplacer
 {
   // idea? -> config struct is just pointer received from lua?
 
@@ -84,9 +84,9 @@ namespace UCPtoOpenGL
 
   /** complete **/
 
-  struct ToOpenGLConfig
+  struct GraphicsAPIReplacerConfig
   {
-    WindowConfig window;
+    WindowConfig graphicsCore;
     GraphicConfig graphic;
     ControlConfig control;
   };

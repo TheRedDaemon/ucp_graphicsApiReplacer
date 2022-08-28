@@ -3,15 +3,15 @@
 // includes that are always used with this
 #include "fakeDDClasses.h"
 
-namespace UCPtoOpenGL
+namespace UCPGraphicsApiReplacer
 {
   // forward declared
   struct SHCWindowOrMainStructFake;
   struct SHCBinkControlStructFake;
-  class WindowCore;
+  class GraphicsCore;
 
 
-  class CrusaderToOpenGL : public FakeDirectDraw
+  class CrusaderGraphicsApiReplacer : public FakeDirectDraw
   {
     // using func defines
     using BinkDDSurfaceType = unsigned int(__stdcall *)(IDirectDrawSurface* surfacePtr);
@@ -19,8 +19,8 @@ namespace UCPtoOpenGL
 
 
   public:
-    CrusaderToOpenGL(ToOpenGLConfig& conf);
-    virtual ~CrusaderToOpenGL();
+    CrusaderGraphicsApiReplacer(GraphicsAPIReplacerConfig& conf);
+    virtual ~CrusaderGraphicsApiReplacer();
 
     // that -> the stronghold object(whatever it is)
     void __thiscall createWindow(SHCWindowOrMainStructFake* that,
@@ -73,11 +73,11 @@ namespace UCPtoOpenGL
   private:  // variables
 
     // config:
-    ToOpenGLConfig& confRef;
+    GraphicsAPIReplacerConfig& confRef;
 
     // intern:
 
-    const std::unique_ptr<WindowCore> window;
+    const std::unique_ptr<GraphicsCore> graphicsCore;
 
     // contains data values
     struct

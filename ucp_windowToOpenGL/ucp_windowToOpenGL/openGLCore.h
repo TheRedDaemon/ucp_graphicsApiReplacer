@@ -1,45 +1,39 @@
 #pragma once
 
+// parent class
+#include "graphicsCore.h"
+
 // openGL
 #include "gl/gl.h"
 #include "gl/glext.h"
 #include "gl/wglext.h" // needed for windows OpenGL
 
-namespace UCPtoOpenGL
+namespace UCPGraphicsApiReplacer
 {
-  class WindowCore
+  class OpenGLCore final : public GraphicsCore
   {
   public:
-    WindowCore();
-    ~WindowCore();
+    OpenGLCore();
+    ~OpenGLCore() override;
 
-    void setConf(ToOpenGLConfig* conf)
-    {
-      confPtr = conf;
-    };
-
-    bool loadWGLFunctions(HINSTANCE hInstance);  // creates fake context to get OpenGL functions
-    bool createWindow(HWND win);
+    bool preWindowCreationCall(HINSTANCE hInstance) override;  // creates fake context to get OpenGL functions
+    bool createWindow(HWND win) override;
 
     // does nothing, only sets tex size
-    void setOnlyTexSize(Size<int> texSize);
+    void setOnlyTexSize(Size<int> texSize) override;
 
-    void adjustTexSizeAndViewport(Size<int> texSize, Size<int> viewSize, Size<double> scale);
+    void adjustTexSizeAndViewport(Size<int> texSize, Size<int> viewSize, Size<double> scale) override;
     
-    Size<int> getTexStrongSize()
+    Size<int> getTexStrongSize() override
     {
       return strongTexSize;
     }
     
-    HRESULT renderNextScreen(unsigned short* backData);
+    HRESULT renderNextScreen(unsigned short* backData) override;
 
-    void releaseContext(HWND hwnd);  // for a bit clean up
+    void releaseContext(HWND hwnd) override;  // for a bit clean up
 
   private:
-
-    // config:
-    ToOpenGLConfig* confPtr{ nullptr };
-    PixelFormat pixFormat{ ARGB_1555 };
 
     // wgl stuff -> both of these should actually get released and deleted at the end
     // TODO: should it work, create another hook to release them... or let lua do it

@@ -247,18 +247,19 @@
     <ClInclude Include="configUtil.h" />
     <ClInclude Include="controlAndDetour.h" />
     <ClInclude Include="fakeDDClasses.h" />
+    <ClInclude Include="graphicsCore.h" />
     <ClInclude Include="logHelper.h" />
     <ClInclude Include="shcRelatedStructures.h" />
-    <ClInclude Include="toOpenGLconfig.h" />
-    <ClInclude Include="crusaderToOpenGL.h" />
+    <ClInclude Include="graphicsApiReplacerConfig.h" />
+    <ClInclude Include="crusaderGraphicsApiReplacer.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="windowCore.h" />
+    <ClInclude Include="openGLCore.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="configUtil.cpp" />
     <ClCompile Include="control.cpp" />
-    <ClCompile Include="crusaderToOpenGL.cpp" />
+    <ClCompile Include="crusaderGraphicsApiReplacer.cpp" />
     <ClCompile Include="detourFuncs.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="fakeDDSurfaces.cpp" />
@@ -270,7 +271,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="windowCore.cpp" />
+    <ClCompile Include="openGLCore.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

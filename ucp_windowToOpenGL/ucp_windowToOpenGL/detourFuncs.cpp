@@ -2,9 +2,9 @@
 #include "pch.h"
 
 #include "controlAndDetour.h"
-#include "crusaderToOpenGL.h"
+#include "crusaderGraphicsApiReplacer.h"
 
-namespace UCPtoOpenGL
+namespace UCPGraphicsApiReplacer
 {
   namespace DetourFunc
   {
@@ -19,7 +19,7 @@ namespace UCPtoOpenGL
 
         mov     ecx, offset Control::ToOpenGL // mov toOpenGL this pointer
         
-        jmp     CrusaderToOpenGL::createWindow  // jump to actual func
+        jmp     CrusaderGraphicsApiReplacer::createWindow  // jump to actual func
       }
     }
 
@@ -40,7 +40,7 @@ namespace UCPtoOpenGL
 
         mov     ecx, offset Control::ToOpenGL // mov toOpenGL this pointer
 
-        jmp     CrusaderToOpenGL::drawInit  // jump to actual func
+        jmp     CrusaderGraphicsApiReplacer::drawInit  // jump to actual func
       }
     }
 
