@@ -53,7 +53,7 @@ namespace UCPGraphicsApiReplacer
 
     if (!RegisterClassA(&windowClass))
     {
-      Log(LOG_ERROR, "[graphicsApiReplacer]: [OpenGL]: Failed to create dummy graphicsCore class.");
+      Log(LOG_ERROR, "[graphicsApiReplacer]: [OpenGL]: Failed to create dummy window class.");
       return false;
     }
 
@@ -74,7 +74,7 @@ namespace UCPGraphicsApiReplacer
 
     if (!dummyWindow)
     {
-      Log(LOG_ERROR, "[graphicsApiReplacer]: [OpenGL]: Failed to create dummy graphicsCore.");
+      Log(LOG_ERROR, "[graphicsApiReplacer]: [OpenGL]: Failed to create dummy window.");
       return false;
     }
 

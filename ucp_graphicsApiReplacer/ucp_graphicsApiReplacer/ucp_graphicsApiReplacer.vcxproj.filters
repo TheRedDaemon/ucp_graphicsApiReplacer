@@ -48,6 +48,9 @@
     <ClInclude Include="graphicsCore.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="directX11Core.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -72,6 +75,9 @@
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="fakeDDSurfaces.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="directX11Core.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
   </ItemGroup>

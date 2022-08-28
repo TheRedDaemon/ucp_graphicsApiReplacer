@@ -86,7 +86,7 @@ namespace UCPGraphicsApiReplacer
 
   struct GraphicsAPIReplacerConfig
   {
-    WindowConfig graphicsCore;
+    WindowConfig window;
     GraphicConfig graphic;
     ControlConfig control;
   };

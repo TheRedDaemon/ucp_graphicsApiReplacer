@@ -210,23 +210,23 @@ namespace UCPGraphicsApiReplacer
       {
         if (field == "type")
         {
-          success = setIntField(L, 3, (int*)&Control::Conf.graphicsCore.type, 0, 3);
+          success = setIntField(L, 3, (int*)&Control::Conf.window.type, 0, 3);
         }
         else if (field == "width")
         {
-          success = setIntField(L, 3, &Control::Conf.graphicsCore.width, 0, 20000); // using ridiculous max 
+          success = setIntField(L, 3, &Control::Conf.window.width, 0, 20000); // using ridiculous max 
         }
         else if (field == "height")
         {
-          success = setIntField(L, 3, &Control::Conf.graphicsCore.height, 0, 20000); // using ridiculous max
+          success = setIntField(L, 3, &Control::Conf.window.height, 0, 20000); // using ridiculous max
         }
         else if (field == "pos")
         {
-          success = setIntField(L, 3, (int*)&Control::Conf.graphicsCore.pos, 0, 4);
+          success = setIntField(L, 3, (int*)&Control::Conf.window.pos, 0, 4);
         }
         else if (field == "continueOutOfFocus")
         {
-          success = setIntField(L, 3, (int*)&Control::Conf.graphicsCore.continueOutOfFocus, 0, 2);
+          success = setIntField(L, 3, (int*)&Control::Conf.window.continueOutOfFocus, 0, 2);
         }
         else
         {
