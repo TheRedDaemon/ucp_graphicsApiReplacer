@@ -27,9 +27,15 @@ public:
 
   virtual ~IUnknownWrapper()
   {
+    releaseIfPresent();
+  }
+
+  void releaseIfPresent()
+  {
     if (iUnknownPtr)
     {
       iUnknownPtr->Release(); // free
+      iUnknownPtr = nullptr;
     }
   }
 

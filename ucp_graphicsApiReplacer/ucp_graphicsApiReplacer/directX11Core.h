@@ -74,6 +74,11 @@ namespace UCPGraphicsApiReplacer
     IUnknownWrapper<ID3D11Buffer> indexBufferPtr{};
     IUnknownWrapper<ID3D11Buffer> constantPixelTransformBufferPtr{};
 
+    IUnknownWrapper<ID3D11SamplerState> samplerStatePtr{};
+
+    IUnknownWrapper<ID3D11Texture2D> gameTexturePtr{};
+    IUnknownWrapper<ID3D11ShaderResourceView> gameTextureViewPtr{};
+
     // helper functions
     void writeOutFeatureLevelString(D3D_FEATURE_LEVEL level);
 
@@ -81,5 +86,6 @@ namespace UCPGraphicsApiReplacer
     std::unique_ptr<CustomDebugMessage> getDebugMessage(int index);
     void receiveDirectXDebugMessages();
     bool initSystem();
+    void createRenderAndGameTexture();
   };
 }

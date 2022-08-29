@@ -128,24 +128,37 @@ namespace UCPGraphicsApiReplacer
           int3  vSomeVectorThatMayBeNeededByASpecificShader;
       };
 
+      SamplerState SimpleSampler
+      {
+          Filter = MIN_MAG_MIP_POINT ; // this needs to be settable
+          AddressU = Wrap;
+          AddressV = Wrap;
+      };
+
       /* vertex attributes go here to input to the vertex shader */
-      struct vertexShaderIn {
+      struct VertexShaderIn {
           float3 positionLocal : POS;
+          float2 tex : TEX;
       };
 
       /* outputs from vertex shader go here. can be interpolated to pixel shader */
-      struct vertexShaderOut {
+      struct VertexShaderOut {
           float4 positionClip : SV_POSITION; // required output of VS
+          float2 tex : TEXCOORD0;
       };
 
-      vertexShaderOut vertexShaderMain(vertexShaderIn input) {
-        vertexShaderOut output = (vertexShaderOut)0; // zero the memory first
+      VertexShaderOut vertexShaderMain(VertexShaderIn input) {
+        VertexShaderOut output;
         output.positionClip = float4(input.positionLocal, 1.0);
+        output.tex = input.tex;
         return output;
       }
 
-      float4 pixelShaderMain(vertexShaderOut input) : SV_TARGET {
-        return float4( 1.0, 0.0, 1.0, 1.0 ); // must return an RGBA colour
+      Texture2D gameTexture : register(t0);
+      SamplerState simpleSampler : register(s0);
+
+      float4 pixelShaderMain(VertexShaderOut input) : SV_TARGET {
+        return gameTexture.Sample(simpleSampler, input.tex); // must return an RGBA colour
       }
     )" };
 
@@ -221,10 +234,10 @@ namespace UCPGraphicsApiReplacer
     // INPUT LAYOUT
     D3D11_INPUT_ELEMENT_DESC inputElementDesc[] = {
       { "POS", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+      { "TEX", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
       /*
       { "COL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
       { "NOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-      { "TEX", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
       */
     };
     if (FAILED(devicePtr->CreateInputLayout(
@@ -242,16 +255,30 @@ namespace UCPGraphicsApiReplacer
 
     // data
     float vertexDataArray[]{
+      -1.0f, -1.0f,   // pos
+      0.0f, 1.0f,     // tex
+
+      1.0f, -1.0f,
+      1.0f, 1.0f,
+
+      -1.0f, 1.0f,
+      0.0f, 0.0f,
+      
+      1.0f, 1.0f,
+      1.0f, 0.0f,
+    };
+    UINT vertexStride{ 4 * sizeof(float) };
+    UINT vertexOffset{ 0 };
+    UINT vertexCount{ 4 };
+
+    int indexDataArray[]{ 0, 2, 1, 2, 3, 1 };
+
+    float textureCoordsArray[]{
       -1.0f, -1.0f,
       1.0f, -1.0f,
       -1.0f, 1.0f,
       1.0f, 1.0f,
     };
-    UINT vertexStride{ 2 * sizeof(float) };
-    UINT vertexOffset{ 0 };
-    UINT vertexCount{ 4 };
-
-    int indexDataArray[]{ 0, 2, 1, 2, 3, 1 };
 
     struct
     {
@@ -324,7 +351,19 @@ namespace UCPGraphicsApiReplacer
       Log(LOG_ERROR, "[graphicsApiReplacer] : [DirectX] : Unable to create constant color transform buffer. ");
       return false;
     }
-    
+
+    // create sampler state
+    D3D11_SAMPLER_DESC samplerDesc{};
+    samplerDesc.Filter = confPtr->graphic.filterLinear ? D3D11_FILTER_MIN_MAG_MIP_LINEAR : D3D11_FILTER_MIN_MAG_MIP_POINT;
+    samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+    samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+    samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+    if (FAILED(devicePtr->CreateSamplerState(&samplerDesc, samplerStatePtr.expose())))
+    {
+      receiveDirectXDebugMessages();
+      Log(LOG_ERROR, "[graphicsApiReplacer] : [DirectX] : Unable to create sampler state. ");
+      return false;
+    }
 
     // set input assembler
     deviceContextPtr->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -342,9 +381,53 @@ namespace UCPGraphicsApiReplacer
     deviceContextPtr->PSSetShader(pixelShaderPtr.get(), NULL, 0);
 
     deviceContextPtr->PSSetConstantBuffers(0, 1, constantPixelTransformBufferPtr.expose());
+    deviceContextPtr->PSSetSamplers(0, 1, samplerStatePtr.expose());
 
     receiveDirectXDebugMessages();
     return true;
+  }
+
+
+  void UCPGraphicsApiReplacer::DirectX11Core::createRenderAndGameTexture()
+  {
+    if (gameTexturePtr)
+    {
+      gameTexturePtr->Release();
+      *gameTexturePtr.expose() = nullptr;
+    }
+
+    D3D11_TEXTURE2D_DESC desc{};
+    desc.Width = strongTexSize.w;
+    desc.Height = strongTexSize.h;
+    desc.MipLevels = desc.ArraySize = 1;
+    desc.Format = colorFormat;
+    desc.SampleDesc.Count = 1;
+    desc.Usage = D3D11_USAGE_DYNAMIC;
+    desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+    desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+    if (FAILED(devicePtr->CreateTexture2D(&desc, NULL, gameTexturePtr.expose())))
+    {
+      receiveDirectXDebugMessages();
+      Log(LOG_FATAL, "[graphicsApiReplacer] : [DirectX] : Unable to create game texture resource. "); // needs to crash
+    }
+
+    if (gameTextureViewPtr)
+    {
+      gameTextureViewPtr->Release();
+    }
+
+    D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc{};
+    SRVDesc.Format = colorFormat;
+    SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    SRVDesc.Texture2D.MipLevels = 1;
+    if (FAILED(devicePtr->CreateShaderResourceView(gameTexturePtr.get(), &SRVDesc, gameTextureViewPtr.expose())))
+    {
+      receiveDirectXDebugMessages();
+      Log(LOG_FATAL, "[graphicsApiReplacer] : [DirectX] : Unable to create game texture view. "); // needs to crash
+    }
+
+    deviceContextPtr->PSSetShaderResources(0, 1, gameTextureViewPtr.expose());
   }
 
 
@@ -490,6 +573,31 @@ namespace UCPGraphicsApiReplacer
   // source: https://stackoverflow.com/a/64808444
   HRESULT DirectX11Core::renderNextScreen(unsigned short* backData)
   {
+    // update texture, source: https://docs.microsoft.com/en-us/windows/win32/direct3d11/how-to--use-dynamic-resources
+    D3D11_MAPPED_SUBRESOURCE mappedResource{};
+    //  Disable GPU access to the vertex buffer data.
+    if (SUCCEEDED(deviceContextPtr->Map(gameTexturePtr.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource)))
+    {
+      //  Update the vertex buffer here.
+      size_t bytesOfOneLine{ static_cast<size_t>(strongTexSize.w * 2) };
+      unsigned short* sourceRunPtr{ backData };
+      unsigned char* destRunPtr{ (unsigned char*)mappedResource.pData };
+      for (size_t i{ 0 }; i < strongTexSize.h; i++)
+      {
+        memcpy(destRunPtr, sourceRunPtr, bytesOfOneLine);
+        sourceRunPtr += strongTexSize.w;
+        destRunPtr += mappedResource.RowPitch;
+      }
+      //  Re-enable GPU access to the vertex buffer data.
+      deviceContextPtr->Unmap(gameTexturePtr.get(), 0);
+    }
+    else
+    {
+      receiveDirectXDebugMessages();
+      Log(LOG_ERROR, "[graphicsApiReplacer]: [DirectX]: Unable to write to game texture.");
+    }
+
+
     // Add this before each rendering
     deviceContextPtr->OMSetRenderTargets(1, renderTargetViewPtr.expose(), 0 /*spZView.Get()*/); // no stencil, and actually no array, I just get the ptr to the ptr
 
@@ -522,17 +630,26 @@ namespace UCPGraphicsApiReplacer
       0.0f,
       1.0f };
     deviceContextPtr->RSSetViewports(1, &viewport);
+    strongTexSize = texSize;
 
     float sW{ static_cast<float>(scale.w) };
     float sH{ static_cast<float>(scale.h) };
-    FLOAT newPos[]{
-      -1.0f * sW, -1.0f * sH,
+    FLOAT newBuffer[]{
+      -1.0f * sW, -1.0f * sH, // pos
+      0.0f, 1.0f,             // tex
+      
       1.0f * sW, -1.0f * sH,
-      -1.0f * sW, 1.0f * sH,
-      1.0f * sW, 1.0f * sH
-    };
+      1.0f, 1.0f,
 
-    deviceContextPtr->UpdateSubresource(vertexBufferPtr.get(), 0, nullptr, newPos, 0, 0);
+      -1.0f * sW, 1.0f * sH,
+      0.0f, 0.0f,
+
+      1.0f * sW, 1.0f * sH,
+      1.0f, 0.0f,
+    };
+    deviceContextPtr->UpdateSubresource(vertexBufferPtr.get(), 0, nullptr, newBuffer, 0, 0);
+
+    createRenderAndGameTexture();
     receiveDirectXDebugMessages();
   }
 
