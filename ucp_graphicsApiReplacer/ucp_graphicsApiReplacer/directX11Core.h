@@ -72,7 +72,6 @@ namespace UCPGraphicsApiReplacer
 
     IUnknownWrapper<ID3D11Buffer> vertexBufferPtr{};
     IUnknownWrapper<ID3D11Buffer> indexBufferPtr{};
-    IUnknownWrapper<ID3D11Buffer> constantPixelTransformBufferPtr{};
 
     IUnknownWrapper<ID3D11SamplerState> samplerStatePtr{};
 

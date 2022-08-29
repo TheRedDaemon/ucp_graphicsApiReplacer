@@ -71,7 +71,7 @@ namespace UCPGraphicsApiReplacer
     UINT64 messageCount{ infoQueue->GetNumStoredMessages() };
     for (UINT64 i = 0; i < messageCount; i++)
     {
-      std::unique_ptr<CustomDebugMessage> message{ getDebugMessage(i) };
+      std::unique_ptr<CustomDebugMessage> message{ getDebugMessage(static_cast<int>(i)) };
 
       LogLevel levelToUse{ LOG_NONE };
       switch (message->Severity)
@@ -123,11 +123,6 @@ namespace UCPGraphicsApiReplacer
   bool DirectX11Core::initSystem()
   {
     const char shaderCode[]{ R"(
-      cbuffer DRAWING_HELPER : register(b0) {
-          float reverseTransform;
-          int3  vSomeVectorThatMayBeNeededByASpecificShader;
-      };
-
       SamplerState SimpleSampler
       {
           Filter = MIN_MAG_MIP_POINT ; // this needs to be settable
@@ -269,7 +264,6 @@ namespace UCPGraphicsApiReplacer
     };
     UINT vertexStride{ 4 * sizeof(float) };
     UINT vertexOffset{ 0 };
-    UINT vertexCount{ 4 };
 
     int indexDataArray[]{ 0, 2, 1, 2, 3, 1 };
 
@@ -279,20 +273,6 @@ namespace UCPGraphicsApiReplacer
       -1.0f, 1.0f,
       1.0f, 1.0f,
     };
-
-    struct
-    {
-      float reverseTransform{ 1.0 / 0xFF };
-      int colorTransformConstant[3]{ 0, 0, 0b0000000000011111 };
-    } constantValueStruct;
-    if (colorFormat == RGB_565) {
-      constantValueStruct.colorTransformConstant[0] = 0b1111100000000000;
-      constantValueStruct.colorTransformConstant[1] = 0b0000011111100000;
-    }
-    else {
-      constantValueStruct.colorTransformConstant[0] = 0b0111110000000000;
-      constantValueStruct.colorTransformConstant[1] = 0b0000001111100000;
-    }
 
     // create Vertex buffer
     D3D11_BUFFER_DESC vertexBuffDescr{};
@@ -330,28 +310,6 @@ namespace UCPGraphicsApiReplacer
       return false;
     }
 
-    // create constant pixel transform buffer
-    D3D11_BUFFER_DESC cbDesc{};
-    cbDesc.ByteWidth = sizeof(constantValueStruct);
-    cbDesc.Usage = D3D11_USAGE_IMMUTABLE;
-    cbDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-
-    // Fill in the subresource data.
-    D3D11_SUBRESOURCE_DATA constData{};
-    constData.pSysMem = &constantValueStruct;
-
-    // Create the buffer.
-    if (FAILED(devicePtr->CreateBuffer(
-      &cbDesc,
-      &constData,
-      constantPixelTransformBufferPtr.expose()
-    )))
-    {
-      receiveDirectXDebugMessages();
-      Log(LOG_ERROR, "[graphicsApiReplacer] : [DirectX] : Unable to create constant color transform buffer. ");
-      return false;
-    }
-
     // create sampler state
     D3D11_SAMPLER_DESC samplerDesc{};
     samplerDesc.Filter = confPtr->graphic.filterLinear ? D3D11_FILTER_MIN_MAG_MIP_LINEAR : D3D11_FILTER_MIN_MAG_MIP_POINT;
@@ -380,7 +338,6 @@ namespace UCPGraphicsApiReplacer
     deviceContextPtr->VSSetShader(vertexShaderPtr.get(), NULL, 0);
     deviceContextPtr->PSSetShader(pixelShaderPtr.get(), NULL, 0);
 
-    deviceContextPtr->PSSetConstantBuffers(0, 1, constantPixelTransformBufferPtr.expose());
     deviceContextPtr->PSSetSamplers(0, 1, samplerStatePtr.expose());
 
     receiveDirectXDebugMessages();
@@ -390,11 +347,7 @@ namespace UCPGraphicsApiReplacer
 
   void UCPGraphicsApiReplacer::DirectX11Core::createRenderAndGameTexture()
   {
-    if (gameTexturePtr)
-    {
-      gameTexturePtr->Release();
-      *gameTexturePtr.expose() = nullptr;
-    }
+    gameTexturePtr.releaseIfPresent();
 
     D3D11_TEXTURE2D_DESC desc{};
     desc.Width = strongTexSize.w;
@@ -412,10 +365,7 @@ namespace UCPGraphicsApiReplacer
       Log(LOG_FATAL, "[graphicsApiReplacer] : [DirectX] : Unable to create game texture resource. "); // needs to crash
     }
 
-    if (gameTextureViewPtr)
-    {
-      gameTextureViewPtr->Release();
-    }
+    gameTextureViewPtr.releaseIfPresent();
 
     D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc{};
     SRVDesc.Format = colorFormat;
@@ -435,7 +385,7 @@ namespace UCPGraphicsApiReplacer
   DirectX11Core::DirectX11Core() {};
   DirectX11Core::~DirectX11Core() {};
 
-  bool DirectX11Core::preWindowCreationCall(HINSTANCE hInstance)
+  bool DirectX11Core::preWindowCreationCall(HINSTANCE)
   {
     return true;  // unused
   }
@@ -580,9 +530,10 @@ namespace UCPGraphicsApiReplacer
     {
       //  Update the vertex buffer here.
       size_t bytesOfOneLine{ static_cast<size_t>(strongTexSize.w * 2) };
+      size_t numberOfLines{ static_cast<size_t>(strongTexSize.h) };
       unsigned short* sourceRunPtr{ backData };
       unsigned char* destRunPtr{ (unsigned char*)mappedResource.pData };
-      for (size_t i{ 0 }; i < strongTexSize.h; i++)
+      for (size_t i{ 0 }; i < numberOfLines; i++)
       {
         memcpy(destRunPtr, sourceRunPtr, bytesOfOneLine);
         sourceRunPtr += strongTexSize.w;
@@ -653,7 +604,7 @@ namespace UCPGraphicsApiReplacer
     receiveDirectXDebugMessages();
   }
 
-  void DirectX11Core::releaseContext(HWND hwnd)
+  void DirectX11Core::releaseContext(HWND)
   {
     // does nothing, the interfaces should release
   }
