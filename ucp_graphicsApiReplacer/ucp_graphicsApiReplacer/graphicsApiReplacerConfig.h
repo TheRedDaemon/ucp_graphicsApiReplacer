@@ -46,6 +46,12 @@ namespace UCPGraphicsApiReplacer
 
   /** graphics **/
 
+  enum GraphicsApi
+  {
+    GRAPHICS_API_DIRECT_X,
+    GRAPHICS_API_OPEN_GL,
+  };
+
   enum PixelFormat
   {
     ARGB_1555 = 0x555,
@@ -61,6 +67,8 @@ namespace UCPGraphicsApiReplacer
 
   struct GraphicConfig
   {
+    GraphicsApi graphicsApi{ GRAPHICS_API_DIRECT_X };
+
     bool filterLinear{ true };  // if the texture filter should be linear, otherwise nearest
     bool vsync{ true }; // there might be issue with the win10 screen composition...
     bool waitWithGLFinish{ false }; // calls glFinish after swap -> also seems to prevent tearing, do not know what is better...

@@ -193,20 +193,21 @@ exports.enable = function(self, moduleConfig, globalConfig)
       {
         window
         {
-          type                -- default: window      -- see graphicsApiReplacer.windowType table
+          type                -- default: window      -- see graphicsApiReplacer.window.type table
           width               -- default: 1280;       -- num >= 0 (and <= 20000)
           height              -- default: 720;        -- num >= 0 (and <= 20000)
-          pos                 -- default: middle      -- see graphicsApiReplacer.windowPos table
-          continueOutOfFocus  -- default: pause       -- see graphicsApiReplacer.windowContinue table
+          pos                 -- default: middle      -- see graphicsApiReplacer.window.pos table
+          continueOutOfFocus  -- default: pause       -- see graphicsApiReplacer.window.continueOutOfFocus table
         }
         
         graphic
         {
+          api                 -- default: DirectX                 -- see graphicsApiReplacer.graphic.api table
           filterLinear        -- default: true        -- bool     -- if the texture filter should be linear, otherwise nearest
-          vsync               -- default: true        -- bool     -- most likely only relevant for fullscreen modes
-          waitWithGLFinish    -- default: false       -- bool     -- calls glFinish after swap -> also seems to prevent tearing, do not know what is better...
-          pixFormat           -- default: argb1555                -- see graphicsApiReplacer.pixelFormat table
-          debug               -- default: none                    -- see graphicsApiReplacer.debugOpenGL table
+          vsync               -- default: true        -- bool     -- DirectX -> Works, OpenGL -> window mode enforces VSync
+          waitWithGLFinish    -- default: false       -- bool     -- DirectX -> No effect, OpenGL -> calls glFinish after swap, to no effect?
+          pixFormat           -- default: argb1555                -- see graphicsApiReplacer.graphic.pixFormat table
+          debug               -- default: none                    -- see graphicsApiReplacer.graphic.debug table
         }
         
         control
@@ -228,11 +229,12 @@ exports.enable = function(self, moduleConfig, globalConfig)
           - There is still stuff going on that I do not understand.
               - Crusader still can execute a few window functions. It does not seems to have much of an effect.
               - Sometimes the screen breaks during a switch. This can then only be seen in the minimized window in windows, not in-game. So no real effect.
-              - Sometimes the extreme effect list goes missing... bug of the new system, or vanilla?
+              - Sometimes the extreme effect list goes missing... bug of the new system, or vanilla? -> Vanilla
               
       Potential TODO:
           - One thing Crusader is still allowed to do is "SetFocus".
               - Call might be redundant, but maybe removing this prevents even more unnecessary actions?
+              - Future Me: I am not sure if this is still relevant.
   ]]--
 
 
@@ -270,8 +272,13 @@ exports.enable = function(self, moduleConfig, globalConfig)
 
   graphicsApiReplacer.graphic.debug = {
     none                  =   0,
-    enabled               =   1,  -- just enabled debug messages, might have no effect        
-    debugContextEnabled   =   2,  -- tries to create a debug context, this should produce messages
+    enabled               =   1,  -- DirectX -> Enabled Debug Mode, OpenGL -> just enabled debug messages, might have no effect        
+    debugContextEnabled   =   2,  -- DirectX -> Same as enabled, OpenGL -> tries to create a debug context, this should produce messages
+  }
+  
+  graphicsApiReplacer.graphic.api = {
+    DirectX     =   0,  -- far more compatible with stuff, but requires at least Windows 8
+    OpenGL      =   1,  -- legacy, even more unlikely to receive new features and broken in some ways, but proven
   }
 
   -- do actual configuration

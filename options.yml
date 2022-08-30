@@ -30,6 +30,10 @@ graphic:
   type: category
   description: Options for the display system
   children:
+    api:
+      type: choice
+      choices: [DirectX, OpenGL]
+      default: DirectX
     filterLinear:
       type: boolean
       default: true

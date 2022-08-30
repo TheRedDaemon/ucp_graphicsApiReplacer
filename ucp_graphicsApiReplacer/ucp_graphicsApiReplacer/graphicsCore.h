@@ -28,6 +28,8 @@ namespace UCPGraphicsApiReplacer
 
     virtual void releaseContext(HWND hwnd) = 0;  // for a bit clean up
 
+    static std::unique_ptr<GraphicsCore> GetGraphicsCore(GraphicsAPIReplacerConfig& conf);
+
   protected:
 
     // config:

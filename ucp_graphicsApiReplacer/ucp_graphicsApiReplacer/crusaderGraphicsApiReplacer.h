@@ -77,7 +77,7 @@ namespace UCPGraphicsApiReplacer
 
     // intern:
 
-    const std::unique_ptr<GraphicsCore> graphicsCore;
+    std::unique_ptr<GraphicsCore> graphicsCore;
 
     // contains data values
     struct

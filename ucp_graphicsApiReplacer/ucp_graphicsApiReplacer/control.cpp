@@ -235,7 +235,11 @@ namespace UCPGraphicsApiReplacer
       }
       else if (option == "graphic")
       {
-        if (field == "filterLinear")
+        if (field == "api")
+        {
+          success = setIntField(L, 3, (int*)&Control::Conf.graphic.graphicsApi, 0, 1);
+        }
+        else if (field == "filterLinear")
         {
           success = setBoolField(L, 3, &Control::Conf.graphic.filterLinear);
         }

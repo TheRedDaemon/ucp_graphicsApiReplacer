@@ -266,6 +266,7 @@
     <ClCompile Include="directX11Core.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="fakeDDSurfaces.cpp" />
+    <ClCompile Include="graphicsCore.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='LocalDebug|Win32'">Create</PrecompiledHeader>

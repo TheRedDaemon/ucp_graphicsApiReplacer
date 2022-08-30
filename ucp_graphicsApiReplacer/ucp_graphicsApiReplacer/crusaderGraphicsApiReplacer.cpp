@@ -2,8 +2,7 @@
 #include "pch.h"
 
 
-#include "openGLCore.h"
-#include "directX11Core.h"
+#include "graphicsCore.h"
 #include "shcRelatedStructures.h"
 #include "crusaderGraphicsApiReplacer.h"
 #include "configUtil.h"
@@ -18,7 +17,7 @@
 
 namespace UCPGraphicsApiReplacer
 {
-  CrusaderGraphicsApiReplacer::CrusaderGraphicsApiReplacer(GraphicsAPIReplacerConfig& conf) : confRef{ conf }, graphicsCore{ std::make_unique<DirectX11Core>() } {};
+  CrusaderGraphicsApiReplacer::CrusaderGraphicsApiReplacer(GraphicsAPIReplacerConfig& conf) : confRef{ conf } {};
   CrusaderGraphicsApiReplacer::~CrusaderGraphicsApiReplacer() {};
 
 
@@ -53,6 +52,9 @@ namespace UCPGraphicsApiReplacer
   void __thiscall CrusaderGraphicsApiReplacer::createWindow(SHCWindowOrMainStructFake* that,
     HINSTANCE hInstance, LPSTR windowName, unsigned int cursorResource)
   {
+    // load graphics lib now, since first call and config present
+    graphicsCore = GraphicsCore::GetGraphicsCore(confRef);
+
     // removed original shc window init, if interested, check older git versions
 
     // keep ref
