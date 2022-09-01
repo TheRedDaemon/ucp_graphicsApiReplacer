@@ -1,7 +1,7 @@
 # UCP Graphics API Replacer
 
 This repository contains a module for the "Unofficial Crusader Patch Version 3" (UCP3), a modification for Stronghold Crusader.
-The module allows to switch the displaying system to a more modern that uses OpenGL.
+The module allows to switch the displaying system to a more modern that uses either DirectX or OpenGL.
 
 ### Motivation and Plan
 
@@ -14,7 +14,7 @@ Crusader Version 1.41 additionally only works in a fullscreen mode, which makes 
 The module intends to provide a custom made solution explicitly for Crusader that provides better compatibility and user experience.
 This is archived by modifying and taking control of the window creation, the few used DirectDraw calls and certain input functions.
 At its core, the module pretends to be DirectDraw and provides the memory for Crusader to draw its frames in.
-The result is then treated as a texture and displayed using [OpenGL](https://www.opengl.org/).
+The result is then treated as a texture and displayed using either [DirectX 11](https://en.wikipedia.org/wiki/DirectX) or [OpenGL](https://www.opengl.org/).
 Especially mouse inputs are modified to fit the changed display.
 
 ### Usage
@@ -32,7 +32,7 @@ The module has the [winProcHandler](https://github.com/TheRedDaemon/ucp_winProcH
 
 The module provides multiple options. Some things are general:
 * The in-game resolution will only set the render resolution. The window resolution needs to be set through this options.
-* The game resolution ratio is preserved. Empty spaces in the window will stay black.
+* The game resolution ratio is preserved. Empty spaces in the window will stay black. Note, that these parts are still part of the rendered screen, so they will appear in recordings.
 * If one of the three main mouse keys is held, the cursor is clipped to the game part of the window.
 * Option changes currently require a restart.
 
@@ -64,9 +64,13 @@ The following list will go through every option and explain it brief. The struct
     * *render* - The game will run as if it has the focus.
 
 
-* **graphic** - Options for OpenGL.
+* **graphic** - Options for DirectX and OpenGL.
 
-  * ***filterLinear*** - A linear texture filter is applied. Might improve picture if window and render resolution are not equal. Default: *true*
+  * ***api*** - The graphics api to use. Default: *DirectX*
+    * *DirectX* - Recommended. Uses DirectX 11. Turned out far more compatible with overlays and recordings.
+    * *OpenGL* - Deprecated. Uses OpenGL. Potentially easier to get working, but issues with recordings and overlays.
+
+  * ***filterLinear*** - A linear texture filter is applied. Might improve picture if window and render resolution is not equal. Default: *true*
     * *true* or *false*
 
   * ***vsync*** - Activates VSync. Reduces number of rendered frames to display frequency. Default: *true*
@@ -76,17 +80,21 @@ The following list will go through every option and explain it brief. The struct
         As a kind of hack, setting VSync will therefore improve the experience by slowing down the scrolling on low resolutions,
         since less frames are rendered.
 
-  * ***waitWithGLFinish*** - Calls glFinish after screen buffer swap. Might have no effect whatsoever. Possible subject of removal. Default: *false*
+  * ***waitWithGLFinish*** - Calls glFinish after screen buffer swap if OpenGL is used. Might have no effect whatsoever. Possible subject of removal. No effect on DirectX. Default: *false*
     * *true* or *false*
 
   * ***pixFormat*** - Pixel color format. Transformed to 32 bit RGBA anyway, but sets the software renderer option. Default: *argb1555*
     * *argb1555* - Red 5 bit, Green 5 bit, Blue 5 bit. Likely the native texture format.
     * *rgb565* - Red 5 bit, Green 6 bit, Blue 5 bit.
 
-  * ***debug*** - Activates OpenGL debug messages. Should be off for normal usage. Default: *none*
+  * ***debug*** - Activates debug messages. Should be off for normal usage. At least in case of DirectX it requires Debug libraries. Default: *none*
     * *none* - No messages.
-    * *enabled* - Activates debug messages without debug context. Might produce only a few or no messages.
-    * *debugContextEnabled* - Creates a debug context that provides all messages.
+    * *enabled*:
+      * DirectX: Activate debug messages. Requires installed debug libraries.
+      * OpenGL: Activates debug messages without debug context. Might produce only a few or no messages.
+    * *debugContextEnabled*:
+      * DirectX: Activate debug messages. Same as *enabled*. No additional effect.
+      * OpenGL: Creates a debug context that provides all messages.
 
 
 * **control** - Options for the input control.
