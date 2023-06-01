@@ -3,7 +3,6 @@
 
 // lua
 #include "lua.hpp"
-
 #include "controlAndDetour.h"
 
 // winProcHandler
@@ -11,15 +10,17 @@
 
 namespace UCPGraphicsApiReplacer
 {
+  // link log helper function to UCP logging
+  void Log(LogLevel level, const char* message)
+  {
+    ucp_log(static_cast<ucp_NamedVerbosity>(level), message);
+  }
 
   // lua module load
   extern "C" __declspec(dllexport) int __cdecl luaopen_graphicsApiReplacer(lua_State * L)
   {
-    // prepare Lua Logging Roundtrip
-    LuaFunc::getLoggingFunction(L);
-
     // import the lua functions from winProcHandler
-    if (!WinProcHeader::initModuleFunctions(L))
+    if (!WinProcHeader::initModuleFunctions())
     {
       Log(LOG_FATAL, "[graphicsApiReplacer]: Unable to receive functions from 'winProcHandler'.");
     }
