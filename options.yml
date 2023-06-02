@@ -1,66 +1,240 @@
-window:
-  type:
-    type: choice
-    choices: [window, borderlessWindow, borderlessFullscreen]
-    default: window
-  width:
-    type: integer
-    range:
-    min: 0
-    max: 20000
-    default: 1280
-  height:
-    type: integer
-    range:
-    min: 0
-    max: 20000
-    default: 720
-  pos:
-    type: choice
-    choices: [middle, topLeft, bottomLeft, topRight, bottomRight]
-    default: middle
-  continueOutOfFocus:
-    type: choice
-    choices: [pause, continue, render]
-    default: pause
-graphic:
-  api:
-    type: choice
-    choices: [DirectX, OpenGL]
-    default: DirectX
-  filterLinear:
-    type: boolean
+- category: [window]
+  name: type
+  header: '{{window.type}}'
+  text: '{{window.type_descr}}'
+  hasHeader: true
+  type: string
+  display: UCP2RadioGroup
+  url: graphicsApiReplacer.window.type
+  choices:
+  - name: window
+    text: '{{window.type_window}}'
+  - name: borderlessWindow
+    text: '{{window.type_borderlessWindow}}'
+  - name: borderlessFullscreen
+    text: '{{window.type_borderlessFullscreen}}'
+  value:
+    default:
+      enabled: true
+      choice: 'window'
+      
+- category: [window]
+  name: width
+  header: '{{window.width}}'
+  text: '{{window.width_descr}}'
+  hasHeader: true
+  type: integer
+  display: UCP2Slider
+  url: graphicsApiReplacer.window.width
+  min: 0
+  max: 20000
+  step: 1
+  value:
+    default:
+      enabled: true
+      sliderValue: 1280
+      
+- category: [window]
+  name: height
+  header: '{{window.height}}'
+  text: '{{window.height_descr}}'
+  hasHeader: true
+  type: integer
+  display: UCP2Slider
+  url: graphicsApiReplacer.window.height
+  min: 0
+  max: 20000
+  step: 1
+  value:
+    default:
+      enabled: true
+      sliderValue: 720
+      
+- category: [window]
+  name: pos
+  header: '{{window.pos}}'
+  text: '{{window.pos_descr}}'
+  hasHeader: true
+  type: string
+  display: UCP2RadioGroup
+  url: graphicsApiReplacer.window.pos
+  choices:
+  - name: middle
+    text: '{{window.pos_middle}}'
+  - name: topLeft
+    text: '{{window.pos_topLeft}}'
+  - name: bottomLeft
+    text: '{{window.pos_bottomLeft}}'
+  - name: topRight
+    text: '{{window.pos_topRight}}'
+  - name: bottomRight
+    text: '{{window.pos_bottomRight}}'
+  value:
+    default:
+      enabled: true
+      choice: 'middle'
+      
+- category: [window]
+  name: continueOutOfFocus
+  header: '{{window.continueOutOfFocus}}'
+  text: '{{window.continueOutOfFocus_descr}}'
+  hasHeader: true
+  type: string
+  display: UCP2RadioGroup
+  url: graphicsApiReplacer.window.continueOutOfFocus
+  choices:
+  - name: pause
+    text: '{{window.continueOutOfFocus_pause}}'
+  - name: continue
+    text: '{{window.continueOutOfFocus_continue}}'
+  - name: render
+    text: '{{window.continueOutOfFocus_render}}'
+  value:
+    default:
+      enabled: true
+      choice: 'pause'
+
+
+- category: [graphic]
+  name: api
+  header: '{{graphic.api}}'
+  text: '{{graphic.api_descr}}'
+  hasHeader: true
+  type: string
+  display: UCP2RadioGroup
+  url: graphicsApiReplacer.graphic.api
+  choices:
+  - name: DirectX
+    text: '{{graphic.api_DirectX}}'
+  - name: OpenGL
+    text: '{{graphic.api_OpenGL}}'
+  value:
+    default:
+      enabled: true
+      choice: 'DirectX'
+      
+- category: [graphic]
+  name: filterLinear
+  header: '{{graphic.filterLinear}}'
+  text: '{{graphic.filterLinear_descr}}'
+  hasHeader: true
+  type: boolean
+  display: UCP2Switch
+  url: graphicsApiReplacer.graphic.filterLinear
+  value:
     default: true
-  vsync:
-    type: boolean
+    
+- category: [graphic]
+  name: vsync
+  header: '{{graphic.vsync}}'
+  text: '{{graphic.vsync_descr}}'
+  hasHeader: true
+  type: boolean
+  display: UCP2Switch
+  url: graphicsApiReplacer.graphic.vsync
+  value:
     default: true
-  waitWithGLFinish:
-    type: boolean
+
+- category: [graphic]
+  name: waitWithGLFinish
+  header: '{{graphic.waitWithGLFinish}}'
+  text: '{{graphic.waitWithGLFinish_descr}}'
+  hasHeader: true
+  type: boolean
+  display: UCP2Switch
+  url: graphicsApiReplacer.graphic.waitWithGLFinish
+  value:
     default: false
-  pixFormat:
-    type: choice
-    choices: [argb1555, rgb565]
-    default: argb1555
-  debug:
-    type: choice
-    choices: [none, enabled, debugContextEnabled]
-    default: none
-control:
-  clipCursor:
-    type: boolean
+    
+- category: [graphic]
+  name: pixFormat
+  header: '{{graphic.pixFormat}}'
+  text: '{{graphic.pixFormat_descr}}'
+  hasHeader: true
+  type: string
+  display: UCP2RadioGroup
+  url: graphicsApiReplacer.graphic.pixFormat
+  choices:
+  - name: argb1555
+    text: '{{graphic.pixFormat_argb1555}}'
+  - name: rgb565
+    text: '{{graphic.pixFormat_rgb565}}'
+  value:
+    default:
+      enabled: true
+      choice: 'argb1555'
+      
+- category: [graphic]
+  name: debug
+  header: '{{graphic.debug}}'
+  text: '{{graphic.debug_descr}}'
+  hasHeader: true
+  type: string
+  display: UCP2RadioGroup
+  url: graphicsApiReplacer.graphic.debug
+  choices:
+  - name: none
+    text: '{{graphic.debug_none}}'
+  - name: enabled
+    text: '{{graphic.debug_enabled}}'
+  - name: debugContextEnabled
+    text: '{{graphic.debug_debugContextEnabled}}'    
+  value:
+    default:
+      enabled: true
+      choice: 'none'
+
+
+- category: [control]
+  name: clipCursor
+  header: '{{control.clipCursor}}'
+  text: '{{control.clipCursor_descr}}'
+  hasHeader: true
+  type: boolean
+  display: UCP2Switch
+  url: graphicsApiReplacer.control.clipCursor
+  value:
     default: true
-  scrollActive:
-    type: boolean
+    
+- category: [control]
+  name: scrollActive
+  header: '{{control.scrollActive}}'
+  text: '{{control.scrollActive_descr}}'
+  hasHeader: true
+  type: boolean
+  display: UCP2Switch
+  url: graphicsApiReplacer.control.scrollActive
+  value:
     default: true
-  margin:
-    type: integer
-    range:
-      min: 0
-      max: 1000
-    default: 0
-  padding:
-    type: integer
-    range:
-      min: 0
-      max: 1000
-    default: 0
+    
+- category: [control]
+  name: margin
+  header: '{{control.margin}}'
+  text: '{{control.margin_descr}}'
+  hasHeader: true
+  type: integer
+  display: UCP2Slider
+  url: graphicsApiReplacer.control.margin
+  min: 0
+  max: 1000
+  step: 1
+  value:
+    default:
+      enabled: true
+      sliderValue: 0
+      
+- category: [control]
+  name: padding
+  header: '{{control.padding}}'
+  text: '{{control.padding_descr}}'
+  hasHeader: true
+  type: integer
+  display: UCP2Slider
+  url: graphicsApiReplacer.control.padding
+  min: 0
+  max: 1000
+  step: 1
+  value:
+    default:
+      enabled: true
+      sliderValue: 0
