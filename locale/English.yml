@@ -1,4 +1,8 @@
-Name: Graphics API Replacer
+general:
+general_descr:
+
+window:
+window_descr:
 
 window.type:
 window.type_descr:
@@ -26,6 +30,9 @@ window.continueOutOfFocus_pause:
 window.continueOutOfFocus_continue:
 window.continueOutOfFocus_render:
 
+graphic:
+graphic_descr:
+
 graphic.api:
 graphic.api_descr:
 graphic.api_DirectX:
@@ -50,6 +57,9 @@ graphic.debug_descr:
 graphic.debug_none:
 graphic.debug_enabled:
 graphic.debug_debugContextEnabled:
+
+control:
+control_descr:
 
 control.clipCursor:
 control.clipCursor_descr:

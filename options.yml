@@ -1,240 +1,216 @@
-- category: [window]
-  name: type
-  header: '{{window.type}}'
-  text: '{{window.type_descr}}'
+- display: GroupBox
+  header: '{{general}}'
+  text: '{{general_descr}}'
   hasHeader: true
-  type: string
-  display: UCP2RadioGroup
-  url: graphicsApiReplacer.window.type
-  choices:
-  - name: window
-    text: '{{window.type_window}}'
-  - name: borderlessWindow
-    text: '{{window.type_borderlessWindow}}'
-  - name: borderlessFullscreen
-    text: '{{window.type_borderlessFullscreen}}'
-  value:
-    default:
-      enabled: true
-      choice: 'window'
-      
-- category: [window]
-  name: width
-  header: '{{window.width}}'
-  text: '{{window.width_descr}}'
-  hasHeader: true
-  type: integer
-  display: UCP2Slider
-  url: graphicsApiReplacer.window.width
-  min: 0
-  max: 20000
-  step: 1
-  value:
-    default:
-      enabled: true
-      sliderValue: 1280
-      
-- category: [window]
-  name: height
-  header: '{{window.height}}'
-  text: '{{window.height_descr}}'
-  hasHeader: true
-  type: integer
-  display: UCP2Slider
-  url: graphicsApiReplacer.window.height
-  min: 0
-  max: 20000
-  step: 1
-  value:
-    default:
-      enabled: true
-      sliderValue: 720
-      
-- category: [window]
-  name: pos
-  header: '{{window.pos}}'
-  text: '{{window.pos_descr}}'
-  hasHeader: true
-  type: string
-  display: UCP2RadioGroup
-  url: graphicsApiReplacer.window.pos
-  choices:
-  - name: middle
-    text: '{{window.pos_middle}}'
-  - name: topLeft
-    text: '{{window.pos_topLeft}}'
-  - name: bottomLeft
-    text: '{{window.pos_bottomLeft}}'
-  - name: topRight
-    text: '{{window.pos_topRight}}'
-  - name: bottomRight
-    text: '{{window.pos_bottomRight}}'
-  value:
-    default:
-      enabled: true
-      choice: 'middle'
-      
-- category: [window]
-  name: continueOutOfFocus
-  header: '{{window.continueOutOfFocus}}'
-  text: '{{window.continueOutOfFocus_descr}}'
-  hasHeader: true
-  type: string
-  display: UCP2RadioGroup
-  url: graphicsApiReplacer.window.continueOutOfFocus
-  choices:
-  - name: pause
-    text: '{{window.continueOutOfFocus_pause}}'
-  - name: continue
-    text: '{{window.continueOutOfFocus_continue}}'
-  - name: render
-    text: '{{window.continueOutOfFocus_render}}'
-  value:
-    default:
-      enabled: true
-      choice: 'pause'
+  text: Replace the Graphics API. Allows for recording streams with software such as OBS.
+  columns: 1
+  category: [Graphics API Replacer]
+  children:
 
+  - display: GroupBox
+    header: '{{window}}'
+    text: '{{window_descr}}'
+    columns: 1
+    children:
 
-- category: [graphic]
-  name: api
-  header: '{{graphic.api}}'
-  text: '{{graphic.api_descr}}'
-  hasHeader: true
-  type: string
-  display: UCP2RadioGroup
-  url: graphicsApiReplacer.graphic.api
-  choices:
-  - name: DirectX
-    text: '{{graphic.api_DirectX}}'
-  - name: OpenGL
-    text: '{{graphic.api_OpenGL}}'
-  value:
-    default:
-      enabled: true
-      choice: 'DirectX'
-      
-- category: [graphic]
-  name: filterLinear
-  header: '{{graphic.filterLinear}}'
-  text: '{{graphic.filterLinear_descr}}'
-  hasHeader: true
-  type: boolean
-  display: UCP2Switch
-  url: graphicsApiReplacer.graphic.filterLinear
-  value:
-    default: true
-    
-- category: [graphic]
-  name: vsync
-  header: '{{graphic.vsync}}'
-  text: '{{graphic.vsync_descr}}'
-  hasHeader: true
-  type: boolean
-  display: UCP2Switch
-  url: graphicsApiReplacer.graphic.vsync
-  value:
-    default: true
+    - url: graphicsApiReplacer.window.type
+      header: '{{window.type}}'
+      text: '{{window.type_descr}}'
+      hasHeader: true
+      display: Choice
+      content:
+        type: choice
+        choices:
+        - name: window
+          text: '{{window.type_window}}'
+        - name: borderlessWindow
+          text: '{{window.type_borderlessWindow}}'
+        - name: borderlessFullscreen
+          text: '{{window.type_borderlessFullscreen}}'
+        value: window
 
-- category: [graphic]
-  name: waitWithGLFinish
-  header: '{{graphic.waitWithGLFinish}}'
-  text: '{{graphic.waitWithGLFinish_descr}}'
-  hasHeader: true
-  type: boolean
-  display: UCP2Switch
-  url: graphicsApiReplacer.graphic.waitWithGLFinish
-  value:
-    default: false
-    
-- category: [graphic]
-  name: pixFormat
-  header: '{{graphic.pixFormat}}'
-  text: '{{graphic.pixFormat_descr}}'
-  hasHeader: true
-  type: string
-  display: UCP2RadioGroup
-  url: graphicsApiReplacer.graphic.pixFormat
-  choices:
-  - name: argb1555
-    text: '{{graphic.pixFormat_argb1555}}'
-  - name: rgb565
-    text: '{{graphic.pixFormat_rgb565}}'
-  value:
-    default:
-      enabled: true
-      choice: 'argb1555'
-      
-- category: [graphic]
-  name: debug
-  header: '{{graphic.debug}}'
-  text: '{{graphic.debug_descr}}'
-  hasHeader: true
-  type: string
-  display: UCP2RadioGroup
-  url: graphicsApiReplacer.graphic.debug
-  choices:
-  - name: none
-    text: '{{graphic.debug_none}}'
-  - name: enabled
-    text: '{{graphic.debug_enabled}}'
-  - name: debugContextEnabled
-    text: '{{graphic.debug_debugContextEnabled}}'    
-  value:
-    default:
-      enabled: true
-      choice: 'none'
+    - url: graphicsApiReplacer.window.width
+      header: '{{window.width}}'
+      text: '{{window.width_descr}}'
+      hasHeader: true
+      display: Number
+      content:
+        enabled: graphicsApiReplacer.window.type != "borderlessFullscreen"
+        type: integer
+        value: 1280
+        min: 0
+        max: 20000
 
+    - url: graphicsApiReplacer.window.height
+      header: '{{window.height}}'
+      text: '{{window.height_descr}}'
+      display: Number
+      content:
+        enabled: graphicsApiReplacer.window.type != "borderlessFullscreen"
+        type: integer
+        value: 720
+        min: 0
+        max: 20000
 
-- category: [control]
-  name: clipCursor
-  header: '{{control.clipCursor}}'
-  text: '{{control.clipCursor_descr}}'
-  hasHeader: true
-  type: boolean
-  display: UCP2Switch
-  url: graphicsApiReplacer.control.clipCursor
-  value:
-    default: true
-    
-- category: [control]
-  name: scrollActive
-  header: '{{control.scrollActive}}'
-  text: '{{control.scrollActive_descr}}'
-  hasHeader: true
-  type: boolean
-  display: UCP2Switch
-  url: graphicsApiReplacer.control.scrollActive
-  value:
-    default: true
-    
-- category: [control]
-  name: margin
-  header: '{{control.margin}}'
-  text: '{{control.margin_descr}}'
-  hasHeader: true
-  type: integer
-  display: UCP2Slider
-  url: graphicsApiReplacer.control.margin
-  min: 0
-  max: 1000
-  step: 1
-  value:
-    default:
-      enabled: true
-      sliderValue: 0
-      
-- category: [control]
-  name: padding
-  header: '{{control.padding}}'
-  text: '{{control.padding_descr}}'
-  hasHeader: true
-  type: integer
-  display: UCP2Slider
-  url: graphicsApiReplacer.control.padding
-  min: 0
-  max: 1000
-  step: 1
-  value:
-    default:
-      enabled: true
-      sliderValue: 0
+    - url: graphicsApiReplacer.window.pos
+      header: '{{window.pos}}'
+      text: '{{window.pos_descr}}'
+      hasHeader: true
+      display: Choice
+      content:
+        enabled: graphicsApiReplacer.window.type != "borderlessFullscreen"
+        type: choice
+        choices:
+        - name: middle
+          text: '{{window.pos_middle}}'
+        - name: topLeft
+          text: '{{window.pos_topLeft}}'
+        - name: bottomLeft
+          text: '{{window.pos_bottomLeft}}'
+        - name: topRight
+          text: '{{window.pos_topRight}}'
+        - name: bottomRight
+          text: '{{window.pos_bottomRight}}'
+        value: middle
+
+    - url: graphicsApiReplacer.window.continueOutOfFocus
+      header: '{{window.continueOutOfFocus}}'
+      text: '{{window.continueOutOfFocus_descr}}'
+      hasHeader: true
+      display: Choice
+      content:
+        type: choice
+        choices:
+        - name: pause
+          text: '{{window.continueOutOfFocus_pause}}'
+        - name: continue
+          text: '{{window.continueOutOfFocus_continue}}'
+        - name: render
+          text: '{{window.continueOutOfFocus_render}}'
+        value: pause
+
+  - display: GroupBox
+    header: '{{graphic}}'
+    text: '{{graphic_descr}}'
+    hasHeader: true
+    columns: 1
+    children:
+
+    - url: graphicsApiReplacer.graphic.api
+      header: '{{graphic.api}}'
+      text: '{{graphic.api_descr}}'
+      hasHeader: true
+      display: Choice
+      content:
+        type: choice
+        choices:
+        - name: DirectX
+          text: '{{graphic.api_DirectX}}'
+        - name: OpenGL
+          text: '{{graphic.api_OpenGL}}'
+        value: DirectX
+
+    - url: graphicsApiReplacer.graphic.filterLinear
+      header: '{{graphic.filterLinear}}'
+      text: '{{graphic.filterLinear_descr}}'
+      hasHeader: true
+      display: Switch
+      content:
+        type: boolean
+        value: true
+
+    - url: graphicsApiReplacer.graphic.vsync
+      header: '{{graphic.vsync}}'
+      text: '{{graphic.vsync_descr}}'
+      hasHeader: true
+      display: Switch
+      content:
+        type: boolean
+        value: true
+
+    - url: graphicsApiReplacer.graphic.waitWithGLFinish
+      header: '{{graphic.waitWithGLFinish}}'
+      text: '{{graphic.waitWithGLFinish_descr}}'
+      hasHeader: true
+      content:
+        enabled: graphicsApiReplacer.graphic.api == "OpenGL"
+        type: boolean
+        value: false
+
+    - url: graphicsApiReplacer.graphic.pixFormat
+      header: '{{graphic.pixFormat}}'
+      text: '{{graphic.pixFormat_descr}}'
+      hasHeader: true
+      display: Choice
+      content:
+        type: choice
+        choices:
+        - name: argb1555
+          text: '{{graphic.pixFormat_argb1555}}'
+        - name: rgb565
+          text: '{{graphic.pixFormat_rgb565}}'
+        value: argb1555
+
+    - url: graphicsApiReplacer.graphic.debug
+      header: '{{graphic.debug}}'
+      text: '{{graphic.debug_descr}}'
+      hasHeader: true
+      display: Choice
+      content:
+        type: choice
+        choices:
+        - name: none
+          text: '{{graphic.debug_none}}'
+        - name: enabled
+          text: '{{graphic.debug_enabled}}'
+        - name: debugContextEnabled
+          text: '{{graphic.debug_debugContextEnabled}}'
+          enabled: graphicsApiReplacer.graphic.api == "OpenGL"
+        value: none
+
+  - display: GroupBox
+    header: '{{control}}'
+    text: '{{control_descr}}'
+    hasHeader: true
+    columns: 1
+    children:
+
+    - url: graphicsApiReplacer.control.clipCursor
+      header: '{{control.clipCursor}}'
+      text: '{{control.clipCursor_descr}}'
+      hasHeader: true
+      display: Switch
+      content:
+        type: boolean
+        value: true
+        
+    - url: graphicsApiReplacer.control.scrollActive
+      header: '{{control.scrollActive}}'
+      text: '{{control.scrollActive_descr}}'
+      hasHeader: true
+      display: Switch
+      content:
+        type: boolean
+        value: true
+        
+    - url: graphicsApiReplacer.control.margin
+      header: '{{control.margin}}'
+      text: '{{control.margin_descr}}'
+      hasHeader: true
+      display: Number
+      content:
+        type: integer
+        value: 0
+        min: 0
+        max: 1000
+
+    - url: graphicsApiReplacer.control.padding
+      header: '{{control.padding}}'
+      text: '{{control.padding_descr}}'
+      hasHeader: true
+      display: Number
+      content:
+        type: integer
+        value: 0
+        min: 0
+        max: 1000
