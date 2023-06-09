@@ -14,14 +14,14 @@ window.type_borderlessWindow: Borderless Window
 window.type_borderlessFullscreen: Borderless Fullscreen
 
 window.width: Width 
-window.width_descr: The pixel width of the game window.
+window.width_descr: The width of the game window.
 
 window.height: Height
-window.height_descr: The pixel height of the game window.
+window.height_descr: The height of the game window.
 
 window.pos: Position
 window.pos_descr: Decides the (start) position of the window.
-window.pos_middle: Middle
+window.pos_middle: Centered
 window.pos_topLeft: Top Left
 window.pos_bottomLeft: Bottom Left
 window.pos_topRight: Top Right
@@ -68,7 +68,7 @@ control.clipCursor: Clip Cursor
 control.clipCursor_descr: Clips the cursor to the game part of the window in general, which will otherwise only happen with a hold mouse button.
 
 control.scrollActive: Scroll
-control.scrollActive_descr: Border scrolling is active.
+control.scrollActive_descr: Activates border scrolling.
 
 control.margin: Scroll Margin
 control.margin_descr: Window pixels to extend the scroll zone outward for window modes without active clipper.
