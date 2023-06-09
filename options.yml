@@ -33,9 +33,9 @@
       header: '{{window.width}}'
       text: '{{window.width_descr}}'
       hasHeader: true
+      enabled: graphicsApiReplacer.window.type != "borderlessFullscreen"
       display: Number
       content:
-        enabled: graphicsApiReplacer.window.type != "borderlessFullscreen"
         type: integer
         value: 1280
         min: 0
@@ -44,9 +44,9 @@
     - url: graphicsApiReplacer.window.height
       header: '{{window.height}}'
       text: '{{window.height_descr}}'
+      enabled: graphicsApiReplacer.window.type != "borderlessFullscreen"
       display: Number
       content:
-        enabled: graphicsApiReplacer.window.type != "borderlessFullscreen"
         type: integer
         value: 720
         min: 0
@@ -56,9 +56,9 @@
       header: '{{window.pos}}'
       text: '{{window.pos_descr}}'
       hasHeader: true
+      enabled: graphicsApiReplacer.window.type != "borderlessFullscreen"
       display: Choice
       content:
-        enabled: graphicsApiReplacer.window.type != "borderlessFullscreen"
         type: choice
         choices:
         - name: middle
@@ -132,8 +132,9 @@
       header: '{{graphic.waitWithGLFinish}}'
       text: '{{graphic.waitWithGLFinish_descr}}'
       hasHeader: true
+      enabled: graphicsApiReplacer.graphic.api == "OpenGL"
+      display: Switch
       content:
-        enabled: graphicsApiReplacer.graphic.api == "OpenGL"
         type: boolean
         value: false
 
