@@ -1,0 +1,77 @@
+general: Grafik-API Ersetzer
+general_descr: "Dieses Modul erlaubt zur Darstellung des Spiels eine moderner Grafik-API zu benutzen, wahlweise DirectX oder OpenGL. Das sollte das generelle Erlebnis verbessern, beispielsweise mit Aufnahme-Software.
+Es ist zu beachten, dass das Rendern weiterhin spiel-intern mittels CPU ausgeführt wird, weshalb keine Performance-Verbesserungen zu erwarten sind. 
+
+Die reale Auflösung des Fensters wird mittels der Optionen hier festgelegt, während die Optionen im Spiel stattdessen die Renderauflösung angeben. Das Bildverhältnis ist hierbei abhängig von beiden Auflösungen und es kann zu schwarzen Balken kommen, welche von Aufzeichnungssoftware mit erfasst werden."
+
+window: Fensteroptionen
+window_descr: Generelle Fensteroptionen.
+
+window.type: Modus
+window.type_descr: Der Fenstermodus bestimmt die Darstellung des Spielfensters.
+window.type_window: Fenster
+window.type_borderlessWindow: Rahmenloses Fenster
+window.type_borderlessFullscreen: Rahmenloses Vollbild
+
+window.width: Breite 
+window.width_descr: Die Breite des Fensters in den Fenstermodi.
+
+window.height: Höhe
+window.height_descr: Die Höhe des Fensters in den Fenstermodi.
+
+window.pos: Position
+window.pos_descr: Die (Start)position des Fensters in den Fenstermodi.
+window.pos_middle: Zentriert
+window.pos_topLeft: Oben Links
+window.pos_bottomLeft: Unten Links
+window.pos_topRight: Oben Rechts
+window.pos_bottomRight: Unten Rechts
+
+window.continueOutOfFocus: Nicht-fokussiert Fortsetzen
+window.continueOutOfFocus_descr: Bestimmt das Verhalten des Spiels wenn es nicht fokussiert ist.
+window.continueOutOfFocus_pause: Pause
+window.continueOutOfFocus_continue: Fortsetzen
+window.continueOutOfFocus_render: Fortsetzen und Rendern
+
+graphic: Grafik-AP Optionen
+graphic_descr: Optionen für DirectX und OpenGL.
+
+graphic.api: Grafik-AP
+graphic.api_descr: Die zu verwendende Grafik-AP.
+graphic.api_DirectX: DirectX 11
+graphic.api_OpenGL: OpenGL (Veraltet)
+
+graphic.filterLinear: Linearer Filter
+graphic.filterLinear_descr: Ein linearer Texturfilter wird über das Bild angewendet. Kann die Darstellung verbessern wenn sich Darstellungs- und Renderauflösung unterscheiden.
+
+graphic.vsync: VSync
+graphic.vsync_descr: Aktiviert VSync. Beschränkt die Anzahl an gerenderten Frames auf die Bildschirmfrequenz. Hat einen Effekt auf das Scrolling, da es teilweise frame-abhängig ist.
+
+graphic.waitWithGLFinish: Warten mit glFinish
+graphic.waitWithGLFinish_descr: Ruft nach dem Bildschirm-Buffer-Swap glFinish auf, sofern OpenGL genutzt wird. Hat vermutlich keinen Effekt. Wird in Zukunft potentiell entfernt.
+
+graphic.pixFormat: Pixel Format
+graphic.pixFormat_descr: Pixel Fabrformat. Wird für die Darstellung aber ohnehin in 32bit RGBA umgewandelt, aber gibt an, welche Farbwerte der Software-Renderer nutzt. ARGB1555 entspricht hierbei vermutlich dem nativen Texturformat.
+graphic.pixFormat_argb1555: ARGB1555
+graphic.pixFormat_rgb565: RGB565
+
+graphic.debug: API Debug
+graphic.debug_descr: Aktiviert Debug-Nachrichten. Sollte für die normale Nutzung deaktiviert sein. Für DirectX werde Debug-Bibliotheken genötigt.
+graphic.debug_none: None
+graphic.debug_enabled: Aktiviert (Reduzierte Ausgabe für OpenGL)
+graphic.debug_debugContextEnabled: Nutze einen OpenGL Debug-Context
+
+control: Steuerung
+control_descr: Optionen zur Modifizierung der Steuerung.
+
+control.clipCursor: Cursor-Beschränkung
+control.clipCursor_descr: Beschränkt den Cursor generell auf den Spieleteil des Fensters, was ansonsten nur beim Halten eines Mausbuttons passiert.
+
+control.scrollActive: Scrollen
+control.scrollActive_descr: Aktiviert Scrollen am Rand.
+
+control.margin: Scroll Margin
+control.margin_descr: Anzahl Fensterpixel, um welche die Scrollzone nach außen erweitert werden soll. Zeigt nur Wirkung im Fenstermodus ohne Clipper.
+
+control.padding: Scroll Padding
+control.padding_descr: Anzahl Fensterpixel, um welche die Scrollzone nach innen erweitert werden soll.

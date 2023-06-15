@@ -1,0 +1,77 @@
+general: Graphics API Replacer
+general_descr: "This module allows to switch the displaying system to a more modern that uses either DirectX or OpenGL, which should provide a better experience, for example with recording software.
+Note, that the rendering itself is still done by the CPU, so performance gains should not be expected.
+
+The window resolution is set via this options, while the in-game options decide the render resolution. The display-ratio is based on the in-game resolution, which may product black bars that will show up on recordings."
+
+window: Window Options
+window_descr: General options related to the window.
+
+window.type: Mode
+window.type_descr: The type of window mode to use.
+window.type_window: Window
+window.type_borderlessWindow: Borderless Window
+window.type_borderlessFullscreen: Borderless Fullscreen
+
+window.width: Width 
+window.width_descr: The width of the game window.
+
+window.height: Height
+window.height_descr: The height of the game window.
+
+window.pos: Position
+window.pos_descr: Decides the (start) position of the window.
+window.pos_middle: Centered
+window.pos_topLeft: Top Left
+window.pos_bottomLeft: Bottom Left
+window.pos_topRight: Top Right
+window.pos_bottomRight: Bottom Right
+
+window.continueOutOfFocus: Continue Out-Of-Focus
+window.continueOutOfFocus_descr: Sets how the game handles losing focus.
+window.continueOutOfFocus_pause: Pause
+window.continueOutOfFocus_continue: Continue
+window.continueOutOfFocus_render: Continue and Render
+
+graphic: Graphics API Options
+graphic_descr: Options for DirectX and OpenGL.
+
+graphic.api: Graphics API
+graphic.api_descr: The graphics API to use.
+graphic.api_DirectX: DirectX 11
+graphic.api_OpenGL: OpenGL (Deprecated)
+
+graphic.filterLinear: Filter Linear
+graphic.filterLinear_descr: A linear texture filter is applied. Might improve picture if window and render resolution is not equal.
+
+graphic.vsync: VSync
+graphic.vsync_descr: Activates VSync. Caps number of rendered frames to display frequency. Has effect on map scrolling, since it is partially frame dependent.
+
+graphic.waitWithGLFinish: Wait with glFinish
+graphic.waitWithGLFinish_descr: Calls glFinish after screen buffer swap if OpenGL is used. Might have no effect whatsoever. Possible subject of removal.
+
+graphic.pixFormat: Pixel Format
+graphic.pixFormat_descr: Pixel color format. Transformed to 32 bit RGBA anyway, but sets the software renderer option. ARGB1555 is likely the native texture format.
+graphic.pixFormat_argb1555: ARGB1555
+graphic.pixFormat_rgb565: RGB565
+
+graphic.debug: API Debug
+graphic.debug_descr: Activates debug messages. Should be off for normal usage. At least in case of DirectX it requires Debug libraries.
+graphic.debug_none: None
+graphic.debug_enabled: Enabled (Reduced output for OpenGL)
+graphic.debug_debugContextEnabled: Create OpenGL debug context
+
+control: Control
+control_descr: Options for input control.
+
+control.clipCursor: Clip Cursor
+control.clipCursor_descr: Clips the cursor to the game part of the window in general, which will otherwise only happen with a hold mouse button.
+
+control.scrollActive: Scroll
+control.scrollActive_descr: Activates border scrolling.
+
+control.margin: Scroll Margin
+control.margin_descr: Window pixels to extend the scroll zone outward for window modes without active clipper.
+
+control.padding: Scroll Padding
+control.padding_descr: Window pixels to extend the scroll zone inward.

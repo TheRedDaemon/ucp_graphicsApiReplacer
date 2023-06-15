@@ -99,7 +99,7 @@ The following list will go through every option and explain it brief. The struct
 
 * **control** - Options for the input control.
 
-  * ***clipCursor*** - Clips the cursor the game part of the window in general. Default: *true*
+  * ***clipCursor*** - Clips the cursor to the game part of the window in general. Default: *true*
     * *true* or *false*
 
   * ***scrollActive*** - Border scrolling is active. Default: *true*
