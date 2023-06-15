@@ -3,14 +3,12 @@
   text: '{{general_descr}}'
   hasHeader: true
   text: Replace the Graphics API. Allows for recording streams with software such as OBS.
-  columns: 1
   category: [Graphics API Replacer]
   children:
 
   - display: GroupBox
     header: '{{window}}'
     text: '{{window_descr}}'
-    columns: 1
     children:
 
     - url: graphicsApiReplacer.window.type
@@ -93,7 +91,6 @@
     header: '{{graphic}}'
     text: '{{graphic_descr}}'
     hasHeader: true
-    columns: 1
     children:
 
     - url: graphicsApiReplacer.graphic.api
@@ -173,7 +170,6 @@
     header: '{{control}}'
     text: '{{control_descr}}'
     hasHeader: true
-    columns: 1
     children:
 
     - url: graphicsApiReplacer.control.clipCursor
