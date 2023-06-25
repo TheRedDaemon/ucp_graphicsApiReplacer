@@ -17,7 +17,7 @@ options:
       text: '{{window.type_descr}}'
       hasHeader: true
       display: Choice
-      content:
+      contents:
         type: choice
         choices:
         - name: window
@@ -34,7 +34,7 @@ options:
       hasHeader: true
       enabled: graphicsApiReplacer.window.type != "borderlessFullscreen"
       display: Number
-      content:
+      contents:
         type: integer
         value: 1280
         min: 0
@@ -45,7 +45,7 @@ options:
       text: '{{window.height_descr}}'
       enabled: graphicsApiReplacer.window.type != "borderlessFullscreen"
       display: Number
-      content:
+      contents:
         type: integer
         value: 720
         min: 0
@@ -57,7 +57,7 @@ options:
       hasHeader: true
       enabled: graphicsApiReplacer.window.type != "borderlessFullscreen"
       display: Choice
-      content:
+      contents:
         type: choice
         choices:
         - name: middle
@@ -77,7 +77,7 @@ options:
       text: '{{window.continueOutOfFocus_descr}}'
       hasHeader: true
       display: Choice
-      content:
+      contents:
         type: choice
         choices:
         - name: pause
@@ -99,7 +99,7 @@ options:
       text: '{{graphic.api_descr}}'
       hasHeader: true
       display: Choice
-      content:
+      contents:
         type: choice
         choices:
         - name: DirectX
@@ -113,7 +113,7 @@ options:
       text: '{{graphic.filterLinear_descr}}'
       hasHeader: true
       display: Switch
-      content:
+      contents:
         type: boolean
         value: true
 
@@ -122,7 +122,7 @@ options:
       text: '{{graphic.vsync_descr}}'
       hasHeader: true
       display: Switch
-      content:
+      contents:
         type: boolean
         value: true
 
@@ -132,7 +132,7 @@ options:
       hasHeader: true
       enabled: graphicsApiReplacer.graphic.api == "OpenGL"
       display: Switch
-      content:
+      contents:
         type: boolean
         value: false
 
@@ -141,7 +141,7 @@ options:
       text: '{{graphic.pixFormat_descr}}'
       hasHeader: true
       display: Choice
-      content:
+      contents:
         type: choice
         choices:
         - name: argb1555
@@ -155,7 +155,7 @@ options:
       text: '{{graphic.debug_descr}}'
       hasHeader: true
       display: Choice
-      content:
+      contents:
         type: choice
         choices:
         - name: none
@@ -178,7 +178,7 @@ options:
       text: '{{control.clipCursor_descr}}'
       hasHeader: true
       display: Switch
-      content:
+      contents:
         type: boolean
         value: true
         
@@ -187,7 +187,7 @@ options:
       text: '{{control.scrollActive_descr}}'
       hasHeader: true
       display: Switch
-      content:
+      contents:
         type: boolean
         value: true
         
@@ -196,7 +196,7 @@ options:
       text: '{{control.margin_descr}}'
       hasHeader: true
       display: Number
-      content:
+      contents:
         type: integer
         value: 0
         min: 0
@@ -207,7 +207,7 @@ options:
       text: '{{control.padding_descr}}'
       hasHeader: true
       display: Number
-      content:
+      contents:
         type: integer
         value: 0
         min: 0
