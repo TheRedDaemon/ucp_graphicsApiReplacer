@@ -2,7 +2,6 @@
   header: '{{general}}'
   text: '{{general_descr}}'
   hasHeader: true
-  text: Replace the Graphics API. Allows for recording streams with software such as OBS.
   category: [Graphics API Replacer]
   children:
 
