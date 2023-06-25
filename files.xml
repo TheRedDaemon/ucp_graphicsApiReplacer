@@ -5,6 +5,7 @@
     <file src="ucp_graphicsApiReplacer/$(Configuration)/graphicsApiReplacer.dll" />
     <file src="*.lua" target="." />
     <file src="*.yml" target="." />
+    <file src="locale" target="." />
   </files>
   
   <files build="Debug">
@@ -12,5 +13,6 @@
     <file src="ucp_graphicsApiReplacer/$(Configuration)/graphicsApiReplacer.pdb" />
     <file src="*.lua" target="." />
     <file src="*.yml" target="." />
+    <file src="locale" target="." />
   </files>
 </module>

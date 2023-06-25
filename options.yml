@@ -1,8 +1,9 @@
+specification-version: 1.0.0
+options:
 - display: GroupBox
   header: '{{general}}'
   text: '{{general_descr}}'
   hasHeader: true
-  text: Replace the Graphics API. Allows for recording streams with software such as OBS.
   category: [Graphics API Replacer]
   children:
 
@@ -16,7 +17,7 @@
       text: '{{window.type_descr}}'
       hasHeader: true
       display: Choice
-      content:
+      contents:
         type: choice
         choices:
         - name: window
@@ -33,7 +34,7 @@
       hasHeader: true
       enabled: graphicsApiReplacer.window.type != "borderlessFullscreen"
       display: Number
-      content:
+      contents:
         type: integer
         value: 1280
         min: 0
@@ -44,7 +45,7 @@
       text: '{{window.height_descr}}'
       enabled: graphicsApiReplacer.window.type != "borderlessFullscreen"
       display: Number
-      content:
+      contents:
         type: integer
         value: 720
         min: 0
@@ -56,7 +57,7 @@
       hasHeader: true
       enabled: graphicsApiReplacer.window.type != "borderlessFullscreen"
       display: Choice
-      content:
+      contents:
         type: choice
         choices:
         - name: middle
@@ -76,7 +77,7 @@
       text: '{{window.continueOutOfFocus_descr}}'
       hasHeader: true
       display: Choice
-      content:
+      contents:
         type: choice
         choices:
         - name: pause
@@ -98,7 +99,7 @@
       text: '{{graphic.api_descr}}'
       hasHeader: true
       display: Choice
-      content:
+      contents:
         type: choice
         choices:
         - name: DirectX
@@ -112,7 +113,7 @@
       text: '{{graphic.filterLinear_descr}}'
       hasHeader: true
       display: Switch
-      content:
+      contents:
         type: boolean
         value: true
 
@@ -121,7 +122,7 @@
       text: '{{graphic.vsync_descr}}'
       hasHeader: true
       display: Switch
-      content:
+      contents:
         type: boolean
         value: true
 
@@ -131,7 +132,7 @@
       hasHeader: true
       enabled: graphicsApiReplacer.graphic.api == "OpenGL"
       display: Switch
-      content:
+      contents:
         type: boolean
         value: false
 
@@ -140,7 +141,7 @@
       text: '{{graphic.pixFormat_descr}}'
       hasHeader: true
       display: Choice
-      content:
+      contents:
         type: choice
         choices:
         - name: argb1555
@@ -154,7 +155,7 @@
       text: '{{graphic.debug_descr}}'
       hasHeader: true
       display: Choice
-      content:
+      contents:
         type: choice
         choices:
         - name: none
@@ -177,7 +178,7 @@
       text: '{{control.clipCursor_descr}}'
       hasHeader: true
       display: Switch
-      content:
+      contents:
         type: boolean
         value: true
         
@@ -186,7 +187,7 @@
       text: '{{control.scrollActive_descr}}'
       hasHeader: true
       display: Switch
-      content:
+      contents:
         type: boolean
         value: true
         
@@ -195,7 +196,7 @@
       text: '{{control.margin_descr}}'
       hasHeader: true
       display: Number
-      content:
+      contents:
         type: integer
         value: 0
         min: 0
@@ -206,7 +207,7 @@
       text: '{{control.padding_descr}}'
       hasHeader: true
       display: Number
-      content:
+      contents:
         type: integer
         value: 0
         min: 0

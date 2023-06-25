@@ -1,8 +1,8 @@
 general: Graphics API Replacer
-general_descr: "This module allows to switch the displaying system to a more modern that uses either DirectX or OpenGL, which should provide a better experience, for example with recording software.
-Note, that the rendering itself is still done by the CPU, so performance gains should not be expected.
-
-The window resolution is set via this options, while the in-game options decide the render resolution. The display-ratio is based on the in-game resolution, which may product black bars that will show up on recordings."
+general_descr: "This module allows to switch the displaying system to a more modern that uses either DirectX or OpenGL, which should provide a better experience, for example with recording software. 
+  Note, that the rendering itself is still done by the CPU, so performance gains should not be expected.
+  
+  The window resolution is set via this options, while the in-game options decide the render resolution. The display-ratio is based on the in-game resolution, which may product black bars that will show up on recordings."
 
 window: Window Options
 window_descr: General options related to the window.

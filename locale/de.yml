@@ -1,8 +1,8 @@
 general: Grafik-API Ersetzer
 general_descr: "Dieses Modul erlaubt zur Darstellung des Spiels eine moderner Grafik-API zu benutzen, wahlweise DirectX oder OpenGL. Das sollte das generelle Erlebnis verbessern, beispielsweise mit Aufnahme-Software.
-Es ist zu beachten, dass das Rendern weiterhin spiel-intern mittels CPU ausgeführt wird, weshalb keine Performance-Verbesserungen zu erwarten sind. 
-
-Die reale Auflösung des Fensters wird mittels der Optionen hier festgelegt, während die Optionen im Spiel stattdessen die Renderauflösung angeben. Das Bildverhältnis ist hierbei abhängig von beiden Auflösungen und es kann zu schwarzen Balken kommen, welche von Aufzeichnungssoftware mit erfasst werden."
+  Es ist zu beachten, dass das Rendern weiterhin spiel-intern mittels CPU ausgeführt wird, weshalb keine Performance-Verbesserungen zu erwarten sind. 
+  
+  Die reale Auflösung des Fensters wird mittels der Optionen hier festgelegt, während die Optionen im Spiel stattdessen die Renderauflösung angeben. Das Bildverhältnis ist hierbei abhängig von beiden Auflösungen und es kann zu schwarzen Balken kommen, welche von Aufzeichnungssoftware mit erfasst werden."
 
 window: Fensteroptionen
 window_descr: Generelle Fensteroptionen.
