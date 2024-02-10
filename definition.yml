@@ -6,4 +6,4 @@ meta:
   version: 1.0.0
 type: module
 dependencies:
-  winProcHandler: >= 0.1.0
+  winProcHandler: ">= 0.1.0"
