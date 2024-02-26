@@ -26,7 +26,7 @@ options:
           text: '{{window.type_borderlessWindow}}'
         - name: borderlessFullscreen
           text: '{{window.type_borderlessFullscreen}}'
-        value: window
+        value: borderlessFullscreen
 
     - url: graphicsApiReplacer.window.width
       header: '{{window.width}}'
