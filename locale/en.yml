@@ -1,7 +1,8 @@
 general: Graphics API Replacer
-general_descr: "This module allows to switch the displaying system to a more modern that uses either DirectX or OpenGL, which should provide a better experience, for example with recording software. 
+general_descr:
+  "This module allows to switch the displaying system to a more modern that uses either DirectX or OpenGL, which should provide a better experience, for example with recording software.
   Note, that the rendering itself is still done by the CPU, so performance gains should not be expected.
-  
+
   The window resolution is set via this options, while the in-game options decide the render resolution. The display-ratio is based on the in-game resolution, which may product black bars that will show up on recordings."
 
 window: Window Options
@@ -13,7 +14,7 @@ window.type_window: Window
 window.type_borderlessWindow: Borderless Window
 window.type_borderlessFullscreen: Borderless Fullscreen
 
-window.width: Width 
+window.width: Width
 window.width_descr: The width of the game window.
 
 window.height: Height
@@ -32,6 +33,7 @@ window.continueOutOfFocus_descr: Sets how the game handles losing focus.
 window.continueOutOfFocus_pause: Pause
 window.continueOutOfFocus_continue: Continue
 window.continueOutOfFocus_render: Continue and Render
+window.minimizeOnLostFocus_descr: Minimize when window loses focus.
 
 graphic: Graphics API Options
 graphic_descr: Options for DirectX and OpenGL.
