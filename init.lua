@@ -198,6 +198,7 @@ exports.enable = function(self, moduleConfig, globalConfig)
           height              -- default: 720;        -- num >= 0 (and <= 20000)
           pos                 -- default: middle      -- see graphicsApiReplacer.window.pos table
           continueOutOfFocus  -- default: pause       -- see graphicsApiReplacer.window.continueOutOfFocus table
+          minimizeOnLostFocus -- default: false        -- (force) minimize if focus lost
         }
         
         graphic

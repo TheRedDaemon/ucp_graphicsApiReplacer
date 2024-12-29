@@ -41,6 +41,7 @@ namespace UCPGraphicsApiReplacer
     WindowPos pos{ POS_MIDDLE };  // only used for non fullscreen
 
     ContinueOutOfFocus continueOutOfFocus{ NOFOCUS_PAUSE }; // the game and the rendering continue
+    bool minimizeOnLostFocus{ false };
   };
 
 

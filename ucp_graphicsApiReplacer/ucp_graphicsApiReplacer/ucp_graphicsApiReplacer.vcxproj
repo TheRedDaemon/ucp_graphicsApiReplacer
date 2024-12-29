@@ -179,5 +179,8 @@
     </ClCompile>
     <ClCompile Include="openGLCore.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Directory.Build.props" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

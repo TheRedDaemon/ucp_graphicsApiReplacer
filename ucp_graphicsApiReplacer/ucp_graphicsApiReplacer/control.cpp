@@ -209,6 +209,9 @@ namespace UCPGraphicsApiReplacer
         {
           success = setIntField(L, 3, (int*)&Control::Conf.window.continueOutOfFocus, 0, 2);
         }
+        else if (field == "minimizeOnLostFocus") {
+          success = setBoolField(L, 3, (bool*)&Control::Conf.window.minimizeOnLostFocus);
+        }
         else
         {
           fieldUnknown = true;
