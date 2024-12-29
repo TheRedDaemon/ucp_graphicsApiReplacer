@@ -33,6 +33,7 @@ window.continueOutOfFocus_descr: Sets how the game handles losing focus.
 window.continueOutOfFocus_pause: Pause
 window.continueOutOfFocus_continue: Continue
 window.continueOutOfFocus_render: Continue and Render
+
 window.minimizeOnLostFocus_descr: Minimize when window loses focus.
 
 graphic: Graphics API Options

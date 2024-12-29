@@ -33,6 +33,8 @@ window.continueOutOfFocus_pause: Pause
 window.continueOutOfFocus_continue: Fortsetzen
 window.continueOutOfFocus_render: Fortsetzen und Rendern
 
+window.minimizeOnLostFocus_descr: Minimiert das Fenster beim Verlust des Fokus.
+
 graphic: Grafik-AP Optionen
 graphic_descr: Optionen für DirectX und OpenGL.
 

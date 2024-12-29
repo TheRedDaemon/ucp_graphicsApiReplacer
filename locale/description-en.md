@@ -1,7 +1,7 @@
 # Graphics API Replacer
 
-**Author**: TheRedDaemon  
-**Version**: 1.2.0  
+**Authors**: TheRedDaemon, gynt  
+**Version**: 1.3.0  
 **Repository**: [https://github.com/TheRedDaemon/ucp_graphicsApiReplacer](https://github.com/TheRedDaemon/ucp_graphicsApiReplacer)
 
 This module allows to switch the old DirectDraw API displaying system to a more modern that uses either DirectX or OpenGL. This is archived by modifying and taking control of the window creation, the few used DirectDraw calls and certain input functions. At its core, the module pretends to be DirectDraw and provides the memory for Crusader to draw its software rendered frames in. The result is then treated as a texture and displayed using either DirectX 11 or OpenGL. Mouse inputs are modified to fit the changed display.

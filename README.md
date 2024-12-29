@@ -63,6 +63,9 @@ The following list will go through every option and explain it brief. The struct
     * *continue* - The game continues and sounds play, but the window freezes.
     * *render* - The game will run as if it has the focus.
 
+  * ***minimizeOnLostFocus*** - Sets if the game window should minimize when losing the focus. Default: *false*
+    * *true* or *false*
+
 
 * **graphic** - Options for DirectX and OpenGL.
 
