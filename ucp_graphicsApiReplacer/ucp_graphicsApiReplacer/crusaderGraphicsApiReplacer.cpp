@@ -378,7 +378,7 @@ namespace UCPGraphicsApiReplacer
     d.hasFocus = false;
 
     // found no other way to proper minimize
-    if ((confRef.window.type == TYPE_BORDERLESS_FULLSCREEN || confRef.window.type == TYPE_FULLSCREEN) && confRef.window.minimizeOnLostFocus)
+    if (confRef.window.minimizeOnLostFocus)
     {
       ShowWindow(shcWinStrucPtr->gameWindowHandle, SW_MINIMIZE);
     }

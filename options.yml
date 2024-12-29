@@ -87,13 +87,12 @@ options:
               value: pause
 
           - url: graphicsApiReplacer.window.minimizeOnLostFocus
-            header: "{{window.minimizeOnLostFocus}}"
             text: "{{window.minimizeOnLostFocus_descr}}"
-            hasHeader: true
+            hasHeader: false
             display: Switch
             contents:
               type: boolean
-              value: true
+              value: false
 
       - display: GroupBox
         header: "{{graphic}}"
